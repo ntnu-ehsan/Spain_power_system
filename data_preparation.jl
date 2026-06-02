@@ -21,6 +21,7 @@ const DATA          = joinpath(@__DIR__, "Data")
 const COST_MAP = Dict(
     ("Solar",   "PV")             => ("Solar",               "PV"),
     ("Solar",   "CSP")            => ("Solar",               "CSP"),
+    ("Solar",   "Solar Thermal")  => ("Solar",               "CSP"),
     ("Wind",    "Onshore")        => ("Wind",                "Onshore"),
     ("Wind",    "Offshore")       => ("Wind",                "Onshore"),
     ("Nuclear", "Nuclear")        => ("Nuclear",             ""),
@@ -30,10 +31,16 @@ const COST_MAP = Dict(
     ("Biomass", "Biomass")        => ("Biomass",             ""),
     ("Hydro",   "pumped_storage") => ("Electricity Storage", "Pumped Storage"),
     ("Hydro",   "Run_of_River")   => ("Hydro",               "Run of River"),
+    ("Hydro",   "run_of_river")   => ("Hydro",               "Run of River"),
     ("Hydro",   "Reservoir")      => ("Hydro",               "Reservoir"),
+    ("Hydro",   "reservoir")      => ("Hydro",               "Reservoir"),
     ("Oil",     "Combined_cycle") => ("Oil",                 "Internal Combustion"),
     ("Oil",     "Gas_turbine")    => ("Oil",                 "Internal Combustion"),
 )
+
+function q_limits(pmax_pu::Float64)::Tuple{Float64,Float64}
+    return (pmax_pu, -pmax_pu)   # ±Pmax: conservative fallback ensuring reactive feasibility
+end
 
 function marginal_cost(cost_df::DataFrame, fuel::String, tech::String)::Float64
     key = (fuel, tech)
@@ -52,7 +59,10 @@ function marginal_cost(cost_df::DataFrame, fuel::String, tech::String)::Float64
     return 60.0
 end
 
-function prepare_network()
+function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
+                         solar_avail_mw::Float64 = Inf,
+                         wind_avail_mw::Float64  = Inf;
+                         hydro_reservoir_cost::Union{Float64,Nothing} = nothing)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -62,6 +72,14 @@ function prepare_network()
 
     bus_idx  = Dict(row.bus_id => i for (i, row) in enumerate(eachrow(bus_df)))
     gen_buses = Set(gen_df.bus_id)
+
+    # Total installed capacity of modelled solar/wind generators (for proportional scaling)
+    total_solar_mw = sum(Float64(row.capacity_mw) for row in eachrow(gen_df)
+                         if row.primary_fuel == "Solar" && haskey(bus_idx, row.bus_id);
+                         init = 0.0)
+    total_wind_mw  = sum(Float64(row.capacity_mw) for row in eachrow(gen_df)
+                         if row.primary_fuel == "Wind" && haskey(bus_idx, row.bus_id);
+                         init = 0.0)
 
     # ── Buses ────────────────────────────────────────────────
     buses = Dict{String,Any}()
@@ -77,7 +95,7 @@ function prepare_network()
             "name"     => row.bus_id,
             "base_kv"  => vn,
             "vm"       => 1.0,  "va"   => 0.0,
-            "vmax"     => 1.05, "vmin" => 0.95,
+            "vmax"     => 1.10, "vmin" => 0.90,
             "gs"       => 0.0,  "bs"   => 0.0,
             "zone"     => 1,    "area" => 1,
         )
@@ -89,6 +107,7 @@ function prepare_network()
     for row in eachrow(line_df)
         haskey(bus_idx, row.bus0) || continue
         haskey(bus_idx, row.bus1) || continue
+        String(row.dc) == "t"    && continue   # HVDC handled below as a dcline
         vn     = Float64(row.voltage)
         L      = Float64(row.length)
         z_base = vn^2 / BASEMVA
@@ -136,22 +155,93 @@ function prepare_network()
         )
     end
 
+    # ── DC lines (HVDC) ──────────────────────────────────────
+    # HVDC links are modelled as PowerModels `dcline` components — a
+    # controllable converter pair rather than an AC impedance branch.
+    # (Treating them as AC branches caused solver errors, since x≈0.)
+    # The active-power transfer is a decision variable bounded by the
+    # converter rating; each converter may also exchange reactive power
+    # with its terminal bus.  Converters are modelled lossless.
+    dclines  = Dict{String,Any}()
+    dc_count = 0
+    for row in eachrow(line_df)
+        String(row.dc) == "t" || continue          # AC lines handled above
+        haskey(bus_idx, row.bus0) || continue
+        haskey(bus_idx, row.bus1) || continue
+        vn   = Float64(row.voltage)
+        # Rating from terminal voltage and current limit (same voltage/Imax
+        # columns as AC lines), expressed in per-unit on the system base.
+        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA
+        dc_count += 1
+        dclines[string(dc_count)] = Dict{String,Any}(
+            "index"     => dc_count,
+            "f_bus"     => bus_idx[row.bus0],
+            "t_bus"     => bus_idx[row.bus1],
+            "name"      => String(row.line_id),
+            "br_status" => 1,
+            # Active-power flow variables (bidirectional, ±rate)
+            "pf"    => 0.0,   "pt"    => 0.0,
+            "pminf" => -rate, "pmaxf" => rate,
+            "pmint" => -rate, "pmaxt" => rate,
+            # Reactive-power capability at each converter (±rate)
+            "qf"    => 0.0,   "qt"    => 0.0,
+            "qminf" => -rate, "qmaxf" => rate,
+            "qmint" => -rate, "qmaxt" => rate,
+            # Terminal voltage setpoints
+            "vf"    => 1.0,   "vt"    => 1.0,
+            # Lossless converter model: p_fr + p_to == loss0 + loss1*p_fr
+            "loss0" => 0.0,   "loss1" => 0.0,
+            # No explicit cost on DC transfer
+            "model" => 2, "ncost" => 2, "cost" => [0.0, 0.0],
+            "startup" => 0.0, "shutdown" => 0.0,
+        )
+    end
+
+    # ── Remove buses with no branch connections (isolated buses) ──
+    connected_buses = Set{Int}()
+    for br in values(branches)
+        push!(connected_buses, br["f_bus"])
+        push!(connected_buses, br["t_bus"])
+    end
+    for dc in values(dclines)                       # keep HVDC terminal buses
+        push!(connected_buses, dc["f_bus"])
+        push!(connected_buses, dc["t_bus"])
+    end
+    for k in collect(keys(buses))
+        buses[k]["index"] ∉ connected_buses && delete!(buses, k)
+    end
+
     # ── Generators ───────────────────────────────────────────
     gens      = Dict{String,Any}()
     gen_count = 0
     for row in eachrow(gen_df)
         haskey(bus_idx, row.bus_id) || continue
-        pmax_pu  = Float64(row.capacity_mw) / BASEMVA
-        c1       = marginal_cost(cost_df, String(row.primary_fuel), String(row.technology)) * BASEMVA
+        cap_mw = Float64(row.capacity_mw)
+        pmax_pu = if row.primary_fuel == "Solar" && isfinite(solar_avail_mw) && total_solar_mw > 0
+            min(cap_mw, solar_avail_mw * cap_mw / total_solar_mw) / BASEMVA
+        elseif row.primary_fuel == "Wind" && isfinite(wind_avail_mw) && total_wind_mw > 0
+            min(cap_mw, wind_avail_mw * cap_mw / total_wind_mw) / BASEMVA
+        else
+            cap_mw / BASEMVA
+        end
+        is_reservoir = String(row.primary_fuel) == "Hydro" &&
+                       lowercase(String(row.technology)) == "reservoir"
+        c1 = if is_reservoir && !isnothing(hydro_reservoir_cost)
+            hydro_reservoir_cost * BASEMVA
+        else
+            marginal_cost(cost_df, String(row.primary_fuel), String(row.technology)) * BASEMVA
+        end
+        (qmax_pu, qmin_pu) = q_limits(pmax_pu)
         gen_count += 1
         gens[string(gen_count)] = Dict{String,Any}(
-            "index"      => gen_count,
-            "gen_bus"    => bus_idx[row.bus_id],
-            "name"       => String(row.unit_id),
-            "fuel"       => String(row.primary_fuel),
-            "technology" => String(row.technology),
-            "pmax"       => pmax_pu,   "pmin" => 0.0,
-            "qmax"       =>  pmax_pu,  "qmin" => -pmax_pu,
+            "index"         => gen_count,
+            "gen_bus"       => bus_idx[row.bus_id],
+            "name"          => String(row.unit_id),
+            "fuel"          => String(row.primary_fuel),
+            "technology"    => String(row.technology),
+            "installed_mw"  => cap_mw,           # fixed installed capacity
+            "pmax"          => pmax_pu,   "pmin" => 0.0,
+            "qmax"          => qmax_pu,   "qmin" => qmin_pu,
             "pg"         => pmax_pu/2, "qg"   => 0.0,
             "vg"         => 1.0,
             "mbase"      => BASEMVA,
@@ -165,12 +255,13 @@ function prepare_network()
     # Slack generator (balancing unit, very high cost)
     gen_count += 1
     gens[string(gen_count)] = Dict{String,Any}(
-        "index"      => gen_count,
-        "gen_bus"    => bus_idx[SLACK_BUS_ID],
-        "name"       => "SLACK",
-        "fuel"       => "Slack",
-        "technology" => "Slack",
-        "pmax"       =>  9999.0,  "pmin" => -9999.0,
+        "index"        => gen_count,
+        "gen_bus"      => bus_idx[SLACK_BUS_ID],
+        "name"         => "SLACK",
+        "fuel"         => "Slack",
+        "technology"   => "Slack",
+        "installed_mw" => 9999.0 * BASEMVA,
+        "pmax"         =>  9999.0,  "pmin" => 0.0,
         "qmax"       =>  9999.0,  "qmin" => -9999.0,
         "pg"         => 0.0,      "qg"   => 0.0,
         "vg"         => 1.0,
@@ -183,22 +274,27 @@ function prepare_network()
 
     # ── Loads ────────────────────────────────────────────────
     demand_sum  = sum(skipmissing(load_df.demand))
-    const_qd    = tan(acos(0.95))
+    const_qd    = tan(acos(0.95))   # Q/P ratio at PF 0.95 — provides reactive sink for line charging
     loads       = Dict{String,Any}()
     load_count  = 0
     for row in eachrow(load_df)
         haskey(bus_idx, row.bus_id) || continue
         row.demand == 0.0 && continue
-        pd_pu = Float64(row.demand) / demand_sum * TOTAL_LOAD_MW / BASEMVA
+        pd_pu = Float64(row.demand) / demand_sum * total_load_mw / BASEMVA
+        qd_pu = pd_pu * const_qd
         load_count += 1
+        bus_i = bus_idx[row.bus_id]
         loads[string(load_count)] = Dict{String,Any}(
             "index"    => load_count,
-            "load_bus" => bus_idx[row.bus_id],
+            "load_bus" => bus_i,
             "name"     => String(row.bus_id) * "_load",
             "pd"       => pd_pu,
-            "qd"       => pd_pu * const_qd,
+            "qd"       => qd_pu,
             "status"   => 1,
         )
+        # Local shunt capacitor compensates reactive demand so lines carry
+        # only active power — models distributed reactive compensation
+        buses[string(bus_i)]["bs"] += qd_pu
     end
 
     # ── Assemble PowerModels dict ────────────────────────────
@@ -210,7 +306,7 @@ function prepare_network()
         "branch"   => branches,
         "gen"      => gens,
         "load"     => loads,
-        "dcline"   => Dict{String,Any}(),
+        "dcline"   => dclines,
         "shunt"    => Dict{String,Any}(),
         "storage"  => Dict{String,Any}(),
         "switch"   => Dict{String,Any}(),
@@ -223,6 +319,7 @@ function prepare_network()
         gen_df   = gen_df,
         gens     = gens,
         branches = branches,
+        dclines  = dclines,
         loads    = loads,
     )
 end

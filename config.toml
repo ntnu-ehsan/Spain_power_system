@@ -1,0 +1,22 @@
+# ============================================================
+# Spain Power System — OPF configuration
+# ============================================================
+
+[bellman]
+# How to incorporate Bellman cuts into the hydro cost:
+#
+#   "constant"  — binding cut slope at V_ES_start used as a fixed marginal
+#                 cost (EUR/MWh) for reservoir hydro.  Each hour is solved
+#                 independently (fast, one water value per day).
+#
+#   "piecewise" — all cuts are added as constraints coupling all 24 hours
+#                 of a day in one optimisation.  The solver finds the optimal
+#                 intra-day hydro dispatch considering the full cost-to-go
+#                 function (slower, more accurate).
+#
+method = "piecewise"
+
+bgn_date     = "2024-07-02"          # start date of the long-term model
+ssv_step     = 168                   # stage length in hours (1 week)
+bellman_file = "Data/BellmanValuesOUT.csv"
+volume_file  = "Data/Volume_Scen0_OUT.csv"
