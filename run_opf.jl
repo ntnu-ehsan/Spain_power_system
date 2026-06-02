@@ -21,7 +21,6 @@ Pkg.activate(@__DIR__)
 Pkg.instantiate()
 
 using PowerModels, Ipopt, JuMP, CSV, DataFrames, Printf, Dates, Statistics, TOML
-import HSL_jll
 
 include("data_preparation.jl")
 include("bellman.jl")
@@ -88,14 +87,7 @@ RESULTS = joinpath(@__DIR__, "results")
 
 const HSL_SOLVERS = Set(["ma27", "ma57", "ma77", "ma86", "ma97"])
 
-function hsl_is_functional()
-    try
-        return @ccall HSL_jll.libhsl.LIBHSL_isfunctional()::Bool
-    catch err
-        @warn "Could not verify HSL_jll." exception = (err, catch_backtrace())
-        return false
-    end
-end
+hsl_is_functional() = false
 
 function ipopt_linear_solver()
     requested = lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "ma97"))
