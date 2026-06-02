@@ -85,17 +85,8 @@ PowerModels.silence()
 mkpath(joinpath(@__DIR__, "results"))
 RESULTS = joinpath(@__DIR__, "results")
 
-const HSL_SOLVERS = Set(["ma27", "ma57", "ma77", "ma86", "ma97"])
-
-hsl_is_functional() = false
-
 function ipopt_linear_solver()
-    requested = lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "ma97"))
-    if requested in HSL_SOLVERS && !hsl_is_functional()
-        @warn "HSL not functional; falling back to mumps."
-        return "mumps"
-    end
-    return requested
+    lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "mumps"))
 end
 
 const IPOPT_LINEAR_SOLVER = ipopt_linear_solver()
