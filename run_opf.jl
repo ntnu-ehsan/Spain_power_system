@@ -104,8 +104,8 @@ const IPOPT = optimizer_with_attributes(
 # print_level=3 + print_frequency_iter=100 shows a one-line update every 100 iterations
 const IPOPT_MN = optimizer_with_attributes(
     Ipopt.Optimizer,
-    "print_level"          => 3,
-    "print_frequency_iter" => 100,
+    "print_level"          => 5,
+    "print_frequency_iter" => 1,
     "tol"                  => 1e-4,
     "max_iter"             => 3000,
     "linear_solver"        => IPOPT_LINEAR_SOLVER,
