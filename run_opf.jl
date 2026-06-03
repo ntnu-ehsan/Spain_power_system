@@ -101,14 +101,19 @@ const IPOPT = optimizer_with_attributes(
 )
 
 # Multi-period solver (24 hours coupled — larger problem, needs more iterations)
-# print_level=3 + print_frequency_iter=100 shows a one-line update every 100 iterations
 const IPOPT_MN = optimizer_with_attributes(
     Ipopt.Optimizer,
     "print_level"          => 5,
     "print_frequency_iter" => 1,
     "tol"                  => 1e-4,
-    "max_iter"             => 3000,
+    "max_iter"             => 5000,
     "linear_solver"        => IPOPT_LINEAR_SOLVER,
+    # Accept solution if NLP error stays within acceptable_tol for 15 consecutive iterations.
+    # Prevents infinite looping when dual infeasibility stalls just above tol.
+    "acceptable_tol"       => 1e-3,
+    "acceptable_iter"      => 15,
+    "acceptable_dual_inf_tol"  => 1e-2,
+    "acceptable_constr_viol_tol" => 1e-6,
 )
 
 # ── 4. Result accumulators ───────────────────────────────────
@@ -384,12 +389,14 @@ elseif BELLMAN_METHOD == "piecewise"
             JuMP.@variable(pm.model, θ_future)
             JuMP.@constraint(pm.model, V_ES_end == v_es_0 - total_hydro_mwh)
 
-            # Bellman cuts: piecewise-linear lower bound on future cost
+            # Shift cuts by their minimum intercept so θ_future starts near zero.
+            # This removes the large constant from the objective and improves Ipopt scaling.
+            b_shift = isempty(cuts) ? 0.0 : minimum(c.b for c in cuts)
             for cut in cuts
-                JuMP.@constraint(pm.model, θ_future >= cut.b + cut.a1 * V_ES_end)
+                JuMP.@constraint(pm.model, θ_future >= (cut.b - b_shift) + cut.a1 * V_ES_end)
             end
 
-            # Add future cost to the operational objective
+            # Add future cost to the operational objective (b_shift is a constant, doesn't affect dispatch)
             current_obj = JuMP.objective_function(pm.model)
             JuMP.@objective(pm.model, Min, current_obj + θ_future)
         end
