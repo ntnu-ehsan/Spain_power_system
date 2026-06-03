@@ -113,7 +113,7 @@ const IPOPT_MN = optimizer_with_attributes(
     "acceptable_tol"       => 1e-3,
     "acceptable_iter"      => 15,
     "acceptable_dual_inf_tol"  => 1e-2,
-    "acceptable_constr_viol_tol" => 1e-6,
+    "acceptable_constr_viol_tol" => 1e-4,
 )
 
 # ── 4. Result accumulators ───────────────────────────────────
