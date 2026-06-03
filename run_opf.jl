@@ -105,9 +105,18 @@ const IPOPT_MN = optimizer_with_attributes(
     Ipopt.Optimizer,
     "print_level"          => 5,
     "print_frequency_iter" => 1,
-    "tol"                  => 1e-4,
+    "tol"                  => 5e-4,
     "max_iter"             => 5000,
     "linear_solver"        => IPOPT_LINEAR_SOLVER,
+    # Gradient-based scaling lets Ipopt rebalance rows/columns whose Jacobian norms
+    # differ widely — important for the mixed pu/energy Bellman constraints.
+    "nlp_scaling_method"   => "gradient-based",
+    # Initialise each inequality multiplier as mu/slack rather than a flat 1.0.
+    # The 118 Bellman cuts are slack by up to ~1e9 EUR at the start (their slopes
+    # span a1∈[-160,0] evaluated at a 4.4e6 MWh reservoir), so a constant multiplier
+    # makes the initial complementarity ~1e9 and stalls the first step.  "mu-based"
+    # keeps it at n·mu and lets the inactive cuts' multipliers start near zero.
+    "bound_mult_init_method" => "mu-based",
     # Accept solution if NLP error stays within acceptable_tol for 15 consecutive iterations.
     # Prevents infinite looping when dual infeasibility stalls just above tol.
     "acceptable_tol"       => 1e-3,
@@ -376,27 +385,52 @@ elseif BELLMAN_METHOD == "piecewise"
 
             nw_ids = sort(collect(keys(PowerModels.nws(pm))))
 
-            # Total reservoir hydro energy dispatched across all 24 hours [MWh]
-            total_hydro_mwh = if isempty(reservoir_gen_ids)
-                0.0
+            # Express reservoir energy in pu·h (= MWh / BASEMVA) so V_ES variables
+            # sit at the same scale as the per-unit pg variables.  The raw MWh scale
+            # (O(10^6)) vs pu scale (O(1)) made the KKT matrix too ill-conditioned for
+            # HSL solvers to factorize at iteration 0.
+            v_es_0_puh = v_es_0 / BASEMVA   # initial reservoir volume [pu·h]
+
+            total_hydro_puh = if isempty(reservoir_gen_ids)
+                JuMP.AffExpr(0.0)
             else
-                sum(PowerModels.var(pm, n, :pg, gid) * BASEMVA
+                sum(PowerModels.var(pm, n, :pg, gid)
                     for n in nw_ids for gid in reservoir_gen_ids)
             end
 
-            # V_ES_end: reservoir volume at end of day
-            JuMP.@variable(pm.model, V_ES_end)
-            JuMP.@variable(pm.model, θ_future)
-            JuMP.@constraint(pm.model, V_ES_end == v_es_0 - total_hydro_mwh)
+            # Both variables carry an explicit lower bound of 0.  They appear only
+            # linearly (zero Hessian), so without a bound the log-barrier adds no
+            # curvature in their directions and the KKT matrix has wrong inertia —
+            # Ipopt then reports "problem in step computation" and bails to restoration
+            # at iteration 0.  A lower bound (with an interior start) supplies the
+            # missing curvature.  Both bounds are physically valid: reservoir volume
+            # is non-negative, and the recentred future cost θ' ≥ 0 because reservoir
+            # units only discharge (V_ES_end ≤ v_es_0).
+            JuMP.@variable(pm.model, V_ES_puh >= 0)   # reservoir volume at end of day [pu·h]
+            JuMP.@variable(pm.model, θ_future >= 0)   # future cost relative to its value at v_es_0 [EUR]
+            JuMP.set_start_value(V_ES_puh, v_es_0_puh)   # deep interior (v_es_0_puh ≫ 0)
+            JuMP.set_start_value(θ_future, 1.0e3)        # interior, well above the 0 bound
+            JuMP.@constraint(pm.model, V_ES_puh == v_es_0_puh - total_hydro_puh)
 
-            # Shift cuts by their minimum intercept so θ_future starts near zero.
-            # This removes the large constant from the objective and improves Ipopt scaling.
-            b_shift = isempty(cuts) ? 0.0 : minimum(c.b for c in cuts)
+            # Bellman cuts, recentred about the *starting* reservoir volume v_es_0.
+            #
+            #   raw cut :  θ  ≥ b + a1·V_ES                       (b ~ 3.5e9 EUR, a1·V_ES ~ -4e8 EUR)
+            #   centred :  θ' ≥ (b + a1·v_es_0 − θ_ref) + a1·(V_ES − v_es_0)
+            #
+            # θ_ref is the binding cut value at v_es_0, so θ' starts at 0 and only
+            # carries the dispatch-dependent deviation a1·(V_ES − v_es_0) ~ O(1e6 EUR).
+            # The dropped constant θ_ref (~1.5e9 EUR for high-volume days) is independent
+            # of the dispatch, so it does not change the optimum — but leaving it in the
+            # objective put 10^9-magnitude entries in the KKT system and made the HSL
+            # factorization fail for high-volume days such as 2024-07-08.
+            θ_ref = isempty(cuts) ? 0.0 : maximum(c.b + c.a1 * v_es_0 for c in cuts)
             for cut in cuts
-                JuMP.@constraint(pm.model, θ_future >= (cut.b - b_shift) + cut.a1 * V_ES_end)
+                const_term = cut.b + cut.a1 * v_es_0 - θ_ref
+                # a1 [EUR/MWh] × BASEMVA [MWh/(pu·h)] → slope in EUR/(pu·h)
+                JuMP.@constraint(pm.model,
+                    θ_future >= const_term + cut.a1 * BASEMVA * (V_ES_puh - v_es_0_puh))
             end
 
-            # Add future cost to the operational objective (b_shift is a constant, doesn't affect dispatch)
             current_obj = JuMP.objective_function(pm.model)
             JuMP.@objective(pm.model, Min, current_obj + θ_future)
         end
