@@ -14,9 +14,18 @@
 #                 intra-day hydro dispatch considering the full cost-to-go
 #                 function (slower, more accurate).
 #
-method = "piecewise"
+method = "constant"
 
 bgn_date     = "2024-07-02"          # start date of the long-term model
 ssv_step     = 168                   # stage length in hours (1 week)
 bellman_file = "Data/BellmanValuesOUT.csv"
 volume_file  = "Data/Volume_Scen0_OUT.csv"
+
+[redispatch]
+# When true, the AC OPF acts as a redispatch simulator of the short-term market
+# chain: each hour's solve is warm-started from the continuous-intraday
+# (copper-plate) dispatch, and non-dispatchable units (nuclear, run-of-river
+# hydro, biomass) are fixed at their intraday set-points.  All other units stay
+# free to redispatch to relieve network constraints.
+# When false, the OPF runs as a pure cost-minimising dispatch.
+enabled = true

@@ -42,6 +42,20 @@ function q_limits(pmax_pu::Float64)::Tuple{Float64,Float64}
     return (pmax_pu, -pmax_pu)   # ±Pmax: conservative fallback ensuring reactive feasibility
 end
 
+# Non-dispatchable / must-run units whose intraday set-point is held fixed
+# during redispatch.  Every other technology (gas, coal, oil, reservoir &
+# pumped hydro, wind, solar) is free to be redispatched to relieve network
+# constraints.  Active power is fixed; reactive capability is left free so the
+# units can still provide voltage support.
+function is_fixed_redispatch_unit(fuel::String, tech::String)::Bool
+    f = lowercase(fuel)
+    t = lowercase(tech)
+    f == "nuclear"                       && return true
+    f == "biomass"                       && return true
+    (f == "hydro" && t == "run_of_river") && return true
+    return false
+end
+
 function marginal_cost(cost_df::DataFrame, fuel::String, tech::String)::Float64
     key = (fuel, tech)
     if !haskey(COST_MAP, key)
@@ -62,7 +76,8 @@ end
 function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          solar_avail_mw::Float64 = Inf,
                          wind_avail_mw::Float64  = Inf;
-                         hydro_reservoir_cost::Union{Float64,Nothing} = nothing)
+                         hydro_reservoir_cost::Union{Float64,Nothing} = nothing,
+                         intraday_pg::Union{Dict{String,Float64},Nothing} = nothing)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -217,7 +232,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     for row in eachrow(gen_df)
         haskey(bus_idx, row.bus_id) || continue
         cap_mw = Float64(row.capacity_mw)
-        pmax_pu = if row.primary_fuel == "Solar" && isfinite(solar_avail_mw) && total_solar_mw > 0
+        # Capacity- (or availability-) based active limit, used both as the
+        # dispatchable upper bound and as the basis for reactive capability.
+        pmax_cap_pu = if row.primary_fuel == "Solar" && isfinite(solar_avail_mw) && total_solar_mw > 0
             min(cap_mw, solar_avail_mw * cap_mw / total_solar_mw) / BASEMVA
         elseif row.primary_fuel == "Wind" && isfinite(wind_avail_mw) && total_wind_mw > 0
             min(cap_mw, wind_avail_mw * cap_mw / total_wind_mw) / BASEMVA
@@ -231,7 +248,28 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         else
             marginal_cost(cost_df, String(row.primary_fuel), String(row.technology)) * BASEMVA
         end
-        (qmax_pu, qmin_pu) = q_limits(pmax_pu)
+        # Reactive capability scales with rated MVA, so derive it from the
+        # capacity-based limit before any active-power fixing below.
+        (qmax_pu, qmin_pu) = q_limits(pmax_cap_pu)
+
+        # ── Intraday set-point (redispatch initial operating point) ──
+        # Default: free dispatch on [0, pmax_cap], warm-started at half capacity.
+        pmin_pu  = 0.0
+        pmax_pu  = pmax_cap_pu
+        pg_start = pmax_cap_pu / 2
+        if !isnothing(intraday_pg) && haskey(intraday_pg, String(row.unit_id))
+            v_pu = intraday_pg[String(row.unit_id)] / BASEMVA
+            if is_fixed_redispatch_unit(String(row.primary_fuel), String(row.technology))
+                # Non-dispatchable: hold exactly at the intraday set-point.
+                pmin_pu  = max(v_pu, 0.0)
+                pmax_pu  = max(v_pu, 0.0)
+                pg_start = max(v_pu, 0.0)
+            else
+                # Dispatchable: warm-start from intraday, keep bounds [0, pmax_cap].
+                pg_start = clamp(v_pu, 0.0, pmax_cap_pu)
+            end
+        end
+
         gen_count += 1
         gens[string(gen_count)] = Dict{String,Any}(
             "index"         => gen_count,
@@ -240,9 +278,10 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             "fuel"          => String(row.primary_fuel),
             "technology"    => String(row.technology),
             "installed_mw"  => cap_mw,           # fixed installed capacity
-            "pmax"          => pmax_pu,   "pmin" => 0.0,
+            "pmax"          => pmax_pu,   "pmin" => pmin_pu,
             "qmax"          => qmax_pu,   "qmin" => qmin_pu,
-            "pg"         => pmax_pu/2, "qg"   => 0.0,
+            "pg"         => pg_start,  "qg"   => 0.0,
+            "pg0"        => pg_start,  # intraday reference set-point [pu] for redispatch
             "vg"         => 1.0,
             "mbase"      => BASEMVA,
             "gen_status" => 1,
@@ -264,6 +303,7 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         "pmax"         =>  9999.0,  "pmin" => 0.0,
         "qmax"       =>  9999.0,  "qmin" => -9999.0,
         "pg"         => 0.0,      "qg"   => 0.0,
+        "pg0"        => 0.0,      # no intraday set-point; any slack use is "redispatch"
         "vg"         => 1.0,
         "mbase"      => BASEMVA,
         "gen_status" => 1,

@@ -24,6 +24,7 @@ using PowerModels, Ipopt, JuMP, CSV, DataFrames, Printf, Dates, Statistics, TOML
 
 include("data_preparation.jl")
 include("bellman.jl")
+include("intraday.jl")
 
 # ── 1. Config ────────────────────────────────────────────────
 cfg = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
@@ -33,6 +34,9 @@ const BELLMAN_BGN_DATE = Date(cfg["bellman"]["bgn_date"])
 const BELLMAN_SSV_STEP = cfg["bellman"]["ssv_step"]
 const BELLMAN_FILE     = joinpath(@__DIR__, cfg["bellman"]["bellman_file"])
 const VOLUME_FILE      = joinpath(@__DIR__, cfg["bellman"]["volume_file"])
+
+const REDISPATCH = get(get(cfg, "redispatch", Dict()), "enabled", false)
+@printf "Redispatch mode: %s\n" (REDISPATCH ? "ON (intraday warm-start + fixed non-dispatchables)" : "OFF (cost-minimising dispatch)")
 
 @printf "Bellman method : %s\n" BELLMAN_METHOD
 BELLMAN_METHOD ∈ ("constant", "piecewise") ||
@@ -273,6 +277,31 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
     end
 end
 
+# ── 5b. Redispatch model builder ─────────────────────────────
+# Standard single-period AC OPF, but the objective is replaced by the cost of
+# redispatching away from the intraday set-points:
+#
+#   min  Σ_g c_g · (Δup_g + Δdown_g)
+#   s.t. pg_g = pg0_g + Δup_g − Δdown_g,   Δup_g, Δdown_g ≥ 0
+#
+# c_g is the unit marginal cost (reservoir hydro = water value); the slack's
+# huge cost keeps it near zero.  Fixed non-dispatchable units have pmin=pmax=pg0,
+# so their deviation is forced to zero and they contribute nothing to the cost.
+function redispatch_build(gens_dict)
+    ids = sort([g["index"] for g in values(gens_dict)])
+    pg0 = Dict(g["index"] => g["pg0"]     for g in values(gens_dict))
+    c1  = Dict(g["index"] => g["cost"][1] for g in values(gens_dict))
+    return function (pm::PowerModels.AbstractPowerModel)
+        PowerModels.build_opf(pm)   # vars + constraints + (fuel-cost) objective
+        rup = JuMP.@variable(pm.model, [i in ids], lower_bound = 0.0, base_name = "rup")
+        rdn = JuMP.@variable(pm.model, [i in ids], lower_bound = 0.0, base_name = "rdn")
+        for i in ids
+            JuMP.@constraint(pm.model, PowerModels.var(pm, :pg, i) == pg0[i] + rup[i] - rdn[i])
+        end
+        JuMP.@objective(pm.model, Min, sum(c1[i] * (rup[i] + rdn[i]) for i in ids))
+    end
+end
+
 # ── 6. Bellman pre-computation ───────────────────────────────
 println("\nBellman pre-computation:")
 day_bellman = Dict{String,NamedTuple}()
@@ -284,6 +313,22 @@ for date_str in unique(hourly.date)
     day_bellman[date_str] = (stage=stage, cuts=cuts, v_es=v_es, water_value=wv)
     @printf "  %s : stage=%d  V_ES=%.0f MWh  water_value=%.2f EUR/MWh\n" date_str stage v_es wv
 end
+
+# ── 6b. Intraday dispatch pre-load (redispatch initial operating point) ──
+day_intraday = Dict{String,Dict{String,Vector{Float64}}}()
+if REDISPATCH
+    println("\nIntraday dispatch pre-load:")
+    for date_str in unique(hourly.date)
+        disp = load_intraday_dispatch(date_str)
+        day_intraday[date_str] = disp
+        day_total = sum(sum(v) for v in values(disp)) / 24
+        @printf "  %s : %d units, mean daily dispatch %.0f MW\n" date_str length(disp) day_total
+    end
+end
+
+# Per-hour intraday set-points for `date_str` at `hour`, or nothing if redispatch off.
+intraday_pg_for(date_str, hour) =
+    REDISPATCH ? intraday_hour(day_intraday[date_str], hour) : nothing
 
 # ── 7. Main solve ─────────────────────────────────────────────
 n_total  = nrow(hourly)
@@ -301,10 +346,13 @@ if BELLMAN_METHOD == "constant"
         label    = "$date_str h$(lpad(hour, 2, '0'))"
 
         net = prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
-                              hydro_reservoir_cost = bv.water_value)
+                              hydro_reservoir_cost = bv.water_value,
+                              intraday_pg = intraday_pg_for(date_str, hour))
         (; network, gens, branches, dclines, loads) = net
 
-        result = solve_ac_opf(network, IPOPT)
+        result = REDISPATCH ?
+            PowerModels.solve_model(network, ACPPowerModel, IPOPT, redispatch_build(gens)) :
+            solve_ac_opf(network, IPOPT)
         status = string(result["termination_status"])
 
         @printf "[%2d/%d] %s\n" (n_solved + 1) n_total label
@@ -335,7 +383,8 @@ elseif BELLMAN_METHOD == "piecewise"
 
         # Build 24 networks; reservoir hydro cost = 0 (opportunity cost captured by θ_future)
         nets = [prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
-                                hydro_reservoir_cost = 0.0)
+                                hydro_reservoir_cost = 0.0,
+                                intraday_pg = intraday_pg_for(date_str, ts.hour))
                 for ts in eachrow(day_ts)]
 
         # Generator IDs (Int) for Spanish reservoir hydro — same topology every hour
@@ -357,6 +406,10 @@ elseif BELLMAN_METHOD == "piecewise"
 
         cuts   = bv.cuts
         v_es_0 = bv.v_es
+
+        # Per-network intraday reference set-points & marginal costs (redispatch objective)
+        pg0_nw = Dict(h => Dict(g["index"] => g["pg0"]     for g in values(nets[h+1].gens)) for h in 0:23)
+        c1_nw  = Dict(h => Dict(g["index"] => g["cost"][1] for g in values(nets[h+1].gens)) for h in 0:23)
 
         # Custom build function: standard AC OPF per network + Bellman coupling
         function build_mn_bellman(pm::PowerModels.AbstractPowerModel)
@@ -381,9 +434,29 @@ elseif BELLMAN_METHOD == "piecewise"
                 end
             end
 
-            PowerModels.objective_min_fuel_and_flow_cost(pm)
-
             nw_ids = sort(collect(keys(PowerModels.nws(pm))))
+
+            # Base objective: pure fuel cost, or redispatch deviation cost (redispatch mode).
+            #   redispatch:  Σ_n Σ_g c_g·(Δup + Δdown),  pg = pg0 + Δup − Δdown
+            base_obj = if REDISPATCH
+                dev = JuMP.AffExpr(0.0)
+                for n in nw_ids
+                    pg0_n = pg0_nw[n]
+                    c1_n  = c1_nw[n]
+                    for i in PowerModels.ids(pm, :gen; nw=n)
+                        rup = JuMP.@variable(pm.model, lower_bound = 0.0, base_name = "rup_$(n)_$(i)")
+                        rdn = JuMP.@variable(pm.model, lower_bound = 0.0, base_name = "rdn_$(n)_$(i)")
+                        JuMP.@constraint(pm.model,
+                            PowerModels.var(pm, n, :pg, i) == pg0_n[i] + rup - rdn)
+                        JuMP.add_to_expression!(dev, c1_n[i], rup)
+                        JuMP.add_to_expression!(dev, c1_n[i], rdn)
+                    end
+                end
+                dev
+            else
+                PowerModels.objective_min_fuel_and_flow_cost(pm)
+                JuMP.objective_function(pm.model)
+            end
 
             # Express reservoir energy in pu·h (= MWh / BASEMVA) so V_ES variables
             # sit at the same scale as the per-unit pg variables.  The raw MWh scale
@@ -431,8 +504,7 @@ elseif BELLMAN_METHOD == "piecewise"
                     θ_future >= const_term + cut.a1 * BASEMVA * (V_ES_puh - v_es_0_puh))
             end
 
-            current_obj = JuMP.objective_function(pm.model)
-            JuMP.@objective(pm.model, Min, current_obj + θ_future)
+            JuMP.@objective(pm.model, Min, base_obj + θ_future)
         end
 
         @printf "  Solving 24-hour coupled OPF (Ipopt progress below)...\n"
