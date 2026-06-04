@@ -22,8 +22,13 @@ Pkg.instantiate()
 
 using PowerModels, Ipopt, JuMP, CSV, DataFrames, Printf, Dates, Statistics, TOML
 
+if startswith(lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "ma57")), "ma")
+    import HSL_jll
+end
+
 include("data_preparation.jl")
 include("bellman.jl")
+include("crossborder.jl")
 
 # ── 1. Config ────────────────────────────────────────────────
 cfg = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
@@ -34,6 +39,8 @@ const BELLMAN_SSV_STEP = cfg["bellman"]["ssv_step"]
 const BELLMAN_FILE     = joinpath(@__DIR__, cfg["bellman"]["bellman_file"])
 const VOLUME_FILE      = joinpath(@__DIR__, cfg["bellman"]["volume_file"])
 
+const CROSSBORDER = get(get(cfg, "crossborder", Dict()), "enabled", false)
+@printf "Cross-border   : %s\n" (CROSSBORDER ? "ON" : "OFF")
 @printf "Bellman method : %s\n" BELLMAN_METHOD
 BELLMAN_METHOD ∈ ("constant", "piecewise") ||
     error("config.toml: bellman.method must be \"constant\" or \"piecewise\"")
@@ -85,11 +92,15 @@ PowerModels.silence()
 mkpath(joinpath(@__DIR__, "results"))
 RESULTS = joinpath(@__DIR__, "results")
 
-function ipopt_linear_solver()
-    lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "mumps"))
-end
+const IPOPT_LINEAR_SOLVER = lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "ma57"))
 
-const IPOPT_LINEAR_SOLVER = ipopt_linear_solver()
+function ipopt_linear_solver_attrs()
+    attrs = Pair{String,Any}["linear_solver" => IPOPT_LINEAR_SOLVER]
+    startswith(IPOPT_LINEAR_SOLVER, "ma") && push!(attrs, "hsllib" => HSL_jll.libhsl_path)
+    return attrs
+end
+const IPOPT_SOLVER_ATTRS = ipopt_linear_solver_attrs()
+@printf "Linear solver  : %s\n" IPOPT_LINEAR_SOLVER
 
 # Single-period solver (one hour at a time)
 const IPOPT = optimizer_with_attributes(
@@ -97,7 +108,7 @@ const IPOPT = optimizer_with_attributes(
     "print_level"   => 0,
     "tol"           => 1e-4,
     "max_iter"      => 500,
-    "linear_solver" => IPOPT_LINEAR_SOLVER,
+    IPOPT_SOLVER_ATTRS...,
 )
 
 # Multi-period solver (24 hours coupled — larger problem, needs more iterations)
@@ -107,7 +118,7 @@ const IPOPT_MN = optimizer_with_attributes(
     "print_frequency_iter" => 1,
     "tol"                  => 5e-4,
     "max_iter"             => 5000,
-    "linear_solver"        => IPOPT_LINEAR_SOLVER,
+    IPOPT_SOLVER_ATTRS...,
     # Gradient-based scaling lets Ipopt rebalance rows/columns whose Jacobian norms
     # differ widely — important for the mixed pu/energy Bellman constraints.
     "nlp_scaling_method"   => "gradient-based",
@@ -285,6 +296,26 @@ for date_str in unique(hourly.date)
     @printf "  %s : stage=%d  V_ES=%.0f MWh  water_value=%.2f EUR/MWh\n" date_str stage v_es wv
 end
 
+# ── 6b. Cross-border exchange pre-load ───────────────────────
+xb_data  = Dict{String,Dict{Int,@NamedTuple{FR::Float64, PT::Float64}}}()
+xb_fracs = Dict{String,Dict{String,Float64}}()
+if CROSSBORDER
+    xb_data  = load_crossborder()
+    xb_fracs = crossborder_bus_fractions()
+    println("\nCross-border exchange pre-load:")
+    for (c, bf) in sort(collect(xb_fracs); by = first)
+        @printf "  %s border buses: %s\n" c join(sort(collect(keys(bf))), ", ")
+    end
+    for date_str in unique(hourly.date)
+        nets = xb_data[date_str]
+        fr = extrema(t.FR for t in values(nets)); pt = extrema(t.PT for t in values(nets))
+        @printf "  %s : net FR %.0f…%.0f MW | net PT %.0f…%.0f MW  (+ = import to ES)\n" date_str fr[1] fr[2] pt[1] pt[2]
+    end
+end
+
+crossborder_inj_for(date_str, hour) =
+    CROSSBORDER ? crossborder_injections(xb_data, xb_fracs, date_str, hour) : nothing
+
 # ── 7. Main solve ─────────────────────────────────────────────
 n_total  = nrow(hourly)
 n_solved = 0
@@ -301,7 +332,8 @@ if BELLMAN_METHOD == "constant"
         label    = "$date_str h$(lpad(hour, 2, '0'))"
 
         net = prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
-                              hydro_reservoir_cost = bv.water_value)
+                              hydro_reservoir_cost = bv.water_value,
+                              crossborder_inj = crossborder_inj_for(date_str, hour))
         (; network, gens, branches, dclines, loads) = net
 
         result = solve_ac_opf(network, IPOPT)
@@ -335,7 +367,8 @@ elseif BELLMAN_METHOD == "piecewise"
 
         # Build 24 networks; reservoir hydro cost = 0 (opportunity cost captured by θ_future)
         nets = [prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
-                                hydro_reservoir_cost = 0.0)
+                                hydro_reservoir_cost = 0.0,
+                                crossborder_inj = crossborder_inj_for(date_str, ts.hour))
                 for ts in eachrow(day_ts)]
 
         # Generator IDs (Int) for Spanish reservoir hydro — same topology every hour

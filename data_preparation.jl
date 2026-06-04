@@ -62,7 +62,8 @@ end
 function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          solar_avail_mw::Float64 = Inf,
                          wind_avail_mw::Float64  = Inf;
-                         hydro_reservoir_cost::Union{Float64,Nothing} = nothing)
+                         hydro_reservoir_cost::Union{Float64,Nothing} = nothing,
+                         crossborder_inj::Union{Dict{String,Float64},Nothing} = nothing)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -271,6 +272,36 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         "cost"       => [1_000.0 * BASEMVA, 0.0],
         "startup"    => 0.0,  "shutdown" => 0.0,
     )
+
+    # ── Cross-border exchange (fixed market-cleared imports/exports) ──
+    # Modelled as costless, non-dispatchable generators at the foreign (FR/PT)
+    # terminal buses: +pg injects an import into Spain, −pg withdraws an export.
+    # pmin=pmax pins the unit at the cleared value so it cannot be redispatched.
+    if !isnothing(crossborder_inj)
+        for (bus_id, mw) in crossborder_inj
+            haskey(bus_idx, bus_id) || continue
+            p_pu  = mw / BASEMVA
+            q_cap = abs(p_pu)
+            gen_count += 1
+            gens[string(gen_count)] = Dict{String,Any}(
+                "index"        => gen_count,
+                "gen_bus"      => bus_idx[bus_id],
+                "name"         => "XB_" * bus_id,
+                "fuel"         => "CrossBorder",
+                "technology"   => "Interconnector",
+                "installed_mw" => abs(mw),
+                "pmax"       => p_pu,   "pmin" => p_pu,
+                "qmax"       => q_cap,  "qmin" => -q_cap,
+                "pg"         => p_pu,   "qg"   => 0.0,
+                "vg"         => 1.0,
+                "mbase"      => BASEMVA,
+                "gen_status" => 1,
+                "model"      => 2,  "ncost" => 2,
+                "cost"       => [0.0, 0.0],
+                "startup"    => 0.0,  "shutdown" => 0.0,
+            )
+        end
+    end
 
     # ── Loads ────────────────────────────────────────────────
     demand_sum  = sum(skipmissing(load_df.demand))

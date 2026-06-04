@@ -20,3 +20,10 @@ bgn_date     = "2024-07-02"          # start date of the long-term model
 ssv_step     = 168                   # stage length in hours (1 week)
 bellman_file = "Data/BellmanValuesOUT.csv"
 volume_file  = "Data/Volume_Scen0_OUT.csv"
+
+[crossborder]
+# Fix the market-cleared FR/PT import/export schedule at the border buses.
+# Reads Data/crossborder.csv and injects each country's net exchange as a
+# costless fixed generator at the foreign terminal buses (disaggregated
+# proportionally to line thermal ratings).
+enabled = true
