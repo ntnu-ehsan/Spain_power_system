@@ -39,8 +39,17 @@ const BELLMAN_SSV_STEP = cfg["bellman"]["ssv_step"]
 const BELLMAN_FILE     = joinpath(@__DIR__, cfg["bellman"]["bellman_file"])
 const VOLUME_FILE      = joinpath(@__DIR__, cfg["bellman"]["volume_file"])
 
+const VOLTAGE_BAND       = Float64(get(get(cfg, "network", Dict()), "voltage_band", 0.05))
+const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
+@printf "Voltage band   : ±%.1f %% (%.2f–%.2f pu)\n" (100 * VOLTAGE_BAND) (1 - VOLTAGE_BAND) (1 + VOLTAGE_BAND)
+@printf "Line rating    : %.0f %% of nameplate\n" (100 * LINE_RATING_FACTOR)
+
 const CROSSBORDER = get(get(cfg, "crossborder", Dict()), "enabled", false)
 @printf "Cross-border   : %s\n" (CROSSBORDER ? "ON" : "OFF")
+
+const ANCHOR_TO_MARKET = get(get(cfg, "redispatch", Dict()), "anchor_to_market", false)
+const ANCHOR_WEIGHT    = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weight", 0.0))
+@printf "Redispatch     : %s\n" (ANCHOR_TO_MARKET ? @sprintf("anchor to market (w=%.4g EUR/MW²)", ANCHOR_WEIGHT) : "free cost-min")
 @printf "Bellman method : %s\n" BELLMAN_METHOD
 BELLMAN_METHOD ∈ ("constant", "piecewise") ||
     error("config.toml: bellman.method must be \"constant\" or \"piecewise\"")
@@ -316,6 +325,71 @@ end
 crossborder_inj_for(date_str, hour) =
     CROSSBORDER ? crossborder_injections(xb_data, xb_fracs, date_str, hour) : nothing
 
+# ── 6c. Continuous intraday market schedule (redispatch anchor) ──
+# Per-unit cleared dispatch from SMS++ (Data/smspp_out/nutsx).  Folder name per
+# day differs (day 2 carries a "d2" tag); each hour-h folder holds 24 timesteps
+# and we take Timestep == h.  Returns (date,hour) ⇒ Dict(unit_id ⇒ MW).
+const SMSPP_DIR = joinpath(@__DIR__, "Data", "smspp_out", "nutsx")
+const MARKET_FOLDER_TEMPLATE = Dict(
+    TARGET_DAYS[1] => "results_ij_HH_pomatwo",
+    TARGET_DAYS[2] => "results_ij_d2_HH_pomatwo",
+)
+
+function load_market_schedule()
+    sched = Dict{Tuple{String,Int},Dict{String,Float64}}()
+    for (date_str, tmpl) in MARKET_FOLDER_TEMPLATE
+        for hour in 0:23
+            folder = replace(tmpl, "HH" => string(hour + 1))
+            path   = joinpath(SMSPP_DIR, folder, "ActivePower", "ActivePowerOUT.csv")
+            isfile(path) || error("Missing market schedule file: $path")
+            df  = CSV.read(path, DataFrame)
+            row = df[df.Timestep .== hour, :]
+            nrow(row) == 1 || error("Expected one Timestep=$hour row in $path (got $(nrow(row)))")
+            d = Dict{String,Float64}()
+            for col in names(df)
+                col == "Timestep" && continue
+                d[col] = Float64(row[1, col])
+            end
+            sched[(date_str, hour)] = d
+        end
+    end
+    return sched
+end
+
+market_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
+if ANCHOR_TO_MARKET
+    market_schedule = load_market_schedule()
+    @printf "\nRedispatch anchor: loaded market schedule for %d (date,hour) slots\n" length(market_schedule)
+end
+
+market_sched_for(date_str, hour) =
+    ANCHOR_TO_MARKET ? get(market_schedule, (date_str, hour), nothing) : nothing
+
+# Solve one hour's AC OPF, optionally anchored to the market schedule.  The anchor
+# adds  ANCHOR_WEIGHT * Σ (P_g − P_market_g)²  [MW²] over conventional units (name
+# "G…"), pinning the cost-degenerate hydro/renewables to their cleared dispatch and
+# only deviating where the network requires it.  Falls back to the stock OPF when
+# no schedule is supplied.
+function solve_anchored_opf(network, gens, optimizer, sched)
+    if sched === nothing || ANCHOR_WEIGHT <= 0
+        return solve_ac_opf(network, optimizer)
+    end
+    pm  = PowerModels.instantiate_model(network, PowerModels.ACPPowerModel, PowerModels.build_opf)
+    pen = zero(JuMP.QuadExpr)
+    n_anchored = 0
+    for (_, g) in gens
+        startswith(g["name"], "G") || continue
+        haskey(sched, g["name"]) || continue
+        tgt_pu = sched[g["name"]] / BASEMVA
+        pg     = PowerModels.var(pm, :pg, g["index"])
+        JuMP.add_to_expression!(pen, ((pg - tgt_pu) * BASEMVA)^2)
+        n_anchored += 1
+    end
+    base_obj = JuMP.objective_function(pm.model)
+    JuMP.@objective(pm.model, Min, base_obj + ANCHOR_WEIGHT * pen)
+    return PowerModels.optimize_model!(pm; optimizer = optimizer)
+end
+
 # ── 7. Main solve ─────────────────────────────────────────────
 n_total  = nrow(hourly)
 n_solved = 0
@@ -333,10 +407,12 @@ if BELLMAN_METHOD == "constant"
 
         net = prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
                               hydro_reservoir_cost = bv.water_value,
-                              crossborder_inj = crossborder_inj_for(date_str, hour))
+                              crossborder_inj = crossborder_inj_for(date_str, hour),
+                              voltage_band = VOLTAGE_BAND,
+                              line_rating_factor = LINE_RATING_FACTOR)
         (; network, gens, branches, dclines, loads) = net
 
-        result = solve_ac_opf(network, IPOPT)
+        result = solve_anchored_opf(network, gens, IPOPT, market_sched_for(date_str, hour))
         status = string(result["termination_status"])
 
         @printf "[%2d/%d] %s\n" (n_solved + 1) n_total label
@@ -359,6 +435,8 @@ if BELLMAN_METHOD == "constant"
 # ────────────────────────────────────────────────────────────
 elseif BELLMAN_METHOD == "piecewise"
 
+    ANCHOR_TO_MARKET && @warn "redispatch.anchor_to_market is only wired into the \"constant\" method; the piecewise solve runs unanchored (cost-min)."
+
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly)
@@ -368,7 +446,9 @@ elseif BELLMAN_METHOD == "piecewise"
         # Build 24 networks; reservoir hydro cost = 0 (opportunity cost captured by θ_future)
         nets = [prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
                                 hydro_reservoir_cost = 0.0,
-                                crossborder_inj = crossborder_inj_for(date_str, ts.hour))
+                                crossborder_inj = crossborder_inj_for(date_str, ts.hour),
+                                voltage_band = VOLTAGE_BAND,
+                                line_rating_factor = LINE_RATING_FACTOR)
                 for ts in eachrow(day_ts)]
 
         # Generator IDs (Int) for Spanish reservoir hydro — same topology every hour

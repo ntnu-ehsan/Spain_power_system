@@ -2,6 +2,21 @@
 # Spain Power System — OPF configuration
 # ============================================================
 
+[network]
+# Operator-tunable network security limits applied when assembling the grid.
+#
+#   voltage_band        — acceptable bus voltage deviation from nominal (1.0 pu).
+#                         Bus voltage magnitudes are constrained to
+#                         [1 − voltage_band, 1 + voltage_band].
+#                         0.05 ⇒ ±5 % (0.95–1.05 pu).
+#
+#   line_rating_factor  — fraction of each transmission element's thermal
+#                         nameplate rating made available to the OPF, derated for
+#                         N-1 / reliability margin.  Applies to AC lines,
+#                         transformers and HVDC links.  0.70 ⇒ 70 % of nameplate.
+voltage_band       = 0.05
+line_rating_factor = 0.70
+
 [bellman]
 # How to incorporate Bellman cuts into the hydro cost:
 #
@@ -14,7 +29,7 @@
 #                 intra-day hydro dispatch considering the full cost-to-go
 #                 function (slower, more accurate).
 #
-method = "piecewise"
+method = "constant"
 
 bgn_date     = "2024-07-02"          # start date of the long-term model
 ssv_step     = 168                   # stage length in hours (1 week)
@@ -27,3 +42,16 @@ volume_file  = "Data/Volume_Scen0_OUT.csv"
 # costless fixed generator at the foreign terminal buses (disaggregated
 # proportionally to line thermal ratings).
 enabled = true
+
+[redispatch]
+# Anchor the AC OPF to the continuous intraday market schedule so it behaves
+# as a *redispatch* (minimum deviation from the cleared dispatch) instead of a
+# from-scratch cost-minimisation.  Adds  weight * Σ (P_g − P_market_g)²  [in MW²]
+# to the objective for every conventional unit, breaking the zero-cost hydro
+# degeneracy and keeping units at their market point unless the network forces
+# a change.  Per-unit schedule is read from Data/smspp_out/nutsx (SMS++ output).
+#   anchor_to_market = false → original cost-minimising behaviour.
+#   anchor_weight       EUR per MW²·h.  Larger ⇒ closer to the market schedule;
+#                       smaller ⇒ cheaper redispatch allowed.  Tune per results.
+anchor_to_market = true
+anchor_weight    = 0.1

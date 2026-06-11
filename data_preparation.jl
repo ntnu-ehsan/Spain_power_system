@@ -63,7 +63,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          solar_avail_mw::Float64 = Inf,
                          wind_avail_mw::Float64  = Inf;
                          hydro_reservoir_cost::Union{Float64,Nothing} = nothing,
-                         crossborder_inj::Union{Dict{String,Float64},Nothing} = nothing)
+                         crossborder_inj::Union{Dict{String,Float64},Nothing} = nothing,
+                         voltage_band::Float64       = 0.05,
+                         line_rating_factor::Float64 = 0.70)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -96,7 +98,7 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             "name"     => row.bus_id,
             "base_kv"  => vn,
             "vm"       => 1.0,  "va"   => 0.0,
-            "vmax"     => 1.10, "vmin" => 0.90,
+            "vmax"     => 1.0 + voltage_band, "vmin" => 1.0 - voltage_band,
             "gs"       => 0.0,  "bs"   => 0.0,
             "zone"     => 1,    "area" => 1,
         )
@@ -116,7 +118,7 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         x_pu   = max((Float64(row.x_per_length) * L) / z_base, 1e-4)
         c_F    = Float64(row.c_per_length) * 1e-9 * L
         b_C_pu = 2π * FREQ_HZ * c_F * vn^2 / BASEMVA
-        rate   = sqrt(3) * vn * Float64(row.Imax) / BASEMVA
+        rate   = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor
         br_count += 1
         branches[string(br_count)] = Dict{String,Any}(
             "index"     => br_count,
@@ -139,7 +141,7 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         haskey(bus_idx, row.bus1) || continue
         imva   = Float64(row.installed_MVA)
         x_pu   = max(Float64(row.X_pu_on_installed_base) * (BASEMVA / imva), 1e-4)
-        rate   = imva / BASEMVA
+        rate   = imva / BASEMVA * line_rating_factor
         br_count += 1
         branches[string(br_count)] = Dict{String,Any}(
             "index"     => br_count,
@@ -172,7 +174,7 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         vn   = Float64(row.voltage)
         # Rating from terminal voltage and current limit (same voltage/Imax
         # columns as AC lines), expressed in per-unit on the system base.
-        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA
+        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor
         dc_count += 1
         dclines[string(dc_count)] = Dict{String,Any}(
             "index"     => dc_count,
