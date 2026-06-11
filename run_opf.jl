@@ -101,6 +101,13 @@ PowerModels.silence()
 mkpath(joinpath(@__DIR__, "results"))
 RESULTS = joinpath(@__DIR__, "results")
 
+# Per-solve Ipopt logs, written here so infeasible hours can be diagnosed.
+# Each file records the full iteration history and Ipopt's final verdict
+# (e.g. "Converged to a point of local infeasibility") together with the
+# primal/constraint-violation trajectory that points at the binding limits.
+const IPOPT_LOG_DIR = joinpath(RESULTS, "ipopt_logs")
+mkpath(IPOPT_LOG_DIR)
+
 const IPOPT_LINEAR_SOLVER = lowercase(get(ENV, "IPOPT_LINEAR_SOLVER", "ma57"))
 
 function ipopt_linear_solver_attrs()
@@ -111,18 +118,27 @@ end
 const IPOPT_SOLVER_ATTRS = ipopt_linear_solver_attrs()
 @printf "Linear solver  : %s\n" IPOPT_LINEAR_SOLVER
 
-# Single-period solver (one hour at a time)
-const IPOPT = optimizer_with_attributes(
-    Ipopt.Optimizer,
-    "print_level"   => 0,
-    "tol"           => 1e-4,
-    "max_iter"      => 500,
-    IPOPT_SOLVER_ATTRS...,
-)
+# Single-period solver (one hour at a time).  `log_file`, when given, makes Ipopt
+# mirror its iteration log to that file at file_print_level 5 so infeasible hours
+# can be studied after the run (stdout stays quiet at print_level 0).
+function ipopt_single(; log_file::Union{String,Nothing} = nothing)
+    attrs = Pair{String,Any}[
+        "print_level" => 0,
+        "tol"         => 1e-4,
+        "max_iter"    => 500,
+        IPOPT_SOLVER_ATTRS...,
+    ]
+    if log_file !== nothing
+        push!(attrs, "output_file"      => log_file)
+        push!(attrs, "file_print_level" => 5)
+    end
+    return optimizer_with_attributes(Ipopt.Optimizer, attrs...)
+end
 
-# Multi-period solver (24 hours coupled — larger problem, needs more iterations)
-const IPOPT_MN = optimizer_with_attributes(
-    Ipopt.Optimizer,
+# Multi-period solver (24 hours coupled — larger problem, needs more iterations).
+# `log_file` likewise captures the full Ipopt log for the day's coupled solve.
+function ipopt_mn(; log_file::Union{String,Nothing} = nothing)
+    attrs = Pair{String,Any}[
     "print_level"          => 5,
     "print_frequency_iter" => 1,
     "tol"                  => 5e-4,
@@ -143,7 +159,13 @@ const IPOPT_MN = optimizer_with_attributes(
     "acceptable_iter"      => 15,
     "acceptable_dual_inf_tol"  => 1e-2,
     "acceptable_constr_viol_tol" => 1e-4,
-)
+    ]
+    if log_file !== nothing
+        push!(attrs, "output_file"      => log_file)
+        push!(attrs, "file_print_level" => 5)
+    end
+    return optimizer_with_attributes(Ipopt.Optimizer, attrs...)
+end
 
 # ── 4. Result accumulators ───────────────────────────────────
 summary_rows    = []
@@ -412,7 +434,9 @@ if BELLMAN_METHOD == "constant"
                               line_rating_factor = LINE_RATING_FACTOR)
         (; network, gens, branches, dclines, loads) = net
 
-        result = solve_anchored_opf(network, gens, IPOPT, market_sched_for(date_str, hour))
+        log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_h$(lpad(hour, 2, '0')).log")
+        result = solve_anchored_opf(network, gens, ipopt_single(log_file = log_file),
+                                    market_sched_for(date_str, hour))
         status = string(result["termination_status"])
 
         @printf "[%2d/%d] %s\n" (n_solved + 1) n_total label
@@ -549,8 +573,10 @@ elseif BELLMAN_METHOD == "piecewise"
         end
 
         @printf "  Solving 24-hour coupled OPF (Ipopt progress below)...\n"
+        mn_log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_piecewise.log")
         t_start = time()
-        result  = PowerModels.solve_model(mn_data, ACPPowerModel, IPOPT_MN, build_mn_bellman;
+        result  = PowerModels.solve_model(mn_data, ACPPowerModel,
+                                          ipopt_mn(log_file = mn_log_file), build_mn_bellman;
                                           multinetwork=true)
         elapsed = time() - t_start
         status  = string(result["termination_status"])
