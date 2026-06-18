@@ -15,26 +15,53 @@
 #                         N-1 / reliability margin.  Applies to AC lines,
 #                         transformers and HVDC links.  0.70 ⇒ 70 % of nameplate.
 voltage_band       = 0.05
-line_rating_factor = 0.70
+line_rating_factor = 0.80
 
 [bellman]
-# How to incorporate Bellman cuts into the hydro cost:
-#
-#   "constant"  — binding cut slope at V_ES_start used as a fixed marginal
-#                 cost (EUR/MWh) for reservoir hydro.  Each hour is solved
-#                 independently (fast, one water value per day).
-#
-#   "piecewise" — all cuts are added as constraints coupling all 24 hours
-#                 of a day in one optimisation.  The solver finds the optimal
-#                 intra-day hydro dispatch considering the full cost-to-go
-#                 function (slower, more accurate).
-#
-method = "constant"
-
+# Shared source of the long-term hydro cost-to-go (Bellman cuts produced by the
+# weekly scheduling model).  Both stages of the market chain read from here:
+#   • the day-ahead dispatch always uses the *full* cut set, coupling all 24
+#     hours so reservoir hydro is allocated against the cost-to-go;
+#   • the redispatch uses either the binding constant water value or the full
+#     cuts, selected by [redispatch].water_value.
 bgn_date     = "2024-07-02"          # start date of the long-term model
 ssv_step     = 168                   # stage length in hours (1 week)
 bellman_file = "Data/BellmanValuesOUT.csv"
 volume_file  = "Data/Volume_Scen0_OUT.csv"
+
+[da]
+# ── Stage 1: Day-Ahead market ────────────────────────────────────────────────
+# A copper-plate economic dispatch solving all 24 hours of the day at once.
+# There are NO transmission or voltage limits — the DA market clears energy
+# only, leaving network congestion to be resolved by the redispatch stage.
+# Reservoir hydro is coupled across the day through the full Bellman cost-to-go
+# (the binding cut supplies its opportunity cost), so the intra-day hydro
+# schedule respects the long-term water value.  Cross-border exchange enters as
+# a fixed import (see [crossborder]).  Uses the DA forecast for wind, solar and
+# load: ES_old col "-12" × DA scale factor (always 1.0).
+enabled = true
+
+[id2]
+# ── Stage 2: Intraday market — second gate ───────────────────────────────────
+# Same copper-plate formulation as DA.  Uses ES_old col "-12" scaled by the ID2
+# factor from the new probabilistic files.  Nuclear units are frozen at their
+# DA dispatch for this and all subsequent stages.  (ID1 / first intraday gate
+# is not modelled.)
+enabled = true
+
+[id3]
+# ── Stage 3: Intraday market — third gate ────────────────────────────────────
+# Same copper-plate formulation as DA.  Uses ES_old col "-12" scaled by the ID3
+# factor.  Nuclear units remain frozen at their DA dispatch.
+# Requires [id2].enabled = true.
+enabled = true
+
+[cid]
+# ── Stage 4: Continuous Intraday market ──────────────────────────────────────
+# Identical copper-plate formulation to the DA (all 24 hours coupled through
+# the full Bellman cost-to-go).  Uses ES_old col "-12" scaled by the CID factor.
+# The resulting schedule anchors the subsequent redispatch stage.
+enabled = true
 
 [crossborder]
 # Fix the market-cleared FR/PT import/export schedule at the border buses.
@@ -43,15 +70,28 @@ volume_file  = "Data/Volume_Scen0_OUT.csv"
 # proportionally to line thermal ratings).
 enabled = true
 
+# ── Stage 2: Redispatch ──────────────────────────────────────────────────────
 [redispatch]
-# Anchor the AC OPF to the continuous intraday market schedule so it behaves
-# as a *redispatch* (minimum deviation from the cleared dispatch) instead of a
-# from-scratch cost-minimisation.  Adds  weight * Σ (P_g − P_market_g)²  [in MW²]
-# to the objective for every conventional unit, breaking the zero-cost hydro
-# degeneracy and keeping units at their market point unless the network forces
-# a change.  Per-unit schedule is read from Data/smspp_out/nutsx (SMS++ output).
-#   anchor_to_market = false → original cost-minimising behaviour.
-#   anchor_weight       EUR per MW²·h.  Larger ⇒ closer to the market schedule;
-#                       smaller ⇒ cheaper redispatch allowed.  Tune per results.
-anchor_to_market = true
-anchor_weight    = 0.1
+# Make the CID schedule network-feasible with a full AC OPF anchored to the
+# CID dispatch.  Nuclear, run-of-river hydro, biomass and coal are frozen at
+# their CID set-point; every other unit (Gas, Oil, reservoir & pumped hydro,
+# plus curtailable Wind and Solar) is free to be re-dispatched.
+#   enabled = false → run the day-ahead stage only.
+enabled = true
+
+# Reservoir hydro opportunity cost during redispatch:
+#   "constant"  — binding cut slope at V_ES_start used as a fixed marginal cost
+#                 (EUR/MWh); each hour solved independently (fast).
+#   "piecewise" — full Bellman cuts coupling all 24 hours in one AC OPF (slow,
+#                 mirrors the DA hydro treatment).
+water_value = "constant"
+
+# How the redispatch is allowed to deviate from the DA schedule:
+#   "quadratic"     — min  base_cost + anchor_weight · Σ (P_g − P_DA_g)²  [MW²].
+#                     Larger anchor_weight ⇒ closer to DA; smaller ⇒ cheaper
+#                     redispatch allowed.  Simple, well-conditioned (default).
+#   "cost_weighted" — min  Σ c_g · (Δup_g + Δdown_g),  P_g = P_DA_g + Δup − Δdown.
+#                     Minimises the real cost of redispatch; reservoir Δ priced
+#                     at the water value.
+objective     = "quadratic"
+anchor_weight = 0.8

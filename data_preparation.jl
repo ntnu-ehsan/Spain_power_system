@@ -18,6 +18,8 @@ const TOTAL_LOAD_MW = 35_000.0
 const SLACK_BUS_ID  = "ES00029"
 const DATA          = joinpath(@__DIR__, "Data")
 
+const LOAD_SHED_COST_EUR_MWH = 10_000.0   # Value of Lost Load — shed only as absolute last resort
+
 const COST_MAP = Dict(
     ("Solar",   "PV")             => ("Solar",               "PV"),
     ("Solar",   "CSP")            => ("Solar",               "CSP"),
@@ -64,6 +66,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          wind_avail_mw::Float64  = Inf;
                          hydro_reservoir_cost::Union{Float64,Nothing} = nothing,
                          crossborder_inj::Union{Dict{String,Float64},Nothing} = nothing,
+                         da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
+                         nuclear_da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          voltage_band::Float64       = 0.05,
                          line_rating_factor::Float64 = 0.70)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
@@ -234,7 +238,35 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         else
             marginal_cost(cost_df, String(row.primary_fuel), String(row.technology)) * BASEMVA
         end
+        # Reactive capability is sized on installed capacity, independent of any
+        # active-power freeze applied below.
         (qmax_pu, qmin_pu) = q_limits(pmax_pu)
+
+        # ── Anchor to the day-ahead schedule (redispatch stage) ──────────────
+        # When a DA dispatch is supplied, warm-start every unit from it and
+        # *freeze* the units that do not provide redispatch (Nuclear, run-of-
+        # river hydro, biomass) at their DA set-point (pmin = pmax = P_DA).  All
+        # other units stay free; the anchor objective keeps them near P_DA.
+        da_pu = (!isnothing(da_dispatch) && haskey(da_dispatch, String(row.unit_id))) ?
+                da_dispatch[String(row.unit_id)] / BASEMVA : nothing
+        # Nuclear DA dispatch is carried unchanged into all subsequent market stages.
+        # When nuclear_da_dispatch is provided the unit is frozen regardless of da_dispatch.
+        nuc_pu = (String(row.primary_fuel) == "Nuclear" &&
+                  !isnothing(nuclear_da_dispatch) &&
+                  haskey(nuclear_da_dispatch, String(row.unit_id))) ?
+                 nuclear_da_dispatch[String(row.unit_id)] / BASEMVA : nothing
+        is_frozen = nuc_pu !== nothing ||
+                    (da_pu !== nothing && (
+                        String(row.primary_fuel) == "Nuclear" ||
+                        String(row.primary_fuel) == "Biomass" ||
+                        String(row.primary_fuel) == "Coal"    ||
+                        (String(row.primary_fuel) == "Hydro" &&
+                         lowercase(String(row.technology)) == "run_of_river")))
+        frozen_pu = nuc_pu !== nothing ? nuc_pu : da_pu
+        pmin_g  = is_frozen ? frozen_pu : 0.0
+        pmax_g  = is_frozen ? frozen_pu : pmax_pu
+        pg_strt = frozen_pu !== nothing ? clamp(frozen_pu, 0.0, pmax_pu) : pmax_pu/2
+
         gen_count += 1
         gens[string(gen_count)] = Dict{String,Any}(
             "index"         => gen_count,
@@ -243,9 +275,11 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             "fuel"          => String(row.primary_fuel),
             "technology"    => String(row.technology),
             "installed_mw"  => cap_mw,           # fixed installed capacity
-            "pmax"          => pmax_pu,   "pmin" => 0.0,
+            "pmax"          => pmax_g,   "pmin" => pmin_g,
+            "pg0"           => (frozen_pu !== nothing ? frozen_pu :
+                               da_pu     !== nothing ? da_pu     : pmax_pu/2),
             "qmax"          => qmax_pu,   "qmin" => qmin_pu,
-            "pg"         => pmax_pu/2, "qg"   => 0.0,
+            "pg"         => pg_strt,   "qg"   => 0.0,
             "vg"         => 1.0,
             "mbase"      => BASEMVA,
             "gen_status" => 1,
@@ -275,15 +309,20 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         "startup"    => 0.0,  "shutdown" => 0.0,
     )
 
-    # ── Cross-border exchange (fixed market-cleared imports/exports) ──
-    # Modelled as costless, non-dispatchable generators at the foreign (FR/PT)
-    # terminal buses: +pg injects an import into Spain, −pg withdraws an export.
-    # pmin=pmax pins the unit at the cleared value so it cannot be redispatched.
+    # ── Cross-border exchange (fixed market-cleared imports only) ──
+    # Only positive net injections (imports into Spain) are modelled as fixed
+    # generators.  Negative values (Spanish exports, e.g. to Portugal) are skipped:
+    # the SMS++ intraday market clearing (used as the redispatch anchor) cleared
+    # Spanish generators against domestic load + FR imports only — it placed the
+    # cross-border obligation for PT exports on the Portuguese side of MIBEL.
+    # Injecting the PT export as a fixed withdrawal would create a 1–4 GW gap
+    # between the OPF's required generation and the anchor's reference schedule,
+    # forcing the optimizer to massively deviate from the market dispatch.
     if !isnothing(crossborder_inj)
         for (bus_id, mw) in crossborder_inj
             haskey(bus_idx, bus_id) || continue
+            mw > 0 || continue          # skip exports (negative net injections)
             p_pu  = mw / BASEMVA
-            q_cap = abs(p_pu)
             gen_count += 1
             gens[string(gen_count)] = Dict{String,Any}(
                 "index"        => gen_count,
@@ -291,9 +330,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                 "name"         => "XB_" * bus_id,
                 "fuel"         => "CrossBorder",
                 "technology"   => "Interconnector",
-                "installed_mw" => abs(mw),
+                "installed_mw" => mw,
                 "pmax"       => p_pu,   "pmin" => p_pu,
-                "qmax"       => q_cap,  "qmin" => -q_cap,
+                "qmax"       => p_pu,   "qmin" => -p_pu,
                 "pg"         => p_pu,   "qg"   => 0.0,
                 "vg"         => 1.0,
                 "mbase"      => BASEMVA,
@@ -328,6 +367,34 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         # Local shunt capacitor compensates reactive demand so lines carry
         # only active power — models distributed reactive compensation
         buses[string(bus_i)]["bs"] += qd_pu
+    end
+
+    # ── Load-shedding generators ──────────────────────────────
+    # One curtailable unit per load bus priced at VoLL (10 000 EUR/MWh).
+    # pg ∈ [0, pd] reduces net demand at the bus; qg ∈ [−pd, pd] provides
+    # matching reactive relief.  Dispatches only when no feasible network
+    # solution exists within the thermal/voltage limits.
+    for (_, load) in loads
+        bus_i  = load["load_bus"]
+        pd_pu  = load["pd"]
+        gen_count += 1
+        gens[string(gen_count)] = Dict{String,Any}(
+            "index"        => gen_count,
+            "gen_bus"      => bus_i,
+            "name"         => "LS_" * buses[string(bus_i)]["name"],
+            "fuel"         => "LoadShed",
+            "technology"   => "LoadShed",
+            "installed_mw" => pd_pu * BASEMVA,
+            "pmax"         => pd_pu,   "pmin" => 0.0,
+            "qmax"         => pd_pu,   "qmin" => -pd_pu,
+            "pg"           => 0.0,     "qg"   => 0.0,
+            "vg"           => 1.0,
+            "mbase"        => BASEMVA,
+            "gen_status"   => 1,
+            "model"        => 2,  "ncost" => 2,
+            "cost"         => [LOAD_SHED_COST_EUR_MWH * BASEMVA, 0.0],
+            "startup"      => 0.0,  "shutdown" => 0.0,
+        )
     end
 
     # ── Assemble PowerModels dict ────────────────────────────
