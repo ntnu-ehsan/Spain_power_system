@@ -45,6 +45,19 @@ const VOLUME_FILE      = joinpath(@__DIR__, cfg["bellman"]["volume_file"])
 
 const VOLTAGE_BAND       = Float64(get(get(cfg, "network", Dict()), "voltage_band", 0.05))
 const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
+
+const GEN_BUS_VCTRL = get(get(cfg, "network", Dict()), "gen_bus_voltage_control", false)
+const GEN_BUS_VMIN  = Float64(get(get(cfg, "network", Dict()), "gen_bus_vmin", 0.98))
+const GEN_BUS_VMAX  = Float64(get(get(cfg, "network", Dict()), "gen_bus_vmax", 1.03))
+
+const REACTORS_ENABLED   = get(get(cfg, "reactors", Dict()), "enabled", true)
+const REACTOR_PCT        = Float64(get(get(cfg, "reactors", Dict()), "in_service_pct", 100.0))
+
+const LOAD_PF            = Float64(get(get(cfg, "load", Dict()), "power_factor", 1.0))
+
+const APPARENT_POWER_LIMIT = get(get(cfg, "generators", Dict()), "apparent_power_limit", true)
+const RATED_PF             = Float64(get(get(cfg, "generators", Dict()), "rated_power_factor", 0.90))
+const RENEWABLE_PF         = Float64(get(get(cfg, "generators", Dict()), "renewable_power_factor", 0.95))
 @printf "Voltage band   : ±%.1f %% (%.2f–%.2f pu)\n" (100 * VOLTAGE_BAND) (1 - VOLTAGE_BAND) (1 + VOLTAGE_BAND)
 @printf "Line rating    : %.0f %% of nameplate\n" (100 * LINE_RATING_FACTOR)
 
@@ -458,27 +471,30 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                      nuclear_da_dispatch = nuclear_sched === nothing ? nothing :
                                            get(nuclear_sched, (date_str, ts.hour), nothing),
                      voltage_band = VOLTAGE_BAND,
-                     line_rating_factor = LINE_RATING_FACTOR)
+                     line_rating_factor = LINE_RATING_FACTOR,
+                     reactors_enabled = REACTORS_ENABLED,
+                     reactor_in_service_pct = REACTOR_PCT,
+                     load_power_factor = LOAD_PF,
+                     apparent_power_limit = APPARENT_POWER_LIMIT,
+                     rated_power_factor = RATED_PF,
+                     renewable_power_factor = RENEWABLE_PF,
+                     gen_bus_voltage_control = GEN_BUS_VCTRL,
+                     gen_bus_vmin = GEN_BUS_VMIN,
+                     gen_bus_vmax = GEN_BUS_VMAX)
      for ts in eachrow(day_ts)]
 end
 
-# Helper: run solve_da and populate a schedule dict + rows accumulator.
-function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_tag;
-                            nuclear_sched = nothing)
-    nets = build_da_nets(date_str, day_ts; nuclear_sched = nuclear_sched)
-    reservoir_gen_ids = sort([parse(Int, k) for (k, g) in nets[1].gens
-                               if g["fuel"] == "Hydro" &&
-                                  lowercase(g["technology"]) == "reservoir"])
-    log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_$(log_tag).log")
-    t_start  = time()
-    result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es,
-                        gurobi_da(log_file = log_file))
-    @printf "  %s %s : status=%s  cost=%.0f EUR  (%.1f s)\n" label date_str result.status result.objective (time() - t_start)
-    result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
-        error("$label dispatch failed for $date_str: $(result.status)")
+# Reservoir gen ids (stable across hours) for a day's assembled networks.
+reservoir_ids_of(nets) = sort([parse(Int, k) for (k, g) in nets[1].gens
+                                if g["fuel"] == "Hydro" &&
+                                   lowercase(g["technology"]) == "reservoir"])
+
+# Store a cleared schedule (sched :: Dict net-idx ⇒ unit ⇒ MW) into the
+# (date,hour) schedule dict and append the per-unit rows for CSV export.
+function store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, sched)
     for (h_idx, ts) in enumerate(eachrow(day_ts))
         hour = ts.hour
-        schedule[(date_str, hour)] = result.sched[h_idx]
+        schedule[(date_str, hour)] = sched[h_idx]
         for (k, g) in nets[h_idx].gens
             push!(rows_acc, (
                 date        = date_str,
@@ -486,10 +502,71 @@ function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_
                 gen_id      = g["name"],
                 fuel        = g["fuel"],
                 technology  = g["technology"],
-                dispatch_mw = round(result.sched[h_idx][g["name"]]; digits = 2),
+                dispatch_mw = round(sched[h_idx][g["name"]]; digits = 2),
             ))
         end
     end
+end
+
+# Helper: run solve_da over one day and populate a schedule dict + rows accumulator.
+# free_hours_actual : Set of delivery hours (0–23) tradable at this gate; the rest
+#                     are frozen at `prev_schedule` (the previous gate's (date,hour)
+#                     schedule).  `nothing` ⇒ all 24 hours tradable.
+function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_tag;
+                            nuclear_sched = nothing,
+                            free_hours_actual = nothing,
+                            prev_schedule = nothing)
+    nets = build_da_nets(date_str, day_ts; nuclear_sched = nuclear_sched)
+    reservoir_gen_ids = reservoir_ids_of(nets)
+
+    # Map tradable delivery hours → net indices; freeze the rest at prev_schedule.
+    free_set = nothing
+    prev_map = nothing
+    if free_hours_actual !== nothing
+        free_set = Set{Int}()
+        prev_map = Dict{Int,Dict{String,Float64}}()
+        for (h_idx, ts) in enumerate(eachrow(day_ts))
+            if ts.hour in free_hours_actual
+                push!(free_set, h_idx)
+            elseif prev_schedule !== nothing
+                ps = get(prev_schedule, (date_str, ts.hour), nothing)
+                ps !== nothing && (prev_map[h_idx] = ps)
+            end
+        end
+    end
+
+    log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_$(log_tag).log")
+    t_start  = time()
+    result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es,
+                        gurobi_da(log_file = log_file);
+                        free_hours = free_set, prev_sched = prev_map)
+    @printf "  %s %s : status=%s  cost=%.0f EUR  (%.1f s)\n" label date_str result.status result.objective (time() - t_start)
+    result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
+        error("$label dispatch failed for $date_str: $(result.status)")
+    store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, result.sched)
+end
+
+# Continuous Intraday modelled as auction gates closing one hour before delivery.
+# For each delivery hour we re-clear the remaining horizon (this hour onward) with
+# every earlier hour frozen at its already-committed CID value, then commit this
+# hour.  Earlier hours' reservoir use is locked in, so water cannot be reallocated
+# backwards in time — the causality the 1h-before-delivery rule implies.
+function run_cid_rolling!(schedule, rows_acc, date_str, day_ts, bv; nuclear_sched = nothing)
+    nets = build_da_nets(date_str, day_ts; nuclear_sched = nuclear_sched)
+    reservoir_gen_ids = reservoir_ids_of(nets)
+    H         = length(nets)
+    committed = Dict{Int,Dict{String,Float64}}()
+    t_start   = time()
+    for hgate in 1:H
+        free_set = Set(hgate:H)
+        result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es, gurobi_da();
+                            free_hours = free_set, prev_sched = committed)
+        result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
+            error("CID gate h=$(day_ts.hour[hgate]) failed for $date_str: $(result.status)")
+        committed[hgate] = result.sched[hgate]
+    end
+    @printf "  CID %s : %d rolling gates solved  (%.1f s)\n" date_str H (time() - t_start)
+    store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, committed)
 end
 
 if DA_ENABLED
@@ -516,24 +593,28 @@ end
 id2_sched_for(date_str, hour) = get(id2_schedule, (date_str, hour), nothing)
 
 if ID3_ENABLED
-    println("\n── Stage 3: Intraday market ID3 (copper-plate, Nuclear fixed at DA) ──")
+    println("\n── Stage 3: Intraday market ID3 (copper-plate, last 12h only, Nuclear fixed at DA) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly_id3)
+        # ID3 closes 10:00 D and trades only the last 12 delivery hours (12–23);
+        # hours 0–11 are not retradeable here and stay at their ID2 schedule.
         run_copper_plate!(id3_schedule, id3_rows_all, "ID3", date_str, day_ts, bv, "id3";
-                          nuclear_sched = da_schedule)
+                          nuclear_sched = da_schedule,
+                          free_hours_actual = Set(12:23),
+                          prev_schedule = id2_schedule)
     end
 end
 
 id3_sched_for(date_str, hour) = get(id3_schedule, (date_str, hour), nothing)
 
 if CID_ENABLED
-    println("\n── Stage 4: Intraday market CID (copper-plate, Nuclear fixed at DA) ──")
+    println("\n── Stage 4: Continuous Intraday (rolling gates 1h before delivery, Nuclear fixed at DA) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly_cid)
-        run_copper_plate!(cid_schedule, cid_rows_all, "CID", date_str, day_ts, bv, "cid";
-                          nuclear_sched = da_schedule)
+        run_cid_rolling!(cid_schedule, cid_rows_all, date_str, day_ts, bv;
+                         nuclear_sched = da_schedule)
     end
 end
 
@@ -552,11 +633,46 @@ rd_sched_for(date_str, hour) = CID_ENABLED  ? cid_sched_for(date_str, hour)  :
 #   "cost_weighted" — pay only for movement: Σ c_g·(Δup+Δdown) with
 #                     P_g = P_DA + Δup − Δdown over the free units, plus the slack
 #                     and load-shed penalties so those stay last-resort.
+# Add per-generator reactive-capability constraints to an instantiated model:
+#   • synchronous units (finite `smax`): MVA capability circle  P² + Q² ≤ S²
+#     (convex second-order cone — Ipopt handles it as an NLP);
+#   • inverter-based Wind/Solar (finite `qp_ratio` k): grid-code cap tied to
+#     output,  −k·P ≤ Q ≤ k·P  (linear).
+# No-op when [generators].apparent_power_limit = false (relax switch).  `nw`
+# selects the network for multinetwork (Bellman) models.
+function add_gen_capability!(pm, gen_dict; nw = PowerModels.nw_id_default)
+    APPARENT_POWER_LIMIT || return
+    for (_, g) in gen_dict
+        i  = g["index"]
+        pg = PowerModels.var(pm, nw, :pg, i)
+        qg = PowerModels.var(pm, nw, :qg, i)
+        s = get(g, "smax", Inf)
+        if isfinite(s) && s > 0
+            JuMP.@constraint(pm.model, pg^2 + qg^2 <= s^2)
+        end
+        k = get(g, "qp_ratio", Inf)
+        if isfinite(k)
+            JuMP.@constraint(pm.model, qg <=  k * pg)
+            JuMP.@constraint(pm.model, qg >= -k * pg)
+        end
+    end
+    return
+end
+
+# Plain AC OPF that also enforces the generator MVA limits (when enabled).
+function rd_solve_ac_opf(network, optimizer)
+    APPARENT_POWER_LIMIT || return solve_ac_opf(network, optimizer)
+    pm = PowerModels.instantiate_model(network, PowerModels.ACPPowerModel, PowerModels.build_opf)
+    add_gen_capability!(pm, network["gen"])
+    return PowerModels.optimize_model!(pm; optimizer = optimizer)
+end
+
 function solve_anchored_opf(network, gens, optimizer, sched)
     if sched === nothing || (RD_OBJECTIVE == "quadratic" && ANCHOR_WEIGHT <= 0)
-        return solve_ac_opf(network, optimizer)
+        return rd_solve_ac_opf(network, optimizer)
     end
     pm = PowerModels.instantiate_model(network, PowerModels.ACPPowerModel, PowerModels.build_opf)
+    add_gen_capability!(pm, gens)
 
     if RD_OBJECTIVE == "quadratic"
         pen = zero(JuMP.QuadExpr)
@@ -614,7 +730,16 @@ if RD_WATER_VALUE == "constant"
                               crossborder_inj = crossborder_inj_for(date_str, hour),
                               da_dispatch = rd_sched_for(date_str, hour),
                               voltage_band = VOLTAGE_BAND,
-                              line_rating_factor = LINE_RATING_FACTOR)
+                              line_rating_factor = LINE_RATING_FACTOR,
+                              reactors_enabled = REACTORS_ENABLED,
+                              reactor_in_service_pct = REACTOR_PCT,
+                              load_power_factor = LOAD_PF,
+                              apparent_power_limit = APPARENT_POWER_LIMIT,
+                              rated_power_factor = RATED_PF,
+                              renewable_power_factor = RENEWABLE_PF,
+                              gen_bus_voltage_control = GEN_BUS_VCTRL,
+                              gen_bus_vmin = GEN_BUS_VMIN,
+                              gen_bus_vmax = GEN_BUS_VMAX)
         (; network, gens, branches, dclines, loads) = net
 
         log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_h$(lpad(hour, 2, '0')).log")
@@ -660,7 +785,16 @@ elseif RD_WATER_VALUE == "piecewise"
                                 crossborder_inj = crossborder_inj_for(date_str, ts.hour),
                                 da_dispatch = rd_sched_for(date_str, ts.hour),
                                 voltage_band = VOLTAGE_BAND,
-                                line_rating_factor = LINE_RATING_FACTOR)
+                                line_rating_factor = LINE_RATING_FACTOR,
+                                reactors_enabled = REACTORS_ENABLED,
+                                reactor_in_service_pct = REACTOR_PCT,
+                                load_power_factor = LOAD_PF,
+                                apparent_power_limit = APPARENT_POWER_LIMIT,
+                                rated_power_factor = RATED_PF,
+                                renewable_power_factor = RENEWABLE_PF,
+                                gen_bus_voltage_control = GEN_BUS_VCTRL,
+                                gen_bus_vmin = GEN_BUS_VMIN,
+                                gen_bus_vmax = GEN_BUS_VMAX)
                 for ts in eachrow(day_ts)]
 
         # Generator IDs (Int) for Spanish reservoir hydro — same topology every hour
@@ -709,6 +843,11 @@ elseif RD_WATER_VALUE == "piecewise"
             PowerModels.objective_min_fuel_and_flow_cost(pm)
 
             nw_ids = sort(collect(keys(PowerModels.nws(pm))))
+
+            # Generator reactive-capability limits per hour/network.
+            for n in nw_ids
+                add_gen_capability!(pm, nets[parse(Int, n) + 1].network["gen"]; nw = n)
+            end
 
             # Express reservoir energy in pu·h (= MWh / BASEMVA) so V_ES variables
             # sit at the same scale as the per-unit pg variables.  The raw MWh scale

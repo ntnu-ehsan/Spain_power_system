@@ -20,6 +20,19 @@ const DATA          = joinpath(@__DIR__, "Data")
 
 const LOAD_SHED_COST_EUR_MWH = 10_000.0   # Value of Lost Load — shed only as absolute last resort
 
+# ── Shunt reactors (EHV line-charging compensation) ──────────────────────────
+# Installed peninsular shunt-reactor fleet, REE Boletín Mensual diciembre 2024:
+#   https://www.ree.es/es/datos/publicaciones/boletines-mensuales/boletin-mensual-diciembre-2024
+#   • 400 kV : 11 750 MVAr (80 units)
+#   • ≤220 kV:  3 722 MVAr (55 units)
+# The Balearic/Canary systems are non-synchronous and excluded (peninsular only).
+# The fleet is disaggregated across buses in proportion to the AC line charging
+# connected at each bus and cached in Data/reactors.csv (see add_reactor_shunts!).
+const REACTOR_MVAR_400KV      = 11_750.0
+const REACTOR_MVAR_LE220KV    =  3_722.0
+const REACTOR_HV_THRESHOLD_KV = 380.0      # base_kv ≥ ⇒ "400 kV" group, else "≤220 kV"
+const REACTOR_FILE            = joinpath(DATA, "reactors.csv")
+
 const COST_MAP = Dict(
     ("Solar",   "PV")             => ("Solar",               "PV"),
     ("Solar",   "CSP")            => ("Solar",               "CSP"),
@@ -42,6 +55,76 @@ const COST_MAP = Dict(
 
 function q_limits(pmax_pu::Float64)::Tuple{Float64,Float64}
     return (pmax_pu, -pmax_pu)   # ±Pmax: conservative fallback ensuring reactive feasibility
+end
+
+# Disaggregate the installed shunt-reactor fleet across buses (∝ connected AC
+# line charging) and attach it to the network as `shunt` components.  A reactor
+# absorbs reactive power, so its susceptance is negative (bs < 0).
+#
+# The per-bus *installed* capacity (the full 100 % fleet) is cached in
+# Data/reactors.csv so it can be reused as a model input on later runs; delete
+# that file to regenerate the disaggregation (e.g. after changing the line
+# data).  `in_service_pct` then scales how much of the installed fleet is
+# energised at the operating point — set it in config.toml ([reactors]).
+function add_reactor_shunts!(network, buses, branches, bus_idx;
+                             enabled::Bool, in_service_pct::Float64)
+    enabled || return
+    BASE      = network["baseMVA"]
+    installed = Dict{Int,Float64}()        # bus index ⇒ installed reactor [MVAr]
+
+    if isfile(REACTOR_FILE)
+        rdf = CSV.read(REACTOR_FILE, DataFrame)
+        for row in eachrow(rdf)
+            haskey(bus_idx, row.bus_id) || continue
+            installed[bus_idx[row.bus_id]] = Float64(row.reactor_installed_mvar)
+        end
+    else
+        # Connected line charging at each bus = Σ half-charging of the incident
+        # AC lines (b_fr at the from-bus, b_to at the to-bus), as MVAr at 1.0 pu.
+        # Transformers (b_fr = b_to = 0) and HVDC links contribute nothing.
+        charging = Dict{Int,Float64}()
+        for (_, br) in branches
+            charging[br["f_bus"]] = get(charging, br["f_bus"], 0.0) + get(br, "b_fr", 0.0) * BASE
+            charging[br["t_bus"]] = get(charging, br["t_bus"], 0.0) + get(br, "b_to", 0.0) * BASE
+        end
+        group(bi) = buses[string(bi)]["base_kv"] >= REACTOR_HV_THRESHOLD_KV ? "400kV" : "<=220kV"
+        fleet = Dict("400kV" => REACTOR_MVAR_400KV, "<=220kV" => REACTOR_MVAR_LE220KV)
+        ctot  = Dict("400kV" => 0.0,                "<=220kV" => 0.0)
+        for (bi, c) in charging
+            ctot[group(bi)] += c
+        end
+        rows = NamedTuple[]
+        for (bi, c) in charging
+            g = group(bi)
+            ctot[g] > 0 || continue
+            q = fleet[g] * c / ctot[g]     # ∝ share of group charging
+            installed[bi] = q
+            push!(rows, (bus_id                  = buses[string(bi)]["name"],
+                         base_kv                 = buses[string(bi)]["base_kv"],
+                         voltage_group           = g,
+                         connected_charging_mvar = round(c; digits = 3),
+                         reactor_installed_mvar  = round(q; digits = 3)))
+        end
+        sort!(rows; by = r -> -r.reactor_installed_mvar)
+        CSV.write(REACTOR_FILE, DataFrame(rows))
+        @info "Wrote shunt-reactor disaggregation to $REACTOR_FILE ($(length(rows)) buses)"
+    end
+
+    scale = in_service_pct / 100.0
+    n = length(network["shunt"])        # append after any existing shunts
+    for (bi, q_inst) in installed
+        q = q_inst * scale
+        q > 1e-9 || continue
+        n += 1
+        network["shunt"][string(n)] = Dict{String,Any}(
+            "index"     => n,
+            "shunt_bus" => bi,
+            "gs"        => 0.0,
+            "bs"        => -q / BASE,       # negative ⇒ inductive (absorbs reactive power)
+            "status"    => 1,
+        )
+    end
+    return
 end
 
 function marginal_cost(cost_df::DataFrame, fuel::String, tech::String)::Float64
@@ -69,7 +152,16 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          nuclear_da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          voltage_band::Float64       = 0.05,
-                         line_rating_factor::Float64 = 0.70)
+                         line_rating_factor::Float64 = 0.70,
+                         reactors_enabled::Bool      = true,
+                         reactor_in_service_pct::Float64 = 100.0,
+                         load_power_factor::Float64      = 1.0,
+                         apparent_power_limit::Bool      = true,
+                         rated_power_factor::Float64     = 0.90,
+                         renewable_power_factor::Float64 = 0.95,
+                         gen_bus_voltage_control::Bool   = false,
+                         gen_bus_vmin::Float64           = 0.98,
+                         gen_bus_vmax::Float64           = 1.03)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -79,6 +171,11 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
 
     bus_idx  = Dict(row.bus_id => i for (i, row) in enumerate(eachrow(bus_df)))
     gen_buses = Set(gen_df.bus_id)
+    # Buses hosting a SYNCHRONOUS machine (strong AVR voltage regulation).  Only
+    # these (plus the slack) get the tighter voltage band — renewable-only buses,
+    # whose reactive is capped at low output, keep the wider load-bus band.
+    synchronous_gen_buses = Set(row.bus_id for row in eachrow(gen_df)
+                                if !(row.primary_fuel == "Wind" || row.primary_fuel == "Solar"))
 
     # Total installed capacity of modelled solar/wind generators (for proportional scaling)
     total_solar_mw = sum(Float64(row.capacity_mw) for row in eachrow(gen_df)
@@ -96,13 +193,19 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         bus_type = if row.bus_id == SLACK_BUS_ID; 3
                    elseif row.bus_id in gen_buses;  2
                    else;                            1  end
+        # AVR-regulated buses (synchronous machine or slack) get the tighter band,
+        # so the profile follows realistic setpoints instead of railing to vmax.
+        avr_bus = gen_bus_voltage_control &&
+                  (bus_type == 3 || row.bus_id in synchronous_gen_buses)
+        vmax_b  = avr_bus ? gen_bus_vmax : 1.0 + voltage_band
+        vmin_b  = avr_bus ? gen_bus_vmin : 1.0 - voltage_band
         buses[string(i)] = Dict{String,Any}(
             "index"    => i,  "bus_i"    => i,
             "bus_type" => bus_type,
             "name"     => row.bus_id,
             "base_kv"  => vn,
             "vm"       => 1.0,  "va"   => 0.0,
-            "vmax"     => 1.0 + voltage_band, "vmin" => 1.0 - voltage_band,
+            "vmax"     => vmax_b, "vmin" => vmin_b,
             "gs"       => 0.0,  "bs"   => 0.0,
             "zone"     => 1,    "area" => 1,
         )
@@ -242,6 +345,27 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         # active-power freeze applied below.
         (qmax_pu, qmin_pu) = q_limits(pmax_pu)
 
+        # Reactive capability (enforced in the OPF build via add_gen_capability!):
+        #   • Synchronous units (thermal/hydro): MVA capability circle
+        #     P² + Q² ≤ S²,  S = installed MVA / rated_power_factor  (nameplate,
+        #     not the hourly-derated Pmax); the reactive box is widened to ±S.
+        #   • Inverter-based Wind/Solar: a grid-code reactive cap tied to *actual*
+        #     output, |Q| ≤ tan(acos(renewable_power_factor))·P  (so a derated
+        #     farm cannot park at a very low PF); the box is the value at full
+        #     available output.
+        # When apparent_power_limit = false, both fall back to the ±Pmax box.
+        smax_pu  = Inf      # MVA circle radius [pu]   (synchronous only)
+        qp_ratio = Inf      # |Q|/P cap                (renewables only)
+        if apparent_power_limit
+            if row.primary_fuel == "Wind" || row.primary_fuel == "Solar"
+                qp_ratio = tan(acos(renewable_power_factor))
+                qmax_pu, qmin_pu = qp_ratio * pmax_pu, -qp_ratio * pmax_pu
+            else
+                smax_pu = cap_mw > 0 ? (cap_mw / BASEMVA) / rated_power_factor : Inf
+                isfinite(smax_pu) && ((qmax_pu, qmin_pu) = (smax_pu, -smax_pu))
+            end
+        end
+
         # ── Anchor to the day-ahead schedule (redispatch stage) ──────────────
         # When a DA dispatch is supplied, warm-start every unit from it and
         # *freeze* the units that do not provide redispatch (Nuclear, run-of-
@@ -279,6 +403,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             "pg0"           => (frozen_pu !== nothing ? frozen_pu :
                                da_pu     !== nothing ? da_pu     : pmax_pu/2),
             "qmax"          => qmax_pu,   "qmin" => qmin_pu,
+            "smax"          => smax_pu,    # MVA circle radius [pu] (Inf ⇒ none)
+            "qp_ratio"      => qp_ratio,   # |Q|/P cap (Inf ⇒ none, renewables)
             "pg"         => pg_strt,   "qg"   => 0.0,
             "vg"         => 1.0,
             "mbase"      => BASEMVA,
@@ -345,10 +471,13 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     end
 
     # ── Loads ────────────────────────────────────────────────
-    demand_sum  = sum(skipmissing(load_df.demand))
-    const_qd    = tan(acos(0.95))   # Q/P ratio at PF 0.95 — provides reactive sink for line charging
-    loads       = Dict{String,Any}()
-    load_count  = 0
+    # `load_power_factor` is the NET power factor the transmission grid sees at
+    # each load bus (distribution-level PF correction is assumed already applied
+    # below the model boundary).  qd = pd · tan(acos(pf)); pf = 1.0 ⇒ active only.
+    demand_sum   = sum(skipmissing(load_df.demand))
+    const_qd     = tan(acos(load_power_factor))
+    loads        = Dict{String,Any}()
+    load_count   = 0
     for row in eachrow(load_df)
         haskey(bus_idx, row.bus_id) || continue
         row.demand == 0.0 && continue
@@ -364,9 +493,6 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             "qd"       => qd_pu,
             "status"   => 1,
         )
-        # Local shunt capacitor compensates reactive demand so lines carry
-        # only active power — models distributed reactive compensation
-        buses[string(bus_i)]["bs"] += qd_pu
     end
 
     # ── Load-shedding generators ──────────────────────────────
@@ -411,6 +537,11 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         "storage"  => Dict{String,Any}(),
         "switch"   => Dict{String,Any}(),
     )
+
+    # Attach the disaggregated shunt-reactor fleet (absorbs EHV line charging).
+    add_reactor_shunts!(network, buses, branches, bus_idx;
+                        enabled        = reactors_enabled,
+                        in_service_pct = reactor_in_service_pct)
 
     return (
         network  = network,
