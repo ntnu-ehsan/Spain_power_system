@@ -2,8 +2,43 @@
 
 Multi-hour AC OPF of the Spanish peninsular transmission grid, driven by an
 in-house market chain (day-ahead → intraday gates → continuous intraday →
-network redispatch). Configuration lives in `config.toml`; the network is
-assembled in `data_preparation.jl` and solved in `run_opf.jl`.
+balancing → network redispatch). Configuration lives in `config.toml`; the
+network is assembled in `data_preparation.jl` and solved in `run_opf.jl`.
+
+## Market chain stages
+
+The day is cleared by a sequence of markets, each refining the previous one as
+the load/wind/solar forecast is updated, and the final schedule is then made
+network-feasible by the AC redispatch. Every market stage is a **copper-plate**
+economic dispatch (one system-wide power balance per hour, no network limits)
+with reservoir hydro coupled across the 24 hours through the Bellman cost-to-go;
+the redispatch is the only stage with a full AC network.
+
+| # | Stage | Forecast column | Formulation | `config.toml` |
+| - | ----- | --------------- | ----------- | ------------- |
+| 1 | **Day-ahead (DA)** | `DA` (= ES_old `-12` baseline) | clears all 24 h from scratch | `[da]` |
+| 2 | **Intraday ID2** | `ID2` | re-clears all 24 h, anchored to DA | `[id2]` |
+| 3 | **Intraday ID3** | `ID3` | re-clears the last 12 h (12–23), anchored to ID2 | `[id3]` |
+| 4 | **Continuous intraday (CID)** | `CID` | rolling gates 1 h before delivery, anchored to ID3/ID2 | `[cid]` |
+| 5 | **Balancing (BAL)** | `BE` | re-clears all 24 h, anchored to CID | `[balancing]` |
+| 6 | **Redispatch (RD)** | — | AC or DC OPF (`[redispatch].power_flow`), anchored to BAL | `[redispatch]` |
+
+The forecast columns live in the new `Data/ES/<resource>/` files; actual MW at
+each stage is `ES_old "-12" baseline × stage scale-factor`. Each intraday and
+balancing gate is an **adjustment** market, not a fresh re-clear: it minimises
+dispatch cost first (merit order), then — among cost-optimal solutions —
+minimises total movement from the previous gate's schedule, so flexible units
+only move to cover the genuine net forecast change. Nuclear is frozen at its DA
+dispatch from ID2 onward.
+
+**Balancing (stage 5)** is the final adjustment market, cleared after the
+continuous intraday and just before the redispatch. It reads the probabilistic
+`BE` column of the load/solar/wind files and adjusts the CID schedule with the
+same anchored, minimum-movement formulation as the intraday gates. Its cleared
+schedule — and its `BE` profiles — are what the redispatch is then anchored to
+and built on (the redispatch falls back to CID when `[balancing].enabled =
+false`). Per-stage cleared schedules and profiles are written to
+`results/{da,id2,id3,cid,bal}_dispatch.csv` and `…_profiles.csv`.
 
 ## Shunt reactors (EHV line-charging compensation)
 
@@ -136,3 +171,49 @@ lower PF the load reactive (~11.5 GVAr at 0.95) soaks up much of the charging
 itself, so less reactor capacity is needed. Tune `[load]` and `[reactors]`
 together. (Reactive shunts must live in the network `shunt` dict — PowerModels
 ignores bus-level `gs`/`bs`.)
+
+## Generator AVR voltage band
+
+### Why
+A cost-/loss-minimising AC OPF has no incentive to keep voltages near nominal —
+left to itself it rails almost every bus up to the upper voltage limit, because
+higher voltage means lower current and lower losses. Real grids don't behave
+that way: **synchronous machines are voltage-regulated** by their automatic
+voltage regulators (AVRs), which hold the machine terminal (and hence the host
+bus) to a setpoint near nominal. Modelling that regulation pulls the voltage
+profile off the upper rail and onto realistic setpoints.
+
+### Mechanism
+Buses are split into two voltage bands (`make_pm_network` in
+`data_preparation.jl`):
+
+- **AVR-regulated buses** — the slack bus plus every bus hosting a **synchronous
+  machine** (any unit whose `primary_fuel` is *not* Wind or Solar) are held to
+  the tighter `[gen_bus_vmin, gen_bus_vmax]` band, emulating the AVR setpoint.
+- **All other buses** — renewable-only buses (whose reactive is capped at low
+  output, so they cannot firmly regulate voltage) and load buses keep the wider
+  `±voltage_band`.
+
+Renewable-only buses are deliberately left on the wide band: their reactive
+capability is tied to actual output (see *Generator reactive capability* above),
+so a derated wind/solar farm can't be relied on to hold a setpoint the way a
+synchronous machine can. The band is applied in every stage that builds the
+network (the anchored hour-by-hour solves and the Bellman-coupled multi-hour
+solve); it changes only the feasible voltage range, **not the objective**.
+
+Effect on the redispatch profile (full fleet, 48 h): mean bus voltage
+**1.037 → 1.023 pu** and the share of buses sitting at `vmax` **7.8 % → 0.9 %**.
+
+### Configuration
+Controlled in the `[network]` section of `config.toml`:
+
+```toml
+[network]
+voltage_band            = 0.05   # load / renewable-only buses: ±0.05 around 1.0
+gen_bus_voltage_control = true   # hold synchronous + slack buses to a tighter band
+gen_bus_vmin            = 0.98
+gen_bus_vmax            = 1.03
+```
+
+Set `gen_bus_voltage_control = false` to relax this — every bus then uses
+`±voltage_band` (the original behaviour where the profile rails to `vmax`).

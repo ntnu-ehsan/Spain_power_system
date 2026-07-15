@@ -151,6 +151,7 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          crossborder_inj::Union{Dict{String,Float64},Nothing} = nothing,
                          da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          nuclear_da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
+                         nuclear_min_frac::Float64   = 0.0,
                          voltage_band::Float64       = 0.05,
                          line_rating_factor::Float64 = 0.70,
                          reactors_enabled::Bool      = true,
@@ -161,7 +162,18 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          renewable_power_factor::Float64 = 0.95,
                          gen_bus_voltage_control::Bool   = false,
                          gen_bus_vmin::Float64           = 0.98,
-                         gen_bus_vmax::Float64           = 1.03)
+                         gen_bus_vmax::Float64           = 1.03,
+                         # [scenario] overrides (EMPIRE future system; see
+                         # empire_scenario.jl — all `nothing` for the 2024 run):
+                         #   unit_scale    : (fuel, technology) ⇒ capacity factor the
+                         #                   existing unit fleet is scaled by
+                         #   cost_override : (fuel, technology) ⇒ EUR/MWh replacing the
+                         #                   pypsa-2024 marginal-cost table
+                         #   bess_units    : [(bus_id, power_mw, energy_mwh), …] Li-Ion
+                         #                   BESS fleet placed on the grid
+                         unit_scale::Union{Dict{Tuple{String,String},Float64},Nothing} = nothing,
+                         cost_override::Union{Dict{Tuple{String,String},Float64},Nothing} = nothing,
+                         bess_units = nothing)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -178,10 +190,13 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                                 if !(row.primary_fuel == "Wind" || row.primary_fuel == "Solar"))
 
     # Total installed capacity of modelled solar/wind generators (for proportional scaling)
-    total_solar_mw = sum(Float64(row.capacity_mw) for row in eachrow(gen_df)
+    # Per-unit capacity scale factor from the scenario ((fuel, tech) ⇒ factor)
+    uscale(row) = unit_scale === nothing ? 1.0 :
+                  get(unit_scale, (String(row.primary_fuel), String(row.technology)), 1.0)
+    total_solar_mw = sum(Float64(row.capacity_mw) * uscale(row) for row in eachrow(gen_df)
                          if row.primary_fuel == "Solar" && haskey(bus_idx, row.bus_id);
                          init = 0.0)
-    total_wind_mw  = sum(Float64(row.capacity_mw) for row in eachrow(gen_df)
+    total_wind_mw  = sum(Float64(row.capacity_mw) * uscale(row) for row in eachrow(gen_df)
                          if row.primary_fuel == "Wind" && haskey(bus_idx, row.bus_id);
                          init = 0.0)
 
@@ -221,11 +236,16 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         vn     = Float64(row.voltage)
         L      = Float64(row.length)
         z_base = vn^2 / BASEMVA
-        r_pu   = (Float64(row.r_per_length) * L) / z_base
-        x_pu   = max((Float64(row.x_per_length) * L) / z_base, 1e-4)
+        # N identical circuits in parallel: series R,X divide by N; shunt B and
+        # thermal rating (√3·V·Imax per circuit) multiply by N.
+        # N identical circuits in parallel: series R,X divide by N; shunt B and
+        # thermal rating (√3·V·Imax per circuit) multiply by N.
+        nc     = max(Float64(row.circuits), 1.0)
+        r_pu   = (Float64(row.r_per_length) * L) / z_base / nc
+        x_pu   = max((Float64(row.x_per_length) * L) / z_base / nc, 1e-4)
         c_F    = Float64(row.c_per_length) * 1e-9 * L
-        b_C_pu = 2π * FREQ_HZ * c_F * vn^2 / BASEMVA
-        rate   = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor
+        b_C_pu = 2π * FREQ_HZ * c_F * vn^2 / BASEMVA * nc
+        rate   = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc
         br_count += 1
         branches[string(br_count)] = Dict{String,Any}(
             "index"     => br_count,
@@ -281,7 +301,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         vn   = Float64(row.voltage)
         # Rating from terminal voltage and current limit (same voltage/Imax
         # columns as AC lines), expressed in per-unit on the system base.
-        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor
+        # Parallel circuits scale the converter power rating (no series R/X here).
+        nc   = max(Float64(row.circuits), 1.0)
+        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc
         dc_count += 1
         dclines[string(dc_count)] = Dict{String,Any}(
             "index"     => dc_count,
@@ -326,7 +348,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     gen_count = 0
     for row in eachrow(gen_df)
         haskey(bus_idx, row.bus_id) || continue
-        cap_mw = Float64(row.capacity_mw)
+        cap_mw = Float64(row.capacity_mw) * uscale(row)
+        cap_mw > 1e-6 || continue          # tech fully retired in the scenario
         pmax_pu = if row.primary_fuel == "Solar" && isfinite(solar_avail_mw) && total_solar_mw > 0
             min(cap_mw, solar_avail_mw * cap_mw / total_solar_mw) / BASEMVA
         elseif row.primary_fuel == "Wind" && isfinite(wind_avail_mw) && total_wind_mw > 0
@@ -338,6 +361,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                        lowercase(String(row.technology)) == "reservoir"
         c1 = if is_reservoir && !isnothing(hydro_reservoir_cost)
             hydro_reservoir_cost * BASEMVA
+        elseif cost_override !== nothing &&
+               haskey(cost_override, (String(row.primary_fuel), String(row.technology)))
+            cost_override[(String(row.primary_fuel), String(row.technology))] * BASEMVA
         else
             marginal_cost(cost_df, String(row.primary_fuel), String(row.technology)) * BASEMVA
         end
@@ -387,9 +413,14 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                         (String(row.primary_fuel) == "Hydro" &&
                          lowercase(String(row.technology)) == "run_of_river")))
         frozen_pu = nuc_pu !== nothing ? nuc_pu : da_pu
-        pmin_g  = is_frozen ? frozen_pu : 0.0
+        # Nuclear must-run floor: when not frozen (the DA clear), hold nuclear at
+        # >= nuclear_min_frac·Pmax so baseload can't be shut down at the solar peak.
+        nuc_floor = (nuclear_min_frac > 0.0 && String(row.primary_fuel) == "Nuclear") ?
+                    nuclear_min_frac * pmax_pu : 0.0
+        pmin_g  = is_frozen ? frozen_pu : nuc_floor
         pmax_g  = is_frozen ? frozen_pu : pmax_pu
-        pg_strt = frozen_pu !== nothing ? clamp(frozen_pu, 0.0, pmax_pu) : pmax_pu/2
+        pg_strt = frozen_pu !== nothing ? clamp(frozen_pu, 0.0, pmax_pu) :
+                  nuc_floor > 0.0       ? pmax_pu : pmax_pu/2
 
         gen_count += 1
         gens[string(gen_count)] = Dict{String,Any}(
@@ -466,6 +497,45 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                 "model"      => 2,  "ncost" => 2,
                 "cost"       => [0.0, 0.0],
                 "startup"    => 0.0,  "shutdown" => 0.0,
+            )
+        end
+    end
+
+    # ── Li-Ion BESS fleet ([scenario] only) ──────────────────
+    # Each battery is a generator with pmin = −pmax: positive output discharges,
+    # negative charges.  In the copper-plate market stages the daily energy
+    # balance / SOC window is enforced in solve_da (da.jl) via the "energy_mwh"
+    # field; in the redispatch stage the unit is FROZEN at its cleared market
+    # schedule (like nuclear), so the AC OPF cannot re-optimise storage without
+    # an energy constraint.
+    if bess_units !== nothing
+        for b in bess_units
+            haskey(bus_idx, b.bus_id) || continue
+            p_pu   = b.power_mw / BASEMVA
+            name   = "BESS_" * b.bus_id
+            da_pu  = (!isnothing(da_dispatch) && haskey(da_dispatch, name)) ?
+                     da_dispatch[name] / BASEMVA : nothing
+            frozen = da_pu !== nothing
+            gen_count += 1
+            gens[string(gen_count)] = Dict{String,Any}(
+                "index"        => gen_count,
+                "gen_bus"      => bus_idx[b.bus_id],
+                "name"         => name,
+                "fuel"         => "Battery",
+                "technology"   => "Li-Ion",
+                "installed_mw" => b.power_mw,
+                "energy_mwh"   => b.energy_mwh,
+                "pmax"         => frozen ? da_pu :  p_pu,
+                "pmin"         => frozen ? da_pu : -p_pu,
+                "pg"           => frozen ? da_pu : 0.0,
+                "qmax"         => p_pu,   "qmin" => -p_pu,
+                "qg"           => 0.0,
+                "vg"           => 1.0,
+                "mbase"        => BASEMVA,
+                "gen_status"   => 1,
+                "model"        => 2,  "ncost" => 2,
+                "cost"         => [0.0, 0.0],
+                "startup"      => 0.0,  "shutdown" => 0.0,
             )
         end
     end

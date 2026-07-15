@@ -34,14 +34,35 @@ include("data_preparation.jl")
 include("bellman.jl")
 include("crossborder.jl")
 include("da.jl")
+include("empire_scenario.jl")
 
 # ── 1. Config ────────────────────────────────────────────────
 cfg = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
 
 const BELLMAN_BGN_DATE = Date(cfg["bellman"]["bgn_date"])
 const BELLMAN_SSV_STEP = cfg["bellman"]["ssv_step"]
-const BELLMAN_FILE     = joinpath(@__DIR__, cfg["bellman"]["bellman_file"])
-const VOLUME_FILE      = joinpath(@__DIR__, cfg["bellman"]["volume_file"])
+
+# [scenario]: label != "2024" swaps in the EMPIRE future system — the unit
+# fleet is scaled per tech, marginal costs are replaced (incl. CO2 adder),
+# the ES hourly profiles are rescaled, the Li-Ion BESS fleet is added, the
+# Bellman inputs come from the suffixed midterm outputs, and all results go
+# to results/<label>/ (see empire_scenario.jl and config.toml).
+const SCEN_ACTIVE = empire_active(cfg)
+const SCEN_LABEL  = empire_label(cfg)
+const EMP           = SCEN_ACTIVE ? load_empire_scenario(cfg)  : nothing
+const UNIT_SCALE    = SCEN_ACTIVE ? empire_unit_scale(EMP)     : nothing
+const COST_OVERRIDE = SCEN_ACTIVE ? empire_cost_override(EMP)  : nothing
+const BESS_UNITS    = SCEN_ACTIVE ? empire_bess_units(EMP)     : nothing
+const ES_LOAD_SCALE  = SCEN_ACTIVE ? EMP.load_scale_es                    : 1.0
+const ES_SOLAR_SCALE = SCEN_ACTIVE ? get(EMP.growth, "Solar", 1.0)        : 1.0
+const ES_WIND_SCALE  = SCEN_ACTIVE ? get(EMP.growth, "Wind onshore", 1.0) : 1.0
+
+# Scenario runs read the cost-to-go of the matching midterm SDDP run (the
+# suffixed [midterm4] outputs); the 2024 run keeps the [bellman] files.
+const BELLMAN_FILE = joinpath(@__DIR__, SCEN_ACTIVE ?
+    empire_suffixed(cfg["midterm4"]["cuts_out"], cfg)   : cfg["bellman"]["bellman_file"])
+const VOLUME_FILE  = joinpath(@__DIR__, SCEN_ACTIVE ?
+    empire_suffixed(cfg["midterm4"]["volume_out"], cfg) : cfg["bellman"]["volume_file"])
 
 const VOLTAGE_BAND       = Float64(get(get(cfg, "network", Dict()), "voltage_band", 0.05))
 const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
@@ -58,6 +79,10 @@ const LOAD_PF            = Float64(get(get(cfg, "load", Dict()), "power_factor",
 const APPARENT_POWER_LIMIT = get(get(cfg, "generators", Dict()), "apparent_power_limit", true)
 const RATED_PF             = Float64(get(get(cfg, "generators", Dict()), "rated_power_factor", 0.90))
 const RENEWABLE_PF         = Float64(get(get(cfg, "generators", Dict()), "renewable_power_factor", 0.95))
+if SCEN_ACTIVE
+    @printf "Scenario       : %s (EMPIRE period %d, CO2 %.1f EUR/t)\n" SCEN_LABEL EMP.period EMP.co2_price
+    @printf "                 load ×%.3f | solar ×%.3f | wind ×%.3f | BESS %.0f MW / %.0f MWh\n" ES_LOAD_SCALE ES_SOLAR_SCALE ES_WIND_SCALE EMP.storage["ES"].bess_mw EMP.storage["ES"].bess_mwh
+end
 @printf "Voltage band   : ±%.1f %% (%.2f–%.2f pu)\n" (100 * VOLTAGE_BAND) (1 - VOLTAGE_BAND) (1 + VOLTAGE_BAND)
 @printf "Line rating    : %.0f %% of nameplate\n" (100 * LINE_RATING_FACTOR)
 
@@ -66,44 +91,59 @@ const CROSSBORDER = get(get(cfg, "crossborder", Dict()), "enabled", false)
 
 # ── Market-chain stages ──────────────────────────────────────
 # Stage 1 (DA):  copper-plate, 24h Bellman-coupled, DA forecast (-12h) data.
-# Stage 2 (ID):  same copper-plate formulation, -2h forecast data, Nuclear fixed at DA.
-# Stage 3 (CID): same copper-plate formulation, actual (col 23) data, Nuclear fixed at DA.
-# Stage 4 (RD):  AC OPF anchored to CID; Nuclear/Biomass/Coal/ROR frozen at CID (=DA) values.
+# Stage 2-4 (ID2/ID3/CID): same copper-plate formulation, later-gate forecast
+#                data, Nuclear fixed at DA.
+# Stage 5 (BAL): same copper-plate formulation, balancing (BE) data, Nuclear
+#                fixed at DA; anchored to the CID schedule.
+# Stage 6 (RD):  AC OPF anchored to BAL; Nuclear/Biomass/Coal/ROR frozen at BAL (=DA) values.
 const DA_ENABLED  = get(get(cfg, "da",         Dict()), "enabled", true)
+const NUCLEAR_MIN_FRAC = Float64(get(get(cfg, "da", Dict()), "nuclear_min_gen_frac", 0.0))
 const ID2_ENABLED = get(get(cfg, "id2",        Dict()), "enabled", true)
 const ID3_ENABLED = get(get(cfg, "id3",        Dict()), "enabled", true)
 const CID_ENABLED = get(get(cfg, "cid",        Dict()), "enabled", true)
+const BAL_ENABLED = get(get(cfg, "balancing",  Dict()), "enabled", true)
 const RD_ENABLED  = get(get(cfg, "redispatch", Dict()), "enabled", true)
 const RD_WATER_VALUE = lowercase(get(get(cfg, "redispatch", Dict()), "water_value", "constant"))
 const RD_OBJECTIVE   = lowercase(get(get(cfg, "redispatch", Dict()), "objective", "quadratic"))
 const ANCHOR_WEIGHT  = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weight", 0.0))
+# [redispatch].power_flow: "AC" → full nonlinear ACPPowerModel (voltages, reactive
+# power, MVA limits); "DC" → linear DCPPowerModel (active power + angles only, the
+# reactive/voltage knobs become inert).  Selects the PowerModels formulation used
+# by every redispatch solve (constant and piecewise paths).
+const RD_PF_MODEL  = uppercase(get(get(cfg, "redispatch", Dict()), "power_flow", "AC"))
+const RD_PM_TYPE   = RD_PF_MODEL == "DC" ? PowerModels.DCPPowerModel : PowerModels.ACPPowerModel
 
 ID2_ENABLED && !DA_ENABLED  && error("config.toml: [id2].enabled requires [da].enabled")
 ID3_ENABLED && !ID2_ENABLED && error("config.toml: [id3].enabled requires [id2].enabled")
 CID_ENABLED && !DA_ENABLED  && error("config.toml: [cid].enabled requires [da].enabled")
+BAL_ENABLED && !DA_ENABLED  && error("config.toml: [balancing].enabled requires [da].enabled")
 RD_ENABLED  && !DA_ENABLED  && error("config.toml: [redispatch].enabled requires [da].enabled")
 RD_WATER_VALUE ∈ ("constant", "piecewise") ||
     error("config.toml: [redispatch].water_value must be \"constant\" or \"piecewise\"")
 RD_OBJECTIVE ∈ ("quadratic", "cost_weighted") ||
     error("config.toml: [redispatch].objective must be \"quadratic\" or \"cost_weighted\"")
+RD_PF_MODEL ∈ ("AC", "DC") ||
+    error("config.toml: [redispatch].power_flow must be \"AC\" or \"DC\"")
 
-rd_anchor_label() = CID_ENABLED  ? "CID"  :
+rd_anchor_label() = BAL_ENABLED  ? "BAL"  :
+                    CID_ENABLED  ? "CID"  :
                     ID3_ENABLED  ? "ID3"  :
                     ID2_ENABLED  ? "ID2"  : "DA"
 @printf "Day-ahead      : %s\n" (DA_ENABLED  ? "ON (copper-plate, 24h Bellman-coupled)" : "OFF")
 @printf "Intraday (ID2) : %s\n" (ID2_ENABLED ? "ON (copper-plate, Nuclear fixed at DA)" : "OFF")
 @printf "Intraday (ID3) : %s\n" (ID3_ENABLED ? "ON (copper-plate, Nuclear fixed at DA)" : "OFF")
 @printf "Intraday (CID) : %s\n" (CID_ENABLED ? "ON (copper-plate, Nuclear fixed at DA)" : "OFF")
+@printf "Balancing      : %s\n" (BAL_ENABLED ? "ON (copper-plate, Nuclear fixed at DA)" : "OFF")
 @printf "Redispatch     : %s\n" (RD_ENABLED  ?
-    @sprintf("ON  anchor=%s  water_value=%s  objective=%s  w=%.4g",
-             rd_anchor_label(), RD_WATER_VALUE, RD_OBJECTIVE, ANCHOR_WEIGHT) : "OFF")
+    @sprintf("ON  anchor=%s  power_flow=%s  water_value=%s  objective=%s  w=%.4g",
+             rd_anchor_label(), RD_PF_MODEL, RD_WATER_VALUE, RD_OBJECTIVE, ANCHOR_WEIGHT) : "OFF")
 
 # ── 2. Load ES profiles ───────────────────────────────────────────────────────
 # Actual MW at each stage = scale_factor × base_MW, where:
 #   base_MW    : ES_old col "-12" (day-ahead baseline, MW)
 #   scale_factor: stage column (DA/ID2/ID3/CID) from the new ES/ files (0–1 range)
 # DA scale factors are always 1.0, so DA profiles equal the ES_old -12 baseline.
-# Stages modelled: DA → ID2 → ID3 → CID → Redispatch.  BE column is ignored.
+# Stages modelled: DA → ID2 → ID3 → CID → Balancing (BE) → Redispatch.
 TARGET_DAYS = ["2024-07-08", "2024-12-02"]
 ES_OLD_DIR  = joinpath(@__DIR__, "Data", "ES_old")
 ES_NEW_DIR  = joinpath(@__DIR__, "Data", "ES")
@@ -116,19 +156,25 @@ end
 # Returns 24-element vector of MW values for a given stage.
 # new_resource: folder name under Data/ES/      (e.g. "Wind Onshore")
 # old_resource: folder name under Data/ES_old/  (e.g. "Wind")
+# Scenario runs rescale the 2024-actual MW level by the EMPIRE growth factor
+# (load → annual-demand ratio, solar/wind → installed-capacity ratio); the
+# hourly shape and the per-stage forecast factors are kept.
+profile_scale(new_resource) = new_resource == "load"  ? ES_LOAD_SCALE  :
+                              new_resource == "Solar" ? ES_SOLAR_SCALE : ES_WIND_SCALE
 function load_scaled_col(date_str, new_resource, old_resource, stage_col)
     base_df = CSV.read(joinpath(ES_OLD_DIR, old_resource, es_filename(date_str)), DataFrame)
     sort!(base_df, :delivery_time)
     base_mw = Float64.(base_df[!, "-12"])
     scale_df = CSV.read(joinpath(ES_NEW_DIR, new_resource, es_filename(date_str)), DataFrame)
     scale    = Float64.(scale_df[!, stage_col])
-    return base_mw .* scale
+    return base_mw .* scale .* profile_scale(new_resource)
 end
 
 hourly_da_rows  = NamedTuple[]
 hourly_id2_rows = NamedTuple[]
 hourly_id3_rows = NamedTuple[]
 hourly_cid_rows = NamedTuple[]
+hourly_bal_rows = NamedTuple[]
 for date_str in TARGET_DAYS
     load_da   = load_scaled_col(date_str, "load",         "load",  "DA")
     solar_da  = load_scaled_col(date_str, "Solar",        "Solar", "DA")
@@ -142,17 +188,22 @@ for date_str in TARGET_DAYS
     load_cid  = load_scaled_col(date_str, "load",         "load",  "CID")
     solar_cid = load_scaled_col(date_str, "Solar",        "Solar", "CID")
     wind_cid  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "CID")
+    load_bal  = load_scaled_col(date_str, "load",         "load",  "BE")
+    solar_bal = load_scaled_col(date_str, "Solar",        "Solar", "BE")
+    wind_bal  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "BE")
     for h in 0:23
         push!(hourly_da_rows,  (date=date_str, hour=h, load_mw=load_da[h+1],  solar_mw=solar_da[h+1],  wind_mw=wind_da[h+1]))
         push!(hourly_id2_rows, (date=date_str, hour=h, load_mw=load_id2[h+1], solar_mw=solar_id2[h+1], wind_mw=wind_id2[h+1]))
         push!(hourly_id3_rows, (date=date_str, hour=h, load_mw=load_id3[h+1], solar_mw=solar_id3[h+1], wind_mw=wind_id3[h+1]))
         push!(hourly_cid_rows, (date=date_str, hour=h, load_mw=load_cid[h+1], solar_mw=solar_cid[h+1], wind_mw=wind_cid[h+1]))
+        push!(hourly_bal_rows, (date=date_str, hour=h, load_mw=load_bal[h+1], solar_mw=solar_bal[h+1], wind_mw=wind_bal[h+1]))
     end
 end
 hourly_da  = DataFrame(hourly_da_rows);  sort!(hourly_da,  [:date, :hour])
 hourly_id2 = DataFrame(hourly_id2_rows); sort!(hourly_id2, [:date, :hour])
 hourly_id3 = DataFrame(hourly_id3_rows); sort!(hourly_id3, [:date, :hour])
 hourly_cid = DataFrame(hourly_cid_rows); sort!(hourly_cid, [:date, :hour])
+hourly_bal = DataFrame(hourly_bal_rows); sort!(hourly_bal, [:date, :hour])
 
 function print_profile_summary(label, df)
     @printf "%s profiles: %d hours across %d days\n" label nrow(df) length(unique(df.date))
@@ -167,11 +218,14 @@ print_profile_summary("DA",  hourly_da)
 print_profile_summary("ID2", hourly_id2)
 print_profile_summary("ID3", hourly_id3)
 print_profile_summary("CID", hourly_cid)
+print_profile_summary("BAL", hourly_bal)
 
 # ── 3. Solver setup ──────────────────────────────────────────
 PowerModels.silence()
-mkpath(joinpath(@__DIR__, "results"))
-RESULTS = joinpath(@__DIR__, "results")
+# Scenario runs write to results/<label>/ so the 2024 outputs stay untouched.
+RESULTS = SCEN_ACTIVE ? joinpath(@__DIR__, "results", SCEN_LABEL) :
+                        joinpath(@__DIR__, "results")
+mkpath(RESULTS)
 
 # Per-solve Ipopt logs, written here so infeasible hours can be diagnosed.
 # Each file records the full iteration history and Ipopt's final verdict
@@ -247,6 +301,12 @@ branch_rows_all = []
 bus_rows_all    = []
 
 # ── 5. Result processing helper ──────────────────────────────
+# Reactive power getter that coalesces a missing OR NaN value to 0.  DC OPF
+# solutions carry qg/qf keys populated with NaN (there is no reactive power in
+# the linear model); without this, hypot(p, NaN)=NaN poisons every apparent-power
+# and loading_pct figure and silently hides MW overloads.
+reactive_or_zero(d, key) = (q = get(d, key, 0.0); isnan(q) ? 0.0 : q)
+
 # Accepts one hour's solution dict and pushes rows into the accumulators.
 # Returns true on success, false on failure.
 function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
@@ -263,8 +323,8 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 date   = date_str,
                 hour   = hour,
                 bus_id = network["bus"][k]["name"],
-                vm_pu  = round(v["vm"];          digits=4),
-                va_deg = round(rad2deg(v["va"]); digits=3),
+                vm_pu  = round(get(v, "vm", 1.0);      digits=4),   # DC has no vm ⇒ nominal 1.0
+                va_deg = round(rad2deg(v["va"]);       digits=3),
             ))
         end
 
@@ -290,7 +350,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
         for (k, v) in sol_gen
             g        = gens[k]
             pg_mw    = v["pg"] * BASEMVA
-            qg_mvar  = get(v, "qg", 0.0) * BASEMVA
+            qg_mvar  = reactive_or_zero(v, "qg") * BASEMVA
             inst_mw  = g["installed_mw"]
             avail_mw = g["pmax"] * BASEMVA
             util     = avail_mw > 0 ? 100 * pg_mw / avail_mw : 0.0
@@ -333,7 +393,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
         for (k, v) in sol_branch
             br      = branches[k]
             pf_mw   = v["pf"] * BASEMVA
-            qf_mvar = get(v, "qf", 0.0) * BASEMVA
+            qf_mvar = reactive_or_zero(v, "qf") * BASEMVA
             sf_mva  = hypot(pf_mw, qf_mvar)
             rate_mw = br["rate_a"] * BASEMVA
             loading = rate_mw > 0 ? 100 * sf_mva / rate_mw : 0.0
@@ -354,7 +414,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
         for (k, v) in get(sol_hour, "dcline", Dict())
             dc      = dclines[k]
             pf_mw   = v["pf"] * BASEMVA
-            qf_mvar = get(v, "qf", 0.0) * BASEMVA
+            qf_mvar = reactive_or_zero(v, "qf") * BASEMVA
             sf_mva  = hypot(pf_mw, qf_mvar)
             rate_mw = dc["pmaxf"] * BASEMVA
             loading = rate_mw > 0 ? 100 * sf_mva / rate_mw : 0.0
@@ -452,14 +512,26 @@ function gurobi_da(; log_file::Union{String,Nothing} = nothing)
     return optimizer_with_attributes(() -> Gurobi.Optimizer(GRB_ENV), attrs...)
 end
 
+# Redispatch solver selection.  The DC formulation is linear (plus, at most, the
+# convex quadratic anchor term), so it is solved exactly with Gurobi; the
+# nonlinear AC formulation needs the interior-point Ipopt.  `log_file` routes
+# the solver log to the per-solve file either way.
+const RD_SOLVER_NAME = RD_PF_MODEL == "DC" ? "Gurobi" : "Ipopt"
+rd_optimizer_single(; log_file = nothing) =
+    RD_PF_MODEL == "DC" ? gurobi_da(log_file = log_file) : ipopt_single(log_file = log_file)
+rd_optimizer_mn(; log_file = nothing) =
+    RD_PF_MODEL == "DC" ? gurobi_da(log_file = log_file) : ipopt_mn(log_file = log_file)
+
 da_rows_all  = []
 id2_rows_all = []
 id3_rows_all = []
 cid_rows_all = []
+bal_rows_all = []
 da_schedule  = Dict{Tuple{String,Int},Dict{String,Float64}}()
 id2_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 id3_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 cid_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
+bal_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 
 # Helper: build 24 energy-only networks for one day using the given hourly profile.
 # nuclear_sched: the full da_schedule dict — when provided, Nuclear units are frozen
@@ -470,6 +542,7 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                      crossborder_inj = crossborder_inj_for(date_str, ts.hour),
                      nuclear_da_dispatch = nuclear_sched === nothing ? nothing :
                                            get(nuclear_sched, (date_str, ts.hour), nothing),
+                     nuclear_min_frac = NUCLEAR_MIN_FRAC,
                      voltage_band = VOLTAGE_BAND,
                      line_rating_factor = LINE_RATING_FACTOR,
                      reactors_enabled = REACTORS_ENABLED,
@@ -480,7 +553,10 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                      renewable_power_factor = RENEWABLE_PF,
                      gen_bus_voltage_control = GEN_BUS_VCTRL,
                      gen_bus_vmin = GEN_BUS_VMIN,
-                     gen_bus_vmax = GEN_BUS_VMAX)
+                     gen_bus_vmax = GEN_BUS_VMAX,
+                     unit_scale = UNIT_SCALE,
+                     cost_override = COST_OVERRIDE,
+                     bess_units = BESS_UNITS)
      for ts in eachrow(day_ts)]
 end
 
@@ -519,18 +595,26 @@ function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_
     nets = build_da_nets(date_str, day_ts; nuclear_sched = nuclear_sched)
     reservoir_gen_ids = reservoir_ids_of(nets)
 
-    # Map tradable delivery hours → net indices; freeze the rest at prev_schedule.
-    free_set = nothing
-    prev_map = nothing
-    if free_hours_actual !== nothing
-        free_set = Set{Int}()
-        prev_map = Dict{Int,Dict{String,Float64}}()
+    # Map tradable delivery hours → net indices.  Hours NOT tradable at this gate
+    # are frozen at prev_schedule (prev_map); tradable hours are anchored to it
+    # (anchor_map) so the gate adjusts the previous dispatch with minimum movement
+    # rather than re-clearing from scratch.  With prev_schedule given but no
+    # free_hours_actual (e.g. ID2), every hour is tradable and anchored.
+    free_set   = nothing
+    prev_map   = nothing
+    anchor_map = nothing
+    if free_hours_actual !== nothing || prev_schedule !== nothing
+        free_set   = Set{Int}()
+        prev_map   = Dict{Int,Dict{String,Float64}}()
+        anchor_map = Dict{Int,Dict{String,Float64}}()
         for (h_idx, ts) in enumerate(eachrow(day_ts))
-            if ts.hour in free_hours_actual
+            is_free = free_hours_actual === nothing || ts.hour in free_hours_actual
+            ps = prev_schedule === nothing ? nothing : get(prev_schedule, (date_str, ts.hour), nothing)
+            if is_free
                 push!(free_set, h_idx)
-            elseif prev_schedule !== nothing
-                ps = get(prev_schedule, (date_str, ts.hour), nothing)
-                ps !== nothing && (prev_map[h_idx] = ps)
+                ps !== nothing && (anchor_map[h_idx] = ps)
+            elseif ps !== nothing
+                prev_map[h_idx] = ps
             end
         end
     end
@@ -539,7 +623,7 @@ function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_
     t_start  = time()
     result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es,
                         gurobi_da(log_file = log_file);
-                        free_hours = free_set, prev_sched = prev_map)
+                        free_hours = free_set, prev_sched = prev_map, anchor = anchor_map)
     @printf "  %s %s : status=%s  cost=%.0f EUR  (%.1f s)\n" label date_str result.status result.objective (time() - t_start)
     result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
         error("$label dispatch failed for $date_str: $(result.status)")
@@ -551,19 +635,35 @@ end
 # every earlier hour frozen at its already-committed CID value, then commit this
 # hour.  Earlier hours' reservoir use is locked in, so water cannot be reallocated
 # backwards in time — the causality the 1h-before-delivery rule implies.
-function run_cid_rolling!(schedule, rows_acc, date_str, day_ts, bv; nuclear_sched = nothing)
+function run_cid_rolling!(schedule, rows_acc, date_str, day_ts, bv;
+                          nuclear_sched = nothing, anchor_base = nothing)
     nets = build_da_nets(date_str, day_ts; nuclear_sched = nuclear_sched)
     reservoir_gen_ids = reservoir_ids_of(nets)
     H         = length(nets)
     committed = Dict{Int,Dict{String,Float64}}()
     t_start   = time()
+    # prev_full holds the most recent market view of every hour, seeded from the
+    # predecessor stage (anchor_base, a (date,hour)⇒sched lookup).  Each gate
+    # anchors its tradable hours to it with minimum movement, then refreshes it
+    # with its own fresh clear so the next gate adjusts from the latest state.
+    prev_full = Dict{Int,Dict{String,Float64}}()
+    if anchor_base !== nothing
+        for (h_idx, ts) in enumerate(eachrow(day_ts))
+            ps = anchor_base(date_str, ts.hour)
+            ps !== nothing && (prev_full[h_idx] = ps)
+        end
+    end
     for hgate in 1:H
-        free_set = Set(hgate:H)
+        free_set   = Set(hgate:H)
+        anchor_map = Dict(h => prev_full[h] for h in hgate:H if haskey(prev_full, h))
         result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es, gurobi_da();
-                            free_hours = free_set, prev_sched = committed)
+                            free_hours = free_set, prev_sched = committed, anchor = anchor_map)
         result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
             error("CID gate h=$(day_ts.hour[hgate]) failed for $date_str: $(result.status)")
         committed[hgate] = result.sched[hgate]
+        for h in hgate:H
+            prev_full[h] = result.sched[h]
+        end
     end
     @printf "  CID %s : %d rolling gates solved  (%.1f s)\n" date_str H (time() - t_start)
     store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, committed)
@@ -585,8 +685,11 @@ if ID2_ENABLED
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly_id2)
+        # All 24 hours tradable, anchored to the DA schedule (minimum-movement
+        # adjustment for the ID2 forecast update rather than a fresh re-clear).
         run_copper_plate!(id2_schedule, id2_rows_all, "ID2", date_str, day_ts, bv, "id2";
-                          nuclear_sched = da_schedule)
+                          nuclear_sched = da_schedule,
+                          prev_schedule = da_schedule)
     end
 end
 
@@ -613,14 +716,39 @@ if CID_ENABLED
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly_cid)
+        # CID's predecessor view: ID3 where it traded (hours 12–23), else ID2,
+        # else DA — the same precedence the redispatch anchor uses.
+        cid_anchor_base(d, h) = ID3_ENABLED ? (id3_sched_for(d, h) !== nothing ? id3_sched_for(d, h) :
+                                               ID2_ENABLED ? id2_sched_for(d, h) : da_sched_for(d, h)) :
+                                ID2_ENABLED ? id2_sched_for(d, h) : da_sched_for(d, h)
         run_cid_rolling!(cid_schedule, cid_rows_all, date_str, day_ts, bv;
-                         nuclear_sched = da_schedule)
+                         nuclear_sched = da_schedule, anchor_base = cid_anchor_base)
     end
 end
 
 cid_sched_for(date_str, hour) = get(cid_schedule, (date_str, hour), nothing)
-# Redispatch anchors to the last cleared schedule: CID > ID3 > ID2 > DA.
-rd_sched_for(date_str, hour) = CID_ENABLED  ? cid_sched_for(date_str, hour)  :
+
+if BAL_ENABLED
+    println("\n── Stage 5: Balancing market (copper-plate, Nuclear fixed at DA) ──")
+    # Predecessor schedule the balancing gate adjusts: the latest market view
+    # available (CID > ID3 > ID2 > DA).  All 24 hours are tradable and anchored
+    # to it with minimum movement — the same formulation as the ID2 intraday gate.
+    pre_bal_schedule = CID_ENABLED ? cid_schedule :
+                       ID3_ENABLED ? id3_schedule :
+                       ID2_ENABLED ? id2_schedule : da_schedule
+    for date_str in TARGET_DAYS
+        bv     = day_bellman[date_str]
+        day_ts = filter(r -> r.date == date_str, hourly_bal)
+        run_copper_plate!(bal_schedule, bal_rows_all, "BAL", date_str, day_ts, bv, "bal";
+                          nuclear_sched = da_schedule,
+                          prev_schedule = pre_bal_schedule)
+    end
+end
+
+bal_sched_for(date_str, hour) = get(bal_schedule, (date_str, hour), nothing)
+# Redispatch anchors to the last cleared schedule: BAL > CID > ID3 > ID2 > DA.
+rd_sched_for(date_str, hour) = BAL_ENABLED  ? bal_sched_for(date_str, hour)  :
+                                CID_ENABLED  ? cid_sched_for(date_str, hour)  :
                                 ID3_ENABLED  ? id3_sched_for(date_str, hour)  :
                                 ID2_ENABLED  ? id2_sched_for(date_str, hour)  :
                                                da_sched_for(date_str, hour)
@@ -642,6 +770,9 @@ rd_sched_for(date_str, hour) = CID_ENABLED  ? cid_sched_for(date_str, hour)  :
 # selects the network for multinetwork (Bellman) models.
 function add_gen_capability!(pm, gen_dict; nw = PowerModels.nw_id_default)
     APPARENT_POWER_LIMIT || return
+    # DC models carry no reactive power (no qg variable), so the MVA capability
+    # circle and the reactive grid-code cap are meaningless — skip them.
+    pm isa PowerModels.AbstractActivePowerModel && return
     for (_, g) in gen_dict
         i  = g["index"]
         pg = PowerModels.var(pm, nw, :pg, i)
@@ -661,8 +792,8 @@ end
 
 # Plain AC OPF that also enforces the generator MVA limits (when enabled).
 function rd_solve_ac_opf(network, optimizer)
-    APPARENT_POWER_LIMIT || return solve_ac_opf(network, optimizer)
-    pm = PowerModels.instantiate_model(network, PowerModels.ACPPowerModel, PowerModels.build_opf)
+    APPARENT_POWER_LIMIT || return PowerModels.solve_opf(network, RD_PM_TYPE, optimizer)
+    pm = PowerModels.instantiate_model(network, RD_PM_TYPE, PowerModels.build_opf)
     add_gen_capability!(pm, network["gen"])
     return PowerModels.optimize_model!(pm; optimizer = optimizer)
 end
@@ -671,7 +802,7 @@ function solve_anchored_opf(network, gens, optimizer, sched)
     if sched === nothing || (RD_OBJECTIVE == "quadratic" && ANCHOR_WEIGHT <= 0)
         return rd_solve_ac_opf(network, optimizer)
     end
-    pm = PowerModels.instantiate_model(network, PowerModels.ACPPowerModel, PowerModels.build_opf)
+    pm = PowerModels.instantiate_model(network, RD_PM_TYPE, PowerModels.build_opf)
     add_gen_capability!(pm, gens)
 
     if RD_OBJECTIVE == "quadratic"
@@ -706,20 +837,22 @@ function solve_anchored_opf(network, gens, optimizer, sched)
     return PowerModels.optimize_model!(pm; optimizer = optimizer)
 end
 
-# ── 7. Stage 4 — Redispatch (AC OPF anchored to CID/ID/DA schedule) ──
-# Uses CID actual values for wind/solar/load and anchors to the last cleared schedule.
-n_total  = nrow(hourly_cid)
+# ── 7. Stage 6 — Redispatch (AC OPF anchored to BAL/CID/ID/DA schedule) ──
+# Uses the final-stage wind/solar/load profiles (balancing BE values when the
+# balancing stage is on, else CID) and anchors to the last cleared schedule.
+hourly_rd = BAL_ENABLED ? hourly_bal : hourly_cid
+n_total  = nrow(hourly_rd)
 n_solved = 0
 
 if RD_ENABLED
-println("\n── Stage 4: Redispatch (AC OPF anchored to $(rd_anchor_label())) ──")
+println("\n── Stage 6: Redispatch ($(RD_PF_MODEL) OPF via $(RD_SOLVER_NAME), anchored to $(rd_anchor_label())) ──")
 
 # ────────────────────────────────────────────────────────────
 # Method A — constant water value (hour-by-hour)
 # ────────────────────────────────────────────────────────────
 if RD_WATER_VALUE == "constant"
 
-    for ts in eachrow(hourly_cid)
+    for ts in eachrow(hourly_rd)
         date_str = ts.date
         hour     = ts.hour
         bv       = day_bellman[date_str]
@@ -739,11 +872,14 @@ if RD_WATER_VALUE == "constant"
                               renewable_power_factor = RENEWABLE_PF,
                               gen_bus_voltage_control = GEN_BUS_VCTRL,
                               gen_bus_vmin = GEN_BUS_VMIN,
-                              gen_bus_vmax = GEN_BUS_VMAX)
+                              gen_bus_vmax = GEN_BUS_VMAX,
+                              unit_scale = UNIT_SCALE,
+                              cost_override = COST_OVERRIDE,
+                              bess_units = BESS_UNITS)
         (; network, gens, branches, dclines, loads) = net
 
         log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_h$(lpad(hour, 2, '0')).log")
-        result = solve_anchored_opf(network, gens, ipopt_single(log_file = log_file),
+        result = solve_anchored_opf(network, gens, rd_optimizer_single(log_file = log_file),
                                     rd_sched_for(date_str, hour))
         status = string(result["termination_status"])
 
@@ -772,7 +908,7 @@ elseif RD_WATER_VALUE == "piecewise"
 
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
-        day_ts = filter(r -> r.date == date_str, hourly_cid)
+        day_ts = filter(r -> r.date == date_str, hourly_rd)
 
         @printf "\n[Piecewise] %s  stage=%d  V_ES_start=%.0f MWh\n" date_str bv.stage bv.v_es
 
@@ -794,7 +930,10 @@ elseif RD_WATER_VALUE == "piecewise"
                                 renewable_power_factor = RENEWABLE_PF,
                                 gen_bus_voltage_control = GEN_BUS_VCTRL,
                                 gen_bus_vmin = GEN_BUS_VMIN,
-                                gen_bus_vmax = GEN_BUS_VMAX)
+                                gen_bus_vmax = GEN_BUS_VMAX,
+                                unit_scale = UNIT_SCALE,
+                                cost_override = COST_OVERRIDE,
+                                bess_units = BESS_UNITS)
                 for ts in eachrow(day_ts)]
 
         # Generator IDs (Int) for Spanish reservoir hydro — same topology every hour
@@ -920,11 +1059,11 @@ elseif RD_WATER_VALUE == "piecewise"
             JuMP.@objective(pm.model, Min, current_obj + θ_future + ANCHOR_WEIGHT * anchor_pen)
         end
 
-        @printf "  Solving 24-hour coupled OPF (Ipopt progress below)...\n"
+        @printf "  Solving 24-hour coupled OPF with %s...\n" RD_SOLVER_NAME
         mn_log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_piecewise.log")
         t_start = time()
-        result  = PowerModels.solve_model(mn_data, ACPPowerModel,
-                                          ipopt_mn(log_file = mn_log_file), build_mn_bellman;
+        result  = PowerModels.solve_model(mn_data, RD_PM_TYPE,
+                                          rd_optimizer_mn(log_file = mn_log_file), build_mn_bellman;
                                           multinetwork=true)
         elapsed = time() - t_start
         status  = string(result["termination_status"])
@@ -993,6 +1132,15 @@ if CID_ENABLED
     CSV.write(joinpath(RESULTS, "cid_dispatch.csv"), cid_df)
     CSV.write(joinpath(RESULTS, "cid_profiles.csv"), hourly_cid)
     @printf "  cid_dispatch.csv : %d rows\n" nrow(cid_df)
+end
+
+# Stage 5 — Balancing cleared schedule + load profile
+if BAL_ENABLED
+    bal_df = DataFrame(bal_rows_all)
+    isempty(bal_rows_all) || sort!(bal_df, [:date, :hour, order(:dispatch_mw, rev=true)])
+    CSV.write(joinpath(RESULTS, "bal_dispatch.csv"), bal_df)
+    CSV.write(joinpath(RESULTS, "bal_profiles.csv"), hourly_bal)
+    @printf "  bal_dispatch.csv : %d rows\n" nrow(bal_df)
 end
 
 # Stage 5 — redispatch (AC-feasible) solution

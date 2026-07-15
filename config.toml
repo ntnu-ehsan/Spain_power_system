@@ -2,6 +2,30 @@
 # Spain Power System — OPF configuration
 # ============================================================
 
+[scenario]
+# ── Scenario selector (shared by the midterm SDDP and the market chain) ─────
+# label = "2024" reproduces the original behaviour exactly (all 2024 inputs,
+# no file suffix).  Any other label activates the EMPIRE-based future system:
+#   • installed capacities per zone/tech   ← <empire_dir>/Output/genInstalledCap.tab
+#   • marginal costs                       ← <empire_dir>/Output/marginal_costs.csv
+#                                            + CO2 adder (3.6/η)·content·price from
+#                                            the Input/Tab files (EMPIRE ran with an
+#                                            emission cap, so its costs carry no CO2)
+#   • annual demand per zone               ← Input/Tab/Node_ElectricAnnualDemand.tab
+#   • cross-zone NTCs                      ← Output/transmissionInstalledCap.tab
+#   • pumped-hydro + Li-Ion BESS           ← Output/stor{PW,EN}InstalledCap.tab
+# All hourly shapes (EDF/EMPIRE weather years, Profile-Iberia, the ES/ES_old
+# forecast factors), the bus-level network topology and the reservoir
+# volumes/inflows stay at their 2024 sources.  The bus-level Spanish fleet is
+# scaled per technology by the EMPIRE growth ratio (installed cap at `period`
+# ÷ EMPIRE 2024 initial cap), so unit siting follows today's fleet.
+# Every output (Bellman cuts, volume trajectory, cut JSON, diagnostics) gets
+# the suffix "_<label>", and the market chain writes to results/<label>/ and
+# reads its Bellman inputs from the suffixed [midterm4] outputs automatically.
+label      = "GoRES"             # e.g. "NECP2035"
+empire_dir = "Data/2035/GoRES"   # EMPIRE run (Input/Tab + Output)
+period     = 2                            # EMPIRE period index: 2 = 2030-2035
+
 [network]
 # Operator-tunable network security limits applied when assembling the grid.
 #
@@ -14,8 +38,8 @@
 #                         nameplate rating made available to the OPF, derated for
 #                         N-1 / reliability margin.  Applies to AC lines,
 #                         transformers and HVDC links.  0.70 ⇒ 70 % of nameplate.
-voltage_band       = 0.05
-line_rating_factor = 0.80
+voltage_band       = 0.1
+line_rating_factor = 3.5
 
 # Generator voltage regulation (AVR).  Synchronous-machine buses (and the slack)
 # are voltage-regulated, so hold them to a tighter band than the load buses — the
@@ -94,6 +118,12 @@ volume_file  = "Data/Volume_Scen0_OUT.csv"
 # a fixed import (see [crossborder]).  Uses the DA forecast for wind, solar and
 # load: ES_old col "-12" × DA scale factor (always 1.0).
 enabled = true
+# Nuclear must-run floor: minimum stable generation as a fraction of available
+# Pmax, so baseload nuclear cannot be backed off at the solar peak (it holds
+# >= this level all day and RES is curtailed instead).  0.0 = no floor (old
+# behaviour, nuclear free to shut down).  The DA sets the profile; the intraday
+# gates and redispatch freeze nuclear at that DA value.
+nuclear_min_gen_frac = 0.8
 
 [id2]
 # ── Stage 2: Intraday market — second gate ───────────────────────────────────
@@ -122,6 +152,18 @@ enabled = true
 # redispatch.  For the first 12 hours its predecessor is ID2 (no ID3 there).
 enabled = true
 
+[balancing]
+# ── Stage 5: Balancing market ────────────────────────────────────────────────
+# Final adjustment market, cleared after the continuous intraday and just before
+# the network redispatch.  Same copper-plate formulation as the intraday gates:
+# all 24 hours are tradable and anchored to the CID schedule with minimum
+# movement (cost-optimal first, then least deviation), so it only adjusts the
+# dispatch to cover the balancing forecast update.  Probabilistic load/solar/wind
+# changes are read from the "BE" column of the new ES files (ES_old col "-12" ×
+# BE factor).  Nuclear stays frozen at its DA dispatch.  The cleared balancing
+# schedule — and the BE profiles — anchor the redispatch.  Requires [da].enabled.
+enabled = true
+
 [crossborder]
 # Fix the market-cleared FR/PT import/export schedule at the border buses.
 # Reads Data/crossborder.csv and injects each country's net exchange as a
@@ -137,6 +179,19 @@ enabled = true
 # plus curtailable Wind and Solar) is free to be re-dispatched.
 #   enabled = false → run the day-ahead stage only.
 enabled = true
+
+# Network model used to make the anchored schedule feasible:
+#   "AC" — full nonlinear AC OPF (Ipopt): bus voltages, reactive power and the
+#          apparent-power (MVA) thermal / generator-capability limits are all
+#          enforced.  This is the reactive-realism path.
+#   "DC" — linear DC OPF: active power and bus angles only.  Voltages and
+#          reactive power are not modelled, thermal limits act on the active
+#          (MW) flow, and the [network].voltage_band, [reactors], [load] and
+#          [generators] reactive knobs have no effect.  Much faster and feasible
+#          in cases where the AC problem is not, at the cost of reactive/voltage
+#          security.  Being linear (LP/convex QP with the quadratic anchor), it
+#          is solved exactly with Gurobi instead of Ipopt.
+power_flow = "DC"
 
 # Reservoir hydro opportunity cost during redispatch:
 #   "constant"  — binding cut slope at V_ES_start used as a fixed marginal cost
@@ -154,3 +209,72 @@ water_value = "constant"
 #                     at the water value.
 objective     = "quadratic"
 anchor_weight = 0.8
+
+[midterm]
+# ── Mid-term hydro scheduling (in-house Bellman cuts via SDDP) ───────────────
+# A 3-zone (FR/ES/PT) weekly hydro-thermal SDDP that computes the Bellman cuts
+# itself from Data/smspp_in + Data/ts, replacing the SMS++ output.  Missing
+# FR/PT time series are synthesised from the ES shapes rescaled to each unit's
+# annual Energy/Capacity.  Run with:  julia --project=. midterm_sddp.jl
+# To use its cuts in the market chain, point [bellman].bellman_file and
+# volume_file at the two outputs below.
+n_stages    = 78         # weekly stages → Timestep 0..77 in the cut file
+block_hours = 2          # within-week time step [h]; must divide 24
+iterations  = 150        # SDDP training iterations
+voll        = 3000.0     # unserved-energy penalty [EUR/MWh]
+solver      = "gurobi"   # "gurobi" | "highs"
+sim_year    = 1982       # climate year for the Volume_Scen0 trajectory
+year_stride = 1          # use every k-th climate year (1 = all 37 scenarios)
+seed        = 1234
+cuts_out    = "Data/BellmanValuesOUT_sddp.csv"
+volume_out  = "Data/Volume_Scen0_OUT_sddp.csv"
+
+[midterm4]
+# ── Mid-term hydro scheduling, 4-node 2024 system (in-house SDDP) ────────────
+# ES / PT / FR / EU (rest of Europe) on the real ~2024 system: capacities from
+# Data/Generation.csv, NTCs from Data/Transmission.csv, pumped storage from
+# Data/Storage.csv, costs from Data/generation_cost_pypsa_2024.csv, and hourly
+# EMPIRE series (Data/ts/EMPIRE, 2015–2019 = 5 joint weather scenarios).
+# 3 reservoir states (ES, FR, EU); PT turbines a weekly inflow budget.
+# Run with:  julia --project=. midterm_sddp4.jl   ("resim" arg → diagnostics)
+n_stages    = 78         # weekly stages → Timestep 0..77 in the cut file
+block_hours = 2          # within-week time step [h]; must divide 24
+iterations  = 60         # SDDP iterations per run (use "cont" arg to add more)
+voll        = 3000.0     # unserved-energy penalty [EUR/MWh]
+solver      = "gurobi"   # "gurobi" | "highs"
+sim_year    = 1982       # EDF climate year for the exported volume trajectory
+seed        = 1234
+cuts_out    = "Data/BellmanValuesOUT_sddp4.csv"
+volume_out  = "Data/Volume_Scen0_OUT_sddp4.csv"
+
+[midterm4.reservoir]
+# Seasonal reservoir sizes (public data): FR ≈ French lakes; EU ≈ Norway 87 +
+# Sweden 34 + Alps/Italy ≈ 24 TWh.  fill0 = fraction full at the July start.
+vmax_twh = { FR = 3.6, EU = 145.0 }   # ES comes from SS_SeasonalStorage.csv
+fill0    = { FR = 0.65, EU = 0.65 }
+
+[midterm4.availability]
+# Mean availability (maintenance + forced outages) applied to thermal capacity.
+# Nuclear 0.90 is the non-French fleets (Nordics/BE/CZ/CH ran ~85-92 % in 2024);
+# the French fleet is overridden per zone below.  Conventional thermal ~90 %.
+Nuclear    = 0.90
+Coal       = 0.90
+Lignite    = 0.90
+"Gas CCGT" = 0.90
+"Gas OCGT" = 0.95
+Oil        = 0.90
+Bio        = 0.85
+Waste      = 0.85
+Geo        = 0.90
+
+[midterm4.availability.FR]
+# Zone override: French nuclear ran at ~70 % CF in 2024 (heavy maintenance).
+Nuclear    = 0.85
+
+[midterm4.gas_cost]
+# Zone-specific 2024 gas marginal cost [EUR/MWh_el]: Iberia buys on MIBGAS
+# (~31 EUR/MWh_th) vs TTF (~34) for FR/EU; cost = fuel/eta + CO2 + VOM.
+# Replaces the single pypsa CCGT figure (93.16, near-tied with coal 94.01)
+# that pinned every zone's marginal price at ~93 EUR/MWh.
+ccgt = { ES = 78.0, PT = 78.0, FR = 87.0, EU = 87.0 }
+ocgt = { ES = 105.0, PT = 105.0, FR = 117.0, EU = 117.0 }
