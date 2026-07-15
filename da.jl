@@ -51,6 +51,14 @@ function solve_da(nets, reservoir_gen_ids::Vector{Int}, cuts, v_es_0::Float64, o
     # from the assembled network (fixed cross-border imports carry pmin == pmax,
     # so they enter the balance as a constant supply term automatically).
     pg = Dict{Tuple{Int,String},JuMP.VariableRef}()
+    # Companion index keyed by (hour, unit NAME).  The integer dict key `k` is a
+    # per-hour sequential counter that is NOT stable across hours: cross-border
+    # (XB_*) generators are added only for import hours, so when a border's net
+    # exchange flips sign within the day the count changes and every unit appended
+    # afterwards (the BESS fleet) is re-keyed.  Any constraint that couples a unit
+    # across hours (the battery SOC/energy-neutrality below) must therefore look
+    # the variable up by its stable name, not by hour-1's integer key.
+    pg_by_name = Dict{Tuple{Int,String},JuMP.VariableRef}()
     for h in 1:H
         frozen = !(h in free)
         ps     = (frozen && prev_sched !== nothing) ? get(prev_sched, h, nothing) : nothing
@@ -58,6 +66,7 @@ function solve_da(nets, reservoir_gen_ids::Vector{Int}, cuts, v_es_0::Float64, o
             v = JuMP.@variable(model, lower_bound = g["pmin"], upper_bound = g["pmax"])
             JuMP.set_start_value(v, g["pg"])
             pg[(h, k)] = v
+            pg_by_name[(h, g["name"])] = v
             if frozen
                 mw     = ps === nothing ? nothing : get(ps, g["name"], nothing)
                 fixval = mw === nothing ? g["pg"] : mw / BASEMVA
@@ -104,14 +113,15 @@ function solve_da(nets, reservoir_gen_ids::Vector{Int}, cuts, v_es_0::Float64, o
     # round-trip loss is second order at the fleet sizes EMPIRE builds.  Frozen
     # hours participate through their fixed pg, so rolling CID gates cannot
     # reallocate energy backwards in time.
-    for (k, g) in nets[1].gens
+    for (_, g) in nets[1].gens
         g["fuel"] == "Battery" || continue
+        name  = g["name"]                         # stable across hours (unlike key k)
         e_puh = g["energy_mwh"] / BASEMVA
         soc0  = 0.5 * e_puh
         for h in 1:H
-            JuMP.@constraint(model, 0.0 <= soc0 - sum(pg[(j, k)] for j in 1:h) <= e_puh)
+            JuMP.@constraint(model, 0.0 <= soc0 - sum(pg_by_name[(j, name)] for j in 1:h) <= e_puh)
         end
-        JuMP.@constraint(model, sum(pg[(j, k)] for j in 1:H) == 0.0)
+        JuMP.@constraint(model, sum(pg_by_name[(j, name)] for j in 1:H) == 0.0)
     end
 
     # Primary objective: linear generation cost (reservoir cost is 0 here) + future
