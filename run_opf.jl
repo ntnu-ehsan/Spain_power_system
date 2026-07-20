@@ -35,6 +35,7 @@ include("bellman.jl")
 include("crossborder.jl")
 include("da.jl")
 include("empire_scenario.jl")
+include("empire_nodal.jl")
 
 # ── 1. Config ────────────────────────────────────────────────
 cfg = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
@@ -52,7 +53,19 @@ const SCEN_LABEL  = empire_label(cfg)
 const EMP           = SCEN_ACTIVE ? load_empire_scenario(cfg)  : nothing
 const UNIT_SCALE    = SCEN_ACTIVE ? empire_unit_scale(EMP)     : nothing
 const COST_OVERRIDE = SCEN_ACTIVE ? empire_cost_override(EMP)  : nothing
-const BESS_UNITS    = SCEN_ACTIVE ? empire_bess_units(EMP)     : nothing
+# [scenario].disaggregation: "nodal" (default) maps the EMPIRE expansion onto
+# the grid at NUTS3 resolution — per-unit capacity factors, greenfield units,
+# intra-ES corridor reinforcement of line ratings, and regional BESS siting
+# (empire_nodal.jl).  "zonal" keeps the original national per-tech scaling.
+const NODAL_ACTIVE  = SCEN_ACTIVE &&
+    lowercase(String(get(cfg["scenario"], "disaggregation", "nodal"))) == "nodal"
+const NODAL         = NODAL_ACTIVE ? build_nodal_disaggregation(cfg, EMP) : nothing
+const UNIT_SCALE_ID = NODAL_ACTIVE ? NODAL.unit_scale : nothing
+const EXTRA_UNITS   = NODAL_ACTIVE ? NODAL.new_units  : nothing
+const LINE_SCALE    = NODAL_ACTIVE ? NODAL.line_scale : nothing
+const EXTRA_LINES   = NODAL_ACTIVE ? NODAL.new_lines  : nothing
+const BESS_UNITS    = NODAL_ACTIVE ? NODAL.bess :
+                      SCEN_ACTIVE  ? empire_bess_units(EMP) : nothing
 const ES_LOAD_SCALE  = SCEN_ACTIVE ? EMP.load_scale_es                    : 1.0
 const ES_SOLAR_SCALE = SCEN_ACTIVE ? get(EMP.growth, "Solar", 1.0)        : 1.0
 const ES_WIND_SCALE  = SCEN_ACTIVE ? get(EMP.growth, "Wind onshore", 1.0) : 1.0
@@ -82,6 +95,11 @@ const RENEWABLE_PF         = Float64(get(get(cfg, "generators", Dict()), "renewa
 if SCEN_ACTIVE
     @printf "Scenario       : %s (EMPIRE period %d, CO2 %.1f EUR/t)\n" SCEN_LABEL EMP.period EMP.co2_price
     @printf "                 load ×%.3f | solar ×%.3f | wind ×%.3f | BESS %.0f MW / %.0f MWh\n" ES_LOAD_SCALE ES_SOLAR_SCALE ES_WIND_SCALE EMP.storage["ES"].bess_mw EMP.storage["ES"].bess_mwh
+    if NODAL_ACTIVE
+        @printf "                 NUTS3 nodal disaggregation: %d unit factors | %d new units (%.0f MW) | %d reinforced lines | %d new corridors | %d BESS sites\n" length(NODAL.unit_scale) nrow(NODAL.new_units) sum(NODAL.new_units.capacity_mw; init = 0.0) length(NODAL.line_scale) nrow(NODAL.new_lines) length(NODAL.bess)
+    else
+        println("                 zonal disaggregation (national per-tech scaling)")
+    end
 end
 @printf "Voltage band   : ±%.1f %% (%.2f–%.2f pu)\n" (100 * VOLTAGE_BAND) (1 - VOLTAGE_BAND) (1 + VOLTAGE_BAND)
 @printf "Line rating    : %.0f %% of nameplate\n" (100 * LINE_RATING_FACTOR)
@@ -95,7 +113,8 @@ const CROSSBORDER = get(get(cfg, "crossborder", Dict()), "enabled", false)
 #                data, Nuclear fixed at DA.
 # Stage 5 (BAL): same copper-plate formulation, balancing (BE) data, Nuclear
 #                fixed at DA; anchored to the CID schedule.
-# Stage 6 (RD):  AC OPF anchored to BAL; Nuclear/Biomass/Coal/ROR frozen at BAL (=DA) values.
+# Stage 6 (RD):  AC OPF anchored to BAL; Nuclear/Biomass/Coal/ROR frozen at BAL (=DA) values;
+#                BESS free within ±rated power, anchored to its BAL schedule.
 const DA_ENABLED  = get(get(cfg, "da",         Dict()), "enabled", true)
 const NUCLEAR_MIN_FRAC = Float64(get(get(cfg, "da", Dict()), "nuclear_min_gen_frac", 0.0))
 const ID2_ENABLED = get(get(cfg, "id2",        Dict()), "enabled", true)
@@ -113,11 +132,44 @@ const ANCHOR_WEIGHT  = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weigh
 const RD_PF_MODEL  = uppercase(get(get(cfg, "redispatch", Dict()), "power_flow", "AC"))
 const RD_PM_TYPE   = RD_PF_MODEL == "DC" ? PowerModels.DCPPowerModel : PowerModels.ACPPowerModel
 
-ID2_ENABLED && !DA_ENABLED  && error("config.toml: [id2].enabled requires [da].enabled")
-ID3_ENABLED && !ID2_ENABLED && error("config.toml: [id3].enabled requires [id2].enabled")
-CID_ENABLED && !DA_ENABLED  && error("config.toml: [cid].enabled requires [da].enabled")
-BAL_ENABLED && !DA_ENABLED  && error("config.toml: [balancing].enabled requires [da].enabled")
-RD_ENABLED  && !DA_ENABLED  && error("config.toml: [redispatch].enabled requires [da].enabled")
+# ── Standalone load-flow / single-hour options ───────────────────────────────
+# [redispatch].from_saved: run ONLY the network load flow (redispatch), reading
+# the anchor schedule from a previous run's <stage>_dispatch.csv in RESULTS
+# instead of re-clearing the market stages.  "" = run the full chain.  A stage
+# name ("DA"|"ID2"|"ID3"|"CID"|"BAL") skips stages 1–5 and anchors the load flow
+# to that saved schedule.  Bellman water values are recomputed here — that is
+# cheap and independent of the market clearing.
+const RD_FROM_SAVED        = uppercase(strip(get(get(cfg, "redispatch", Dict()), "from_saved", "")))
+const RD_FROM_SAVED_ACTIVE = RD_FROM_SAVED != ""
+const RUN_MARKET           = !RD_FROM_SAVED_ACTIVE
+RD_FROM_SAVED ∈ ("", "DA", "ID2", "ID3", "CID", "BAL") ||
+    error("config.toml: [redispatch].from_saved must be \"\" or one of DA/ID2/ID3/CID/BAL")
+
+# [redispatch].only: restrict the load flow to a single delivery hour (or day).
+# "" = every hour of every TARGET_DAY.  "2024-07-08 14" = that date+hour only.
+# "2024-07-08" = all 24 hours of that day only.
+const RD_ONLY = String(strip(get(get(cfg, "redispatch", Dict()), "only", "")))
+const RD_ONLY_DATE, RD_ONLY_HOUR = let
+    if RD_ONLY == ""
+        (nothing, nothing)
+    else
+        parts = split(RD_ONLY)
+        (String(parts[1]), length(parts) >= 2 ? parse(Int, parts[2]) : nothing)
+    end
+end
+
+# Market-stage dependency checks apply only when the market chain actually runs.
+if RUN_MARKET
+    ID2_ENABLED && !DA_ENABLED  && error("config.toml: [id2].enabled requires [da].enabled")
+    ID3_ENABLED && !ID2_ENABLED && error("config.toml: [id3].enabled requires [id2].enabled")
+    CID_ENABLED && !DA_ENABLED  && error("config.toml: [cid].enabled requires [da].enabled")
+    BAL_ENABLED && !DA_ENABLED  && error("config.toml: [balancing].enabled requires [da].enabled")
+    RD_ENABLED  && !DA_ENABLED  && error("config.toml: [redispatch].enabled requires [da].enabled")
+end
+RD_FROM_SAVED_ACTIVE && !RD_ENABLED &&
+    error("config.toml: [redispatch].from_saved is set but [redispatch].enabled = false")
+RD_ONLY_HOUR !== nothing && RD_WATER_VALUE == "piecewise" &&
+    error("config.toml: [redispatch].only with a single hour needs water_value=\"constant\" (piecewise couples all 24 h)")
 RD_WATER_VALUE ∈ ("constant", "piecewise") ||
     error("config.toml: [redispatch].water_value must be \"constant\" or \"piecewise\"")
 RD_OBJECTIVE ∈ ("quadratic", "cost_weighted") ||
@@ -125,7 +177,8 @@ RD_OBJECTIVE ∈ ("quadratic", "cost_weighted") ||
 RD_PF_MODEL ∈ ("AC", "DC") ||
     error("config.toml: [redispatch].power_flow must be \"AC\" or \"DC\"")
 
-rd_anchor_label() = BAL_ENABLED  ? "BAL"  :
+rd_anchor_label() = RD_FROM_SAVED_ACTIVE ? "$(RD_FROM_SAVED) (saved)" :
+                    BAL_ENABLED  ? "BAL"  :
                     CID_ENABLED  ? "CID"  :
                     ID3_ENABLED  ? "ID3"  :
                     ID2_ENABLED  ? "ID2"  : "DA"
@@ -137,6 +190,10 @@ rd_anchor_label() = BAL_ENABLED  ? "BAL"  :
 @printf "Redispatch     : %s\n" (RD_ENABLED  ?
     @sprintf("ON  anchor=%s  power_flow=%s  water_value=%s  objective=%s  w=%.4g",
              rd_anchor_label(), RD_PF_MODEL, RD_WATER_VALUE, RD_OBJECTIVE, ANCHOR_WEIGHT) : "OFF")
+RD_FROM_SAVED_ACTIVE &&
+    @printf "                 standalone load flow: market stages skipped, anchor read from %s_dispatch.csv in the results folder\n" lowercase(RD_FROM_SAVED)
+RD_ONLY != "" &&
+    @printf "                 restricted to: %s\n" RD_ONLY
 
 # ── 2. Load ES profiles ───────────────────────────────────────────────────────
 # Actual MW at each stage = scale_factor × base_MW, where:
@@ -145,6 +202,13 @@ rd_anchor_label() = BAL_ENABLED  ? "BAL"  :
 # DA scale factors are always 1.0, so DA profiles equal the ES_old -12 baseline.
 # Stages modelled: DA → ID2 → ID3 → CID → Balancing (BE) → Redispatch.
 TARGET_DAYS = ["2024-07-08", "2024-12-02"]
+# [redispatch].only may pin the whole run to a single day so the market stages,
+# Bellman pre-compute and load flow all skip the other TARGET_DAY.
+if RD_ONLY_DATE !== nothing
+    TARGET_DAYS = filter(==(RD_ONLY_DATE), TARGET_DAYS)
+    isempty(TARGET_DAYS) &&
+        error("config.toml: [redispatch].only date \"$RD_ONLY_DATE\" is not one of the TARGET_DAYS")
+end
 ES_OLD_DIR  = joinpath(@__DIR__, "Data", "ES_old")
 ES_NEW_DIR  = joinpath(@__DIR__, "Data", "ES")
 
@@ -458,11 +522,12 @@ println("\nBellman pre-computation:")
 day_bellman = Dict{String,NamedTuple}()
 for date_str in TARGET_DAYS
     stage = bellman_stage(date_str, BELLMAN_BGN_DATE, BELLMAN_SSV_STEP)
-    cuts  = load_cuts_at_stage(BELLMAN_FILE, stage)
     v_es  = v_es_at_date(VOLUME_FILE, date_str, BELLMAN_BGN_DATE)
+    v_fr  = v_fr_at_date(VOLUME_FILE, date_str, BELLMAN_BGN_DATE)
+    cuts  = load_cuts_at_stage(BELLMAN_FILE, stage, v_fr)
     wv    = binding_water_value(cuts, v_es)
-    day_bellman[date_str] = (stage=stage, cuts=cuts, v_es=v_es, water_value=wv)
-    @printf "  %s : stage=%d  V_ES=%.0f MWh  water_value=%.2f EUR/MWh\n" date_str stage v_es wv
+    day_bellman[date_str] = (stage=stage, cuts=cuts, v_es=v_es, v_fr=v_fr, water_value=wv)
+    @printf "  %s : stage=%d  V_ES=%.0f MWh  V_FR=%.0f MWh  water_value=%.2f EUR/MWh\n" date_str stage v_es v_fr wv
 end
 
 # ── 6b. Cross-border exchange pre-load ───────────────────────
@@ -556,7 +621,11 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                      gen_bus_vmax = GEN_BUS_VMAX,
                      unit_scale = UNIT_SCALE,
                      cost_override = COST_OVERRIDE,
-                     bess_units = BESS_UNITS)
+                     bess_units = BESS_UNITS,
+                     unit_scale_by_id = UNIT_SCALE_ID,
+                     extra_units = EXTRA_UNITS,
+                     line_scale = LINE_SCALE,
+                     extra_lines = EXTRA_LINES)
      for ts in eachrow(day_ts)]
 end
 
@@ -669,7 +738,7 @@ function run_cid_rolling!(schedule, rows_acc, date_str, day_ts, bv;
     store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, committed)
 end
 
-if DA_ENABLED
+if DA_ENABLED && RUN_MARKET
     println("\n── Stage 1: Day-ahead market (copper-plate, 24h Bellman-coupled) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
@@ -680,7 +749,7 @@ end
 
 da_sched_for(date_str, hour) = get(da_schedule, (date_str, hour), nothing)
 
-if ID2_ENABLED
+if ID2_ENABLED && RUN_MARKET
     println("\n── Stage 2: Intraday market ID2 (copper-plate, Nuclear fixed at DA) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
@@ -695,7 +764,7 @@ end
 
 id2_sched_for(date_str, hour) = get(id2_schedule, (date_str, hour), nothing)
 
-if ID3_ENABLED
+if ID3_ENABLED && RUN_MARKET
     println("\n── Stage 3: Intraday market ID3 (copper-plate, last 12h only, Nuclear fixed at DA) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
@@ -711,7 +780,7 @@ end
 
 id3_sched_for(date_str, hour) = get(id3_schedule, (date_str, hour), nothing)
 
-if CID_ENABLED
+if CID_ENABLED && RUN_MARKET
     println("\n── Stage 4: Continuous Intraday (rolling gates 1h before delivery, Nuclear fixed at DA) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
@@ -728,7 +797,7 @@ end
 
 cid_sched_for(date_str, hour) = get(cid_schedule, (date_str, hour), nothing)
 
-if BAL_ENABLED
+if BAL_ENABLED && RUN_MARKET
     println("\n── Stage 5: Balancing market (copper-plate, Nuclear fixed at DA) ──")
     # Predecessor schedule the balancing gate adjusts: the latest market view
     # available (CID > ID3 > ID2 > DA).  All 24 hours are tradable and anchored
@@ -746,8 +815,32 @@ if BAL_ENABLED
 end
 
 bal_sched_for(date_str, hour) = get(bal_schedule, (date_str, hour), nothing)
-# Redispatch anchors to the last cleared schedule: BAL > CID > ID3 > ID2 > DA.
-rd_sched_for(date_str, hour) = BAL_ENABLED  ? bal_sched_for(date_str, hour)  :
+
+# Reconstruct a (date,hour) ⇒ Dict(unit ⇒ MW) anchor schedule from a previous
+# run's <stage>_dispatch.csv in RESULTS.  Used by the [redispatch].from_saved
+# standalone load-flow path so stages 1–5 need not be re-solved.  The CSV's
+# gen_id column is the unit name and dispatch_mw its cleared MW — exactly the
+# anchor format prepare_network's `da_dispatch` expects.
+function load_saved_schedule(stage)
+    file = joinpath(RESULTS, lowercase(stage) * "_dispatch.csv")
+    isfile(file) ||
+        error("[redispatch].from_saved=$stage: $file not found — run the market chain first")
+    df = CSV.read(file, DataFrame)
+    sched = Dict{Tuple{String,Int},Dict{String,Float64}}()
+    for r in eachrow(df)
+        d = get!(() -> Dict{String,Float64}(), sched, (string(r.date), Int(r.hour)))
+        d[string(r.gen_id)] = Float64(r.dispatch_mw)
+    end
+    @printf "  Loaded %s anchor schedule from %s (%d unit-hours, %d delivery hours)\n" stage basename(file) nrow(df) length(sched)
+    return sched
+end
+
+# In standalone mode the anchor comes from the saved CSV; otherwise it is the
+# last in-memory cleared schedule: BAL > CID > ID3 > ID2 > DA.
+loaded_schedule = RD_FROM_SAVED_ACTIVE ? load_saved_schedule(RD_FROM_SAVED) : nothing
+rd_sched_for(date_str, hour) =
+    RD_FROM_SAVED_ACTIVE ? get(loaded_schedule, (date_str, hour), nothing) :
+                                BAL_ENABLED  ? bal_sched_for(date_str, hour)  :
                                 CID_ENABLED  ? cid_sched_for(date_str, hour)  :
                                 ID3_ENABLED  ? id3_sched_for(date_str, hour)  :
                                 ID2_ENABLED  ? id2_sched_for(date_str, hour)  :
@@ -798,20 +891,84 @@ function rd_solve_ac_opf(network, optimizer)
     return PowerModels.optimize_model!(pm; optimizer = optimizer)
 end
 
-function solve_anchored_opf(network, gens, optimizer, sched)
+# Infeasibility diagnosis: when a DC redispatch solve is infeasible, ask Gurobi for
+# the IIS (irreducible infeasible subsystem) and dump the conflicting constraints to
+# results/<label>/iis.txt together with a gen/branch/bus name legend, so the binding
+# network cut (e.g. a fixed unit trapped behind an undersized line) can be read off.
+function rd_dump_iis(pm, network; label::Union{Nothing,String} = nothing)
+    m = pm.model
+    println("  computing Gurobi IIS ...")
+    try
+        JuMP.compute_conflict!(m)
+    catch e
+        println("  IIS computation failed: $e")
+        return
+    end
+    gen_by_i = Dict(g["index"] => g for (_, g) in network["gen"])
+    bus_by_i = Dict(b["index"] => b for (_, b) in network["bus"])
+    br_by_i  = Dict(b["index"] => b for (_, b) in network["branch"])
+    # Keep one IIS per failed delivery hour so an analysis notebook can match a
+    # conflict to the corresponding row in summary.csv.  iis.txt remains a
+    # backwards-compatible copy of the most recently diagnosed hour.
+    suffix = label === nothing ? "" : "_" * replace(label, " " => "_")
+    out = joinpath(RESULTS, "iis$(suffix).txt")
+    n_conflict = 0
+    open(out, "w") do io
+        for (F, S) in JuMP.list_of_constraint_types(m)
+            for c in JuMP.all_constraints(m, F, S)
+                st = try
+                    JuMP.MOI.get(m, JuMP.MOI.ConstraintConflictStatus(), c)
+                catch
+                    continue
+                end
+                st == JuMP.MOI.IN_CONFLICT || continue
+                n_conflict += 1
+                println(io, c)
+            end
+        end
+        println(io, "\n── legend ─────────────────────────────────")
+        println(io, "gen index → name @ bus (fuel, pmin..pmax pu):")
+        for i in sort(collect(keys(gen_by_i)))
+            g = gen_by_i[i]
+            println(io, "  pg[$i] = $(g["name"]) @ bus $(g["gen_bus"]) ($(g["fuel"]), $(round(g["pmin"];digits=3))..$(round(g["pmax"];digits=3)))")
+        end
+        println(io, "branch index → name f_bus→t_bus (rate_a pu, x pu):")
+        for i in sort(collect(keys(br_by_i)))
+            b = br_by_i[i]
+            println(io, "  br[$i] = $(get(b,"name","?")) $(b["f_bus"])→$(b["t_bus"]) (rate $(round(b["rate_a"];digits=2)), x $(round(b["br_x"];digits=5)))")
+        end
+        println(io, "bus index → name:")
+        for i in sort(collect(keys(bus_by_i)))
+            println(io, "  bus $i = $(get(bus_by_i[i],"name","?"))")
+        end
+    end
+    if label !== nothing
+        cp(out, joinpath(RESULTS, "iis.txt"); force = true)
+    end
+    println("  IIS: $n_conflict conflicting constraints written to $out")
+end
+
+function solve_anchored_opf(network, gens, optimizer, sched;
+                            iis_label::Union{Nothing,String} = nothing)
     if sched === nothing || (RD_OBJECTIVE == "quadratic" && ANCHOR_WEIGHT <= 0)
         return rd_solve_ac_opf(network, optimizer)
     end
     pm = PowerModels.instantiate_model(network, RD_PM_TYPE, PowerModels.build_opf)
     add_gen_capability!(pm, gens)
 
+    # Anchored units: market units ("G…") present in the schedule, plus every
+    # battery ("BESS_…") — a battery absent from the schedule is anchored to
+    # 0 MW so it cannot act as a free energy source (no hourly energy budget).
+    rd_anchor_tgt(g) =
+        startswith(g["name"], "G")     ? (haskey(sched, g["name"]) ? sched[g["name"]] / BASEMVA : nothing) :
+        startswith(g["name"], "BESS_") ? get(sched, g["name"], 0.0) / BASEMVA : nothing
+
     if RD_OBJECTIVE == "quadratic"
         pen = zero(JuMP.QuadExpr)
         for (_, g) in gens
-            startswith(g["name"], "G") || continue
-            haskey(sched, g["name"]) || continue
-            tgt_pu = sched[g["name"]] / BASEMVA
-            pg     = PowerModels.var(pm, :pg, g["index"])
+            tgt_pu = rd_anchor_tgt(g)
+            tgt_pu === nothing && continue
+            pg = PowerModels.var(pm, :pg, g["index"])
             JuMP.add_to_expression!(pen, ((pg - tgt_pu) * BASEMVA)^2)
         end
         base_obj = JuMP.objective_function(pm.model)
@@ -819,10 +976,9 @@ function solve_anchored_opf(network, gens, optimizer, sched)
     else   # cost_weighted
         dev = zero(JuMP.AffExpr)
         for (_, g) in gens
-            pg = PowerModels.var(pm, :pg, g["index"])
-            if startswith(g["name"], "G") && haskey(sched, g["name"]) &&
-               abs(g["pmax"] - g["pmin"]) > 1e-9                 # free, anchored unit
-                tgt_pu = sched[g["name"]] / BASEMVA
+            pg     = PowerModels.var(pm, :pg, g["index"])
+            tgt_pu = rd_anchor_tgt(g)
+            if tgt_pu !== nothing && abs(g["pmax"] - g["pmin"]) > 1e-9  # free, anchored unit
                 up   = JuMP.@variable(pm.model, lower_bound = 0.0)
                 down = JuMP.@variable(pm.model, lower_bound = 0.0)
                 JuMP.@constraint(pm.model, pg == tgt_pu + up - down)
@@ -834,13 +990,30 @@ function solve_anchored_opf(network, gens, optimizer, sched)
         end
         JuMP.@objective(pm.model, Min, dev)
     end
-    return PowerModels.optimize_model!(pm; optimizer = optimizer)
+    result = PowerModels.optimize_model!(pm; optimizer = optimizer)
+    if RD_PF_MODEL == "DC" &&
+       result["termination_status"] in (JuMP.MOI.INFEASIBLE, JuMP.MOI.INFEASIBLE_OR_UNBOUNDED)
+        rd_dump_iis(pm, network; label = iis_label)
+    end
+    return result
 end
 
 # ── 7. Stage 6 — Redispatch (AC OPF anchored to BAL/CID/ID/DA schedule) ──
 # Uses the final-stage wind/solar/load profiles (balancing BE values when the
 # balancing stage is on, else CID) and anchors to the last cleared schedule.
-hourly_rd = BAL_ENABLED ? hourly_bal : hourly_cid
+# Profiles for the load flow follow the anchor stage: in standalone mode that is
+# the saved stage, otherwise the last enabled market stage (BAL else CID).
+hourly_rd = RD_FROM_SAVED_ACTIVE ?
+    (RD_FROM_SAVED == "BAL" ? hourly_bal :
+     RD_FROM_SAVED == "CID" ? hourly_cid :
+     RD_FROM_SAVED == "ID3" ? hourly_id3 :
+     RD_FROM_SAVED == "ID2" ? hourly_id2 : hourly_da) :
+    (BAL_ENABLED ? hourly_bal : hourly_cid)
+# [redispatch].only may pin the load flow to a single delivery hour (constant
+# water_value only; the day is already restricted via TARGET_DAYS).
+RD_ONLY_HOUR !== nothing && (hourly_rd = filter(r -> r.hour == RD_ONLY_HOUR, hourly_rd))
+RD_ONLY_HOUR !== nothing && isempty(hourly_rd) &&
+    error("config.toml: [redispatch].only hour $RD_ONLY_HOUR is out of range 0–23")
 n_total  = nrow(hourly_rd)
 n_solved = 0
 
@@ -875,12 +1048,16 @@ if RD_WATER_VALUE == "constant"
                               gen_bus_vmax = GEN_BUS_VMAX,
                               unit_scale = UNIT_SCALE,
                               cost_override = COST_OVERRIDE,
-                              bess_units = BESS_UNITS)
+                              bess_units = BESS_UNITS,
+                              unit_scale_by_id = UNIT_SCALE_ID,
+                              extra_units = EXTRA_UNITS,
+                              line_scale = LINE_SCALE,
+                              extra_lines = EXTRA_LINES)
         (; network, gens, branches, dclines, loads) = net
 
         log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_h$(lpad(hour, 2, '0')).log")
         result = solve_anchored_opf(network, gens, rd_optimizer_single(log_file = log_file),
-                                    rd_sched_for(date_str, hour))
+                                    rd_sched_for(date_str, hour); iis_label = label)
         status = string(result["termination_status"])
 
         @printf "[%2d/%d] %s\n" (n_solved + 1) n_total label
@@ -933,7 +1110,11 @@ elseif RD_WATER_VALUE == "piecewise"
                                 gen_bus_vmax = GEN_BUS_VMAX,
                                 unit_scale = UNIT_SCALE,
                                 cost_override = COST_OVERRIDE,
-                                bess_units = BESS_UNITS)
+                                bess_units = BESS_UNITS,
+                                unit_scale_by_id = UNIT_SCALE_ID,
+                                extra_units = EXTRA_UNITS,
+                                line_scale = LINE_SCALE,
+                                extra_lines = EXTRA_LINES)
                 for ts in eachrow(day_ts)]
 
         # Generator IDs (Int) for Spanish reservoir hydro — same topology every hour
@@ -1045,10 +1226,14 @@ elseif RD_WATER_VALUE == "piecewise"
                     sched_n === nothing && continue
                     for gid in PowerModels.ids(pm, :gen; nw=n)
                         g = PowerModels.ref(pm, n, :gen, gid)
-                        startswith(g["name"], "G") || continue
-                        haskey(sched_n, g["name"]) || continue
+                        # Market units anchored when scheduled; batteries always
+                        # anchored (to 0 MW when absent from the schedule).
+                        tgt_mw =
+                            startswith(g["name"], "G")     ? get(sched_n, g["name"], nothing) :
+                            startswith(g["name"], "BESS_") ? get(sched_n, g["name"], 0.0) : nothing
+                        tgt_mw === nothing && continue
                         abs(g["pmax"] - g["pmin"]) > 1e-9 || continue   # skip frozen
-                        tgt_pu = sched_n[g["name"]] / BASEMVA
+                        tgt_pu = tgt_mw / BASEMVA
                         pg     = PowerModels.var(pm, n, :pg, gid)
                         JuMP.add_to_expression!(anchor_pen, ((pg - tgt_pu) * BASEMVA)^2)
                     end
@@ -1099,7 +1284,7 @@ end  # if RD_ENABLED
 println("\nResults saved to results/")
 
 # Stage 1 — day-ahead cleared schedule + load profile
-if DA_ENABLED
+if DA_ENABLED && RUN_MARKET
     da_df = DataFrame(da_rows_all)
     isempty(da_rows_all) || sort!(da_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "da_dispatch.csv"), da_df)
@@ -1108,7 +1293,7 @@ if DA_ENABLED
 end
 
 # Stage 2 — ID2 cleared schedule + load profile
-if ID2_ENABLED
+if ID2_ENABLED && RUN_MARKET
     id2_df = DataFrame(id2_rows_all)
     isempty(id2_rows_all) || sort!(id2_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "id2_dispatch.csv"), id2_df)
@@ -1117,7 +1302,7 @@ if ID2_ENABLED
 end
 
 # Stage 3 — ID3 cleared schedule + load profile
-if ID3_ENABLED
+if ID3_ENABLED && RUN_MARKET
     id3_df = DataFrame(id3_rows_all)
     isempty(id3_rows_all) || sort!(id3_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "id3_dispatch.csv"), id3_df)
@@ -1126,7 +1311,7 @@ if ID3_ENABLED
 end
 
 # Stage 4 — CID cleared schedule + load profile
-if CID_ENABLED
+if CID_ENABLED && RUN_MARKET
     cid_df = DataFrame(cid_rows_all)
     isempty(cid_rows_all) || sort!(cid_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "cid_dispatch.csv"), cid_df)
@@ -1135,7 +1320,7 @@ if CID_ENABLED
 end
 
 # Stage 5 — Balancing cleared schedule + load profile
-if BAL_ENABLED
+if BAL_ENABLED && RUN_MARKET
     bal_df = DataFrame(bal_rows_all)
     isempty(bal_rows_all) || sort!(bal_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "bal_dispatch.csv"), bal_df)

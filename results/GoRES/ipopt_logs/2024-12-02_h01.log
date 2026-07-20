@@ -1,0 +1,1460 @@
+This is Ipopt version 3.14.19, running with linear solver ma57.
+
+Number of nonzeros in equality constraint Jacobian...:    13237
+Number of nonzeros in inequality constraint Jacobian.:     3120
+Number of nonzeros in Lagrangian Hessian.............:      454
+
+Total number of variables............................:     5094
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:     3858
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:     3582
+Total number of inequality constraints...............:     1560
+        inequality constraints with only lower bounds:        0
+   inequality constraints with lower and upper bounds:     1560
+        inequality constraints with only upper bounds:        0
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  1.2864370e+07 1.77e+01 8.10e+01  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  1.2865039e+07 1.77e+01 8.08e+01  -1.0 3.35e+01    -  9.71e-03 1.89e-05f  1
+   2  1.0727183e+07 1.75e+01 8.07e+01  -1.0 1.80e+02    -  9.88e-04 1.65e-02f  1
+   3  1.0324892e+07 1.70e+01 7.98e+01  -1.0 1.50e+01  -4.0 1.35e-02 2.61e-02f  1
+   4  9.6586777e+06 1.62e+01 7.68e+01  -1.0 2.97e+02    -  3.97e-02 4.81e-02f  1
+   5  7.8776704e+06 1.41e+01 6.30e+01  -1.0 1.40e+01  -4.5 1.71e-01 1.26e-01f  1
+   6  3.6822978e+06 7.85e+00 4.78e+01  -1.0 4.65e+02    -  2.81e-01 4.45e-01f  1
+   7  1.5478329e+06 9.25e-01 5.57e+00  -1.0 2.74e+01    -  8.83e-01 8.82e-01f  1
+   8  1.4633283e+06 2.95e-11 6.97e-02  -1.0 1.26e+00  -5.0 9.90e-01 1.00e+00f  1
+   9  1.4528598e+06 1.17e-09 9.45e-07  -1.0 2.55e-01  -5.4 1.00e+00 1.00e+00f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  4.3206803e+05 7.73e-11 2.93e-02  -2.5 2.83e-01  -5.9 8.50e-01 1.00e+00f  1
+  11  3.6694866e+05 2.45e-11 1.47e-02  -2.5 8.67e-01    -  9.09e-01 1.00e+00f  1
+  12  3.1958131e+05 1.38e-11 2.43e-02  -3.8 6.48e-01    -  7.35e-01 1.00e+00f  1
+  13  3.1413680e+05 3.78e-11 4.12e-03  -3.8 1.89e-01    -  9.24e-01 1.00e+00f  1
+  14  3.1306311e+05 1.91e-11 1.86e-14  -3.8 1.64e-02    -  1.00e+00 1.00e+00f  1
+  15  3.1089853e+05 2.33e-11 2.24e-03  -5.7 1.33e-02  -6.4 8.33e-01 9.85e-01f  1
+  16  3.1084141e+05 7.63e-12 1.87e-14  -5.7 9.30e-03    -  1.00e+00 1.00e+00f  1
+  17  3.1083152e+05 2.73e-11 7.12e-10  -5.7 5.19e-03  -6.9 1.00e+00 1.00e+00f  1
+  18  3.1080315e+05 1.69e-11 5.67e-06  -8.6 2.98e-03  -7.3 9.92e-01 9.94e-01f  1
+  19  3.1080226e+05 1.97e-11 2.36e-11  -8.6 1.55e-03  -7.8 1.00e+00 1.00e+00f  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  3.1080206e+05 4.14e-11 1.86e-14  -8.6 7.74e-04    -  1.00e+00 1.00e+00f  1
+  21  3.1080201e+05 2.46e-11 1.93e-12  -8.6 3.80e-04  -8.3 1.00e+00 1.00e+00h  1
+  22  3.1080200e+05 2.50e-11 1.87e-14  -8.6 1.78e-04    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 22
+
+                                   (scaled)                 (unscaled)
+Objective...............:   3.1080200205449167e+01    3.1080200205449166e+05
+Dual infeasibility......:   1.8729460101379742e-14    1.8729460101379742e-10
+Constraint violation....:   4.9851247539187160e-12    2.5031199335501242e-11
+Variable bound violation:   1.4684500015960111e-07    1.4684500015960111e-07
+Complementarity.........:   8.8780898910656643e-09    8.8780898910656645e-05
+Overall NLP error.......:   8.8780898910656643e-09    8.8780898910656645e-05
+
+
+Number of objective function evaluations             = 23
+Number of objective gradient evaluations             = 23
+Number of equality constraint evaluations            = 23
+Number of inequality constraint evaluations          = 23
+Number of equality constraint Jacobian evaluations   = 1
+Number of inequality constraint Jacobian evaluations = 1
+Number of Lagrangian Hessian evaluations             = 1
+Total seconds in IPOPT                               = 0.136
+
+EXIT: Optimal Solution Found.
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 11:53:27 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 11:53:27 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x07eb03e4
+Model has 2031 linear objective coefficients and an objective constant of 1.4951161823529590e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3698 rows and 4648 columns
+Presolve time: 0.01s
+Presolved: 1444 rows, 2549 columns, 8481 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.782e+04
+ Factor NZ  : 4.863e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.120e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.62330180e+12 -5.30628542e+11  7.25e+03 7.18e+03  7.17e+06     0s
+   1   1.61567223e+12 -2.39532285e+11  2.15e+03 2.13e+03  2.16e+06     0s
+   2   1.96472355e+11 -1.99137722e+11  2.65e+02 2.62e+02  3.14e+05     0s
+   3   2.37867276e+10 -1.13991477e+11  3.28e+01 3.25e+01  5.24e+04     0s
+   4   1.46671217e+10 -8.60487318e+10  2.05e+01 2.04e+01  3.41e+04     0s
+   5   1.47757760e+09 -3.90367332e+10  2.67e+00 2.64e+00  9.82e+03     0s
+   6   7.20962423e+08 -2.60395536e+10  1.42e+00 1.41e+00  6.36e+03     0s
+   7   2.90840011e+08 -1.04372090e+10  3.90e-01 3.86e-01  2.37e+03     0s
+   8   1.67170355e+08 -7.00126310e+09  1.50e-01 1.48e-01  1.53e+03     0s
+   9   8.95086701e+07 -1.66932766e+09  3.41e-02 3.38e-02  3.59e+02     0s
+  10   4.31143399e+07 -4.76712313e+08  2.45e-03 2.43e-03  1.02e+02     0s
+  11   1.56423263e+07 -9.31524380e+07  3.01e-04 2.98e-04  2.13e+01     0s
+  12   2.94644051e+06 -1.34636206e+07  3.25e-05 3.22e-05  3.21e+00     0s
+  13   7.28531464e+05 -1.35586846e+06  3.23e-06 3.20e-06  4.07e-01     0s
+  14   3.83124116e+05  1.17696928e+05  2.98e-07 2.95e-07  5.19e-02     0s
+  15   3.22146804e+05  2.88190052e+05  2.89e-08 2.60e-08  6.64e-03     0s
+  16   3.11360484e+05  3.10053503e+05  4.29e-08 8.58e-12  2.55e-04     0s
+  17   3.10860623e+05  3.10761199e+05  2.78e-09 5.10e-12  1.94e-05     0s
+  18   3.10819351e+05  3.10804932e+05  5.60e-09 8.86e-12  2.82e-06     0s
+  19   3.10819387e+05  3.10804973e+05  2.79e-07 6.11e-12  2.80e-06     0s
+  20   3.10819502e+05  3.10804973e+05  7.40e-07 6.40e-12  2.80e-06     0s
+  21   3.10816033e+05  3.10801591e+05  7.08e-08 1.26e-10  2.82e-06     0s
+  22   3.10812662e+05  3.10812377e+05  1.54e-09 5.35e-12  5.56e-08     0s
+  23   3.10812512e+05  3.10812464e+05  2.95e-07 5.01e-12  2.10e-08     0s
+  24   3.10812281e+05  3.10812465e+05  8.03e-07 4.29e-12  2.06e-08     0s
+  25   3.10812123e+05  3.10812470e+05  1.19e-06 8.21e-12  1.85e-08     0s
+  26   3.10811358e+05  3.10812472e+05  3.66e-06 6.42e-12  1.75e-08     0s
+  27   3.10809812e+05  3.10812476e+05  8.65e-06 7.32e-12  1.55e-08     0s
+  28   3.10812103e+05  3.10812511e+05  1.29e-06 3.12e-12  2.17e-09     0s
+  29   3.10811221e+05  3.10812514e+05  1.86e-06 6.05e-12  9.28e-10     0s
+  30   3.10812514e+05  3.10812516e+05  2.26e-07 1.21e-11  1.08e-10     0s
+
+Barrier solved model in 30 iterations and 0.08 seconds (0.07 work units)
+Optimal objective 3.10812514e+05
+
+
+User-callback calls 87, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:00:44 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:00:44 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x07eb03e4
+Model has 2031 linear objective coefficients and an objective constant of 1.4951161823529590e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3698 rows and 4648 columns
+Presolve time: 0.01s
+Presolved: 1444 rows, 2549 columns, 8481 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.782e+04
+ Factor NZ  : 4.863e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.120e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.62330180e+12 -5.30628542e+11  7.25e+03 7.18e+03  7.17e+06     0s
+   1   1.61567223e+12 -2.39532285e+11  2.15e+03 2.13e+03  2.16e+06     0s
+   2   1.96472355e+11 -1.99137722e+11  2.65e+02 2.62e+02  3.14e+05     0s
+   3   2.37867276e+10 -1.13991477e+11  3.28e+01 3.25e+01  5.24e+04     0s
+   4   1.46671217e+10 -8.60487318e+10  2.05e+01 2.04e+01  3.41e+04     0s
+   5   1.47757760e+09 -3.90367332e+10  2.67e+00 2.64e+00  9.82e+03     0s
+   6   7.20962423e+08 -2.60395536e+10  1.42e+00 1.41e+00  6.36e+03     0s
+   7   2.90840011e+08 -1.04372090e+10  3.90e-01 3.86e-01  2.37e+03     0s
+   8   1.67170355e+08 -7.00126310e+09  1.50e-01 1.48e-01  1.53e+03     0s
+   9   8.95086701e+07 -1.66932766e+09  3.41e-02 3.38e-02  3.59e+02     0s
+  10   4.31143399e+07 -4.76712313e+08  2.45e-03 2.43e-03  1.02e+02     0s
+  11   1.56423263e+07 -9.31524380e+07  3.01e-04 2.98e-04  2.13e+01     0s
+  12   2.94644051e+06 -1.34636206e+07  3.25e-05 3.22e-05  3.21e+00     0s
+  13   7.28531464e+05 -1.35586846e+06  3.23e-06 3.20e-06  4.07e-01     0s
+  14   3.83124116e+05  1.17696928e+05  2.98e-07 2.95e-07  5.19e-02     0s
+  15   3.22146804e+05  2.88190052e+05  2.89e-08 2.60e-08  6.64e-03     0s
+  16   3.11360484e+05  3.10053503e+05  4.29e-08 8.58e-12  2.55e-04     0s
+  17   3.10860623e+05  3.10761199e+05  2.78e-09 5.10e-12  1.94e-05     0s
+  18   3.10819351e+05  3.10804932e+05  5.60e-09 8.86e-12  2.82e-06     0s
+  19   3.10819387e+05  3.10804973e+05  2.79e-07 6.11e-12  2.80e-06     0s
+  20   3.10819502e+05  3.10804973e+05  7.40e-07 6.40e-12  2.80e-06     0s
+  21   3.10816033e+05  3.10801591e+05  7.08e-08 1.26e-10  2.82e-06     0s
+  22   3.10812662e+05  3.10812377e+05  1.54e-09 5.35e-12  5.56e-08     0s
+  23   3.10812512e+05  3.10812464e+05  2.95e-07 5.01e-12  2.10e-08     0s
+  24   3.10812281e+05  3.10812465e+05  8.03e-07 4.29e-12  2.06e-08     0s
+  25   3.10812123e+05  3.10812470e+05  1.19e-06 8.21e-12  1.85e-08     0s
+  26   3.10811358e+05  3.10812472e+05  3.66e-06 6.42e-12  1.75e-08     0s
+  27   3.10809812e+05  3.10812476e+05  8.65e-06 7.32e-12  1.55e-08     0s
+  28   3.10812103e+05  3.10812511e+05  1.29e-06 3.12e-12  2.17e-09     0s
+  29   3.10811221e+05  3.10812514e+05  1.86e-06 6.05e-12  9.28e-10     0s
+  30   3.10812514e+05  3.10812516e+05  2.26e-07 1.21e-11  1.08e-10     0s
+
+Barrier solved model in 30 iterations and 0.08 seconds (0.07 work units)
+Optimal objective 3.10812514e+05
+
+
+User-callback calls 82, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:16:01 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:16:01 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x07eb03e4
+Model has 2031 linear objective coefficients and an objective constant of 1.4951161823529590e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3698 rows and 4648 columns
+Presolve time: 0.01s
+Presolved: 1444 rows, 2549 columns, 8481 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.782e+04
+ Factor NZ  : 4.863e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.120e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.62330180e+12 -5.30628542e+11  7.25e+03 7.18e+03  7.17e+06     0s
+   1   1.61567223e+12 -2.39532285e+11  2.15e+03 2.13e+03  2.16e+06     0s
+   2   1.96472355e+11 -1.99137722e+11  2.65e+02 2.62e+02  3.14e+05     0s
+   3   2.37867276e+10 -1.13991477e+11  3.28e+01 3.25e+01  5.24e+04     0s
+   4   1.46671217e+10 -8.60487318e+10  2.05e+01 2.04e+01  3.41e+04     0s
+   5   1.47757760e+09 -3.90367332e+10  2.67e+00 2.64e+00  9.82e+03     0s
+   6   7.20962423e+08 -2.60395536e+10  1.42e+00 1.41e+00  6.36e+03     0s
+   7   2.90840011e+08 -1.04372090e+10  3.90e-01 3.86e-01  2.37e+03     0s
+   8   1.67170355e+08 -7.00126310e+09  1.50e-01 1.48e-01  1.53e+03     0s
+   9   8.95086701e+07 -1.66932766e+09  3.41e-02 3.38e-02  3.59e+02     0s
+  10   4.31143399e+07 -4.76712313e+08  2.45e-03 2.43e-03  1.02e+02     0s
+  11   1.56423263e+07 -9.31524380e+07  3.01e-04 2.98e-04  2.13e+01     0s
+  12   2.94644051e+06 -1.34636206e+07  3.25e-05 3.22e-05  3.21e+00     0s
+  13   7.28531464e+05 -1.35586846e+06  3.23e-06 3.20e-06  4.07e-01     0s
+  14   3.83124116e+05  1.17696928e+05  2.98e-07 2.95e-07  5.19e-02     0s
+  15   3.22146804e+05  2.88190052e+05  2.89e-08 2.60e-08  6.64e-03     0s
+  16   3.11360484e+05  3.10053503e+05  4.29e-08 8.58e-12  2.55e-04     0s
+  17   3.10860623e+05  3.10761199e+05  2.78e-09 5.10e-12  1.94e-05     0s
+  18   3.10819351e+05  3.10804932e+05  5.60e-09 8.86e-12  2.82e-06     0s
+  19   3.10819387e+05  3.10804973e+05  2.79e-07 6.11e-12  2.80e-06     0s
+  20   3.10819502e+05  3.10804973e+05  7.40e-07 6.40e-12  2.80e-06     0s
+  21   3.10816033e+05  3.10801591e+05  7.08e-08 1.26e-10  2.82e-06     0s
+  22   3.10812662e+05  3.10812377e+05  1.54e-09 5.35e-12  5.56e-08     0s
+  23   3.10812512e+05  3.10812464e+05  2.95e-07 5.01e-12  2.10e-08     0s
+  24   3.10812281e+05  3.10812465e+05  8.03e-07 4.29e-12  2.06e-08     0s
+  25   3.10812123e+05  3.10812470e+05  1.19e-06 8.21e-12  1.85e-08     0s
+  26   3.10811358e+05  3.10812472e+05  3.66e-06 6.42e-12  1.75e-08     0s
+  27   3.10809812e+05  3.10812476e+05  8.65e-06 7.32e-12  1.55e-08     0s
+  28   3.10812103e+05  3.10812511e+05  1.29e-06 3.12e-12  2.17e-09     0s
+  29   3.10811221e+05  3.10812514e+05  1.86e-06 6.05e-12  9.28e-10     0s
+  30   3.10812514e+05  3.10812516e+05  2.26e-07 1.21e-11  1.08e-10     0s
+
+Barrier solved model in 30 iterations and 0.08 seconds (0.07 work units)
+Optimal objective 3.10812514e+05
+
+
+User-callback calls 83, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:32:14 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:32:14 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x7f3acd6f
+Model has 2031 linear objective coefficients and an objective constant of 1.4951182941840002e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3698 rows and 4648 columns
+Presolve time: 0.01s
+Presolved: 1444 rows, 2549 columns, 8481 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.782e+04
+ Factor NZ  : 4.863e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.120e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.62330180e+12 -5.30628542e+11  7.25e+03 7.18e+03  7.17e+06     0s
+   1   1.61567223e+12 -2.39532285e+11  2.15e+03 2.13e+03  2.16e+06     0s
+   2   1.96472356e+11 -1.99137722e+11  2.65e+02 2.62e+02  3.14e+05     0s
+   3   2.37867275e+10 -1.13991476e+11  3.28e+01 3.25e+01  5.24e+04     0s
+   4   1.46671207e+10 -8.60487288e+10  2.05e+01 2.04e+01  3.41e+04     0s
+   5   1.47757774e+09 -3.90367315e+10  2.67e+00 2.64e+00  9.82e+03     0s
+   6   7.20962250e+08 -2.60395470e+10  1.42e+00 1.41e+00  6.36e+03     0s
+   7   2.90840464e+08 -1.04372246e+10  3.90e-01 3.86e-01  2.37e+03     0s
+   8   1.67170309e+08 -7.00122273e+09  1.50e-01 1.48e-01  1.53e+03     0s
+   9   8.95085075e+07 -1.66932001e+09  3.41e-02 3.38e-02  3.59e+02     0s
+  10   4.31140981e+07 -4.76706539e+08  2.45e-03 2.43e-03  1.02e+02     0s
+  11   1.56420407e+07 -9.31505097e+07  3.01e-04 2.98e-04  2.13e+01     0s
+  12   2.94618106e+06 -1.34619563e+07  3.25e-05 3.22e-05  3.21e+00     0s
+  13   7.28486680e+05 -1.35563160e+06  3.23e-06 3.20e-06  4.07e-01     0s
+  14   3.83117790e+05  1.17719198e+05  2.98e-07 2.95e-07  5.19e-02     0s
+  15   3.22146505e+05  2.88192051e+05  2.93e-08 2.60e-08  6.64e-03     0s
+  16   3.11360725e+05  3.10054077e+05  2.24e-08 7.64e-12  2.55e-04     0s
+  17   3.10860913e+05  3.10761496e+05  1.87e-09 5.48e-12  1.94e-05     0s
+  18   3.10819629e+05  3.10805211e+05  1.34e-09 9.20e-12  2.82e-06     0s
+  19   3.10813752e+05  3.10811760e+05  5.82e-09 1.15e-11  3.89e-07     0s
+  20   3.10812919e+05  3.10812646e+05  1.33e-07 1.09e-11  5.47e-08     0s
+  21   3.10812818e+05  3.10812646e+05  2.05e-07 1.42e-11  5.46e-08     0s
+  22   3.10812844e+05  3.10812575e+05  1.24e-07 8.85e-11  5.50e-08     0s
+  23   3.10812788e+05  3.10812783e+05  1.79e-08 3.26e-12  1.05e-09     0s
+
+Barrier solved model in 23 iterations and 0.06 seconds (0.05 work units)
+Optimal objective 3.10812788e+05
+
+
+User-callback calls 74, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:22:05 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:22:05 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x8c544197
+Model has 2031 linear objective coefficients and an objective constant of 1.4779831810494417e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3696 rows and 4647 columns
+Presolve time: 0.02s
+Presolved: 1446 rows, 2550 columns, 8488 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.784e+04
+ Factor NZ  : 4.940e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.186e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.62328855e+12 -5.30775774e+11  7.25e+03 7.18e+03  7.17e+06     0s
+   1   1.61567703e+12 -2.39793339e+11  2.15e+03 2.13e+03  2.16e+06     0s
+   2   1.96537163e+11 -1.99417838e+11  2.65e+02 2.62e+02  3.14e+05     0s
+   3   2.37515606e+10 -1.14209446e+11  3.27e+01 3.24e+01  5.24e+04     0s
+   4   1.46125183e+10 -8.61387600e+10  2.05e+01 2.03e+01  3.40e+04     0s
+   5   1.47342016e+09 -3.90868595e+10  2.65e+00 2.63e+00  9.82e+03     0s
+   6   7.66360737e+08 -2.71161833e+10  1.53e+00 1.52e+00  6.63e+03     0s
+   7   4.02114481e+08 -1.41045579e+10  6.31e-01 6.26e-01  3.28e+03     0s
+   8   2.16616709e+08 -6.58212431e+09  2.67e-01 2.65e-01  1.47e+03     0s
+   9   1.02382419e+08 -2.67009325e+09  5.16e-02 5.12e-02  5.69e+02     0s
+  10   5.61969019e+07 -8.79082903e+08  1.45e-02 1.43e-02  1.87e+02     0s
+  11   1.84292841e+07 -1.74094594e+08  1.28e-03 1.26e-03  3.78e+01     0s
+  12   3.55492883e+06 -2.00452490e+07  1.09e-04 1.08e-04  4.61e+00     0s
+  13   8.57917189e+05 -2.17816001e+06  1.02e-05 1.01e-05  5.93e-01     0s
+  14   4.09399130e+05  2.45384222e+04  9.60e-07 9.51e-07  7.52e-02     0s
+  15   3.27489012e+05  2.80676760e+05  1.09e-07 6.88e-08  9.14e-03     0s
+  16   3.13062911e+05  3.10910834e+05  8.27e-08 1.19e-11  4.20e-04     0s
+  17   3.12309111e+05  3.12175869e+05  3.80e-06 7.87e-12  2.59e-05     0s
+  18   3.12326949e+05  3.12233965e+05  2.80e-04 1.70e-11  3.81e-06     0s
+  19   3.12204621e+05  3.12242315e+05  2.05e-04 8.72e-12  5.08e-07     0s
+  20   3.12311536e+05  3.12243280e+05  1.01e-04 7.79e-12  2.03e-07     0s
+  21   3.12244864e+05  3.12243737e+05  4.54e-06 3.72e-12  2.67e-08     0s
+  22   3.12246457e+05  3.12243744e+05  5.88e-06 5.78e-12  2.44e-08     0s
+  23   3.12240991e+05  3.12243751e+05  8.45e-06 6.36e-12  2.04e-08     0s
+  24   3.12243763e+05  3.12243796e+05  6.42e-07 9.28e-12  2.85e-09     0s
+  25   3.12243566e+05  3.12243802e+05  6.47e-07 3.94e-12  3.56e-10     0s
+  26   3.12243744e+05  3.12243803e+05  1.43e-07 1.11e-11  4.02e-11     0s
+
+Barrier solved model in 26 iterations and 0.08 seconds (0.06 work units)
+Optimal objective 3.12243744e+05
+
+
+User-callback calls 79, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:28:07 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:28:07 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x7240f77d
+Model has 2031 linear objective coefficients and an objective constant of 1.4779831810494417e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3691 rows and 4639 columns
+Presolve time: 0.01s
+Presolved: 1451 rows, 2558 columns, 8431 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.769e+04
+ Factor NZ  : 4.856e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.115e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   3.92304721e+12 -3.03423360e+11  6.13e+03 4.09e+03  4.07e+06     0s
+   1   1.14042977e+12 -7.94369254e+10  1.86e+03 1.24e+03  1.25e+06     0s
+   2   1.49247835e+11 -5.91710908e+10  2.47e+02 1.65e+02  1.94e+05     0s
+   3   7.27960460e+09 -4.03787015e+10  1.24e+01 8.27e+00  1.60e+04     0s
+   4   1.57621399e+09 -2.09909129e+10  2.90e+00 1.94e+00  5.72e+03     0s
+   5   4.32702527e+08 -9.34991758e+09  9.10e-01 6.08e-01  2.25e+03     0s
+   6   2.71585056e+08 -6.52664567e+09  5.21e-01 3.48e-01  1.54e+03     0s
+   7   2.02475128e+08 -4.53724634e+09  3.52e-01 2.35e-01  1.06e+03     0s
+   8   1.81843666e+08 -3.94355090e+09  2.91e-01 1.95e-01  9.42e+02     0s
+   9   1.64388865e+08 -3.24976942e+09  2.44e-01 1.63e-01  7.88e+02     0s
+  10   1.46212336e+08 -2.44958768e+09  1.92e-01 1.29e-01  6.70e+02     0s
+  11   1.30161209e+08 -1.60316808e+09  1.56e-01 1.04e-01  5.32e+02     0s
+  12   1.21786340e+08 -9.42456891e+08  1.43e-01 9.53e-02  4.83e+02     0s
+  13   1.16171915e+08  1.44007692e+08  1.37e-01 9.15e-02  4.66e+02     0s
+  14   1.11911132e+08  1.20040741e+09  1.32e-01 8.85e-02  4.47e+02     0s
+  15   1.13886360e+08  2.39976843e+09  1.31e-01 8.76e-02  4.41e+02     0s
+  16   1.14658007e+08  3.44562436e+09  1.30e-01 8.70e-02  4.38e+02     0s
+  17   1.15802765e+08  4.69348354e+09  1.29e-01 8.64e-02  4.35e+02     0s
+  18   1.18392421e+08  9.08250521e+09  1.28e-01 1.56e-02  4.25e+02     0s
+  19   1.21616927e+08  1.73884240e+10  1.27e-01 1.55e-02  4.19e+02     0s
+  20   1.23588073e+08  2.71356276e+10  1.26e-01 1.54e-02  4.22e+02     0s
+  21   1.27875732e+08  5.56990976e+10  1.26e-01 1.54e-02  4.25e+02     0s
+  22   5.96598812e+13 -2.28959192e+13  6.13e+04 1.00e+04  9.92e+07     0s
+  23   1.68442728e+13 -3.34261174e+12  2.27e+04 3.71e+03  4.61e+07     0s
+  24   9.54540883e+10 -1.96340390e+11  1.58e+02 2.58e+01  4.08e+05     0s
+  25   5.91328033e+09 -1.54519906e+11  9.96e+00 1.63e+00  5.61e+04     0s
+  26   1.17026369e+09 -6.57769191e+10  2.08e+00 3.40e-01  1.70e+04     0s
+  27   3.68838967e+08 -2.84430276e+10  6.16e-01 1.01e-01  6.60e+03     0s
+  28   2.43459668e+08 -1.73302506e+10  3.39e-01 5.53e-02  3.99e+03     0s
+  29   1.78041183e+08 -1.03763075e+10  2.05e-01 3.34e-02  2.59e+03     0s
+  30   1.45002036e+08 -5.86433795e+09  1.55e-01 2.53e-02  1.92e+03     0s
+  31   1.32820351e+08 -3.65488566e+09  1.42e-01 2.31e-02  1.73e+03     0s
+  32   1.28488021e+08 -1.91874609e+09  1.39e-01 2.26e-02  1.68e+03     0s
+  33   1.19363154e+08  1.72223118e+09  1.33e-01 2.17e-02  1.59e+03     0s
+  34   1.16611812e+08  3.83932313e+09  1.31e-01 2.14e-02  1.57e+03     0s
+  35   1.14701429e+08  7.26258037e+09  1.30e-01 2.12e-02  1.55e+03     0s
+  36   1.16357785e+08  1.31111154e+10  1.29e-01 2.10e-02  1.54e+03     0s
+  37   1.17692666e+08  2.13818766e+10  1.28e-01 2.09e-02  1.53e+03     0s
+  38   1.21040885e+08  4.13018457e+10  1.27e-01 1.97e-02  1.51e+03     0s
+  39   1.24661412e+08  8.06094606e+10  1.26e-01 1.96e-02  1.50e+03     0s
+  40   1.28457317e+08  2.02604267e+11  1.25e-01 1.95e-02  1.48e+03     0s
+  41   1.29851020e+08  6.77104877e+11  1.25e-01 1.95e-02  1.54e+03     0s
+  42   1.29990414e+08  1.94826751e+12  1.25e-01 1.95e-02  1.78e+03     0s
+  43   1.30044035e+08  5.59308107e+12  1.25e-01 1.94e-02  2.35e+03     0s
+  44   1.30202575e+08  1.81858886e+13  1.25e-01 1.93e-02  3.61e+03     0s
+  45   1.30342625e+08  9.73202250e+13  1.25e-01 4.58e-04  8.75e+03     0s
+  46   1.30331229e+08  7.14325575e+14  1.25e-01 1.17e-02  5.33e+04     0s
+  47   5.96598812e+13 -2.28959192e+13  6.13e+04 1.00e+04  9.92e+07     0s
+  48   6.42120818e+12 -6.45070442e+11  9.66e+03 1.58e+03  2.59e+06     0s
+  49   2.50684354e+11 -5.98046395e+09  4.22e+02 6.89e+01  5.11e+03     0s
+  50   7.52938244e+10 -1.20038663e+09  1.29e+02 2.11e+01  5.04e+02     0s
+  51   3.27020798e+10 -6.68941654e+08  5.67e+01 9.25e+00  1.10e+02     0s
+  52   1.36986779e+10 -5.32235385e+08  2.42e+01 3.96e+00  2.71e+01     0s
+  53   9.42530032e+09 -5.09579807e+08  1.69e+01 2.77e+00  1.65e+01     0s
+  54   7.75891096e+09 -5.01913762e+08  1.41e+01 2.30e+00  1.32e+01     0s
+  55   7.96230969e+09 -4.98269585e+08  1.44e+01 2.36e+00  1.45e+01     0s
+  56   6.96676934e+09 -4.93765318e+08  1.27e+01 2.08e+00  1.22e+01     0s
+  57   6.36513092e+09 -4.88012790e+08  1.17e+01 1.91e+00  1.14e+01     0s
+  58   6.06444358e+09 -4.85331191e+08  1.12e+01 1.83e+00  1.09e+01     0s
+  59   5.90333258e+09 -4.84455867e+08  1.09e+01 1.78e+00  1.06e+01     0s
+  60   5.34585924e+09 -4.82261184e+08  9.95e+00 1.63e+00  9.62e+00     0s
+  61   4.46535497e+09 -4.77181723e+08  8.44e+00 1.38e+00  8.36e+00     0s
+  62   4.37336664e+09 -4.74612311e+08  8.29e+00 1.35e+00  8.47e+00     0s
+  63   4.31473558e+09 -4.71019197e+08  8.19e+00 1.34e+00  8.83e+00     0s
+  64   4.22278405e+09 -4.69704775e+08  8.03e+00 1.30e+00  8.70e+00     0s
+  65   4.06650509e+09 -4.68759202e+08  7.76e+00 1.26e+00  8.36e+00     0s
+  66   3.62724547e+09 -4.66965218e+08  7.00e+00 1.14e+00  7.54e+00     0s
+  67   2.29408893e+09 -4.61427029e+08  4.71e+00 7.65e-01  5.24e+00     0s
+  68   2.22279897e+09 -4.60782771e+08  4.59e+00 7.45e-01  5.11e+00     0s
+  69   2.14942032e+09 -4.60073128e+08  4.47e+00 7.25e-01  4.99e+00     0s
+  70   2.00450364e+09 -4.57223650e+08  4.22e+00 6.84e-01  5.12e+00     0s
+  71   1.94153950e+09 -4.54747656e+08  4.11e+00 6.67e-01  5.41e+00     0s
+  72   1.88854559e+09 -4.53565565e+08  4.02e+00 6.52e-01  5.41e+00     0s
+  73   1.80210138e+09 -4.52835396e+08  3.87e+00 6.28e-01  5.21e+00     0s
+  74   1.58565905e+09 -4.52335302e+08  3.49e+00 5.67e-01  4.68e+00     0s
+  75   1.50256354e+09 -4.50659011e+08  3.35e+00 5.44e-01  4.70e+00     0s
+  76   9.87677745e+08 -4.44917372e+08  2.46e+00 4.00e-01  3.42e+00     0s
+  77   9.24551638e+08 -4.43772722e+08  2.35e+00 3.82e-01  3.40e+00     0s
+  78   8.65946037e+08 -4.41958758e+08  2.25e+00 3.65e-01  3.48e+00     0s
+  79   8.27638239e+08 -4.38220789e+08  2.18e+00 3.55e-01  3.86e+00     0s
+  80   7.95847970e+08 -4.32151152e+08  2.13e+00 3.45e-01  4.62e+00     0s
+  81   7.78142286e+08 -4.30772921e+08  2.10e+00 3.40e-01  4.70e+00     0s
+  82   7.44809791e+08 -4.27663977e+08  2.04e+00 3.31e-01  4.87e+00     0s
+  83   7.16280811e+08 -4.21484406e+08  1.99e+00 3.23e-01  5.69e+00     0s
+  84   6.34278420e+08 -4.18873578e+08  1.84e+00 2.99e-01  5.68e+00     0s
+  85   5.54078951e+08 -4.15275332e+08  1.70e+00 2.76e-01  5.50e+00     0s
+  86   5.05664456e+08 -4.13379526e+08  1.61e+00 2.62e-01  5.54e+00     0s
+  87   4.59264454e+08 -4.10603844e+08  1.53e+00 2.49e-01  5.48e+00     0s
+  88   4.45000865e+08 -4.09023719e+08  1.51e+00 2.44e-01  5.56e+00     0s
+  89   4.32655844e+08 -4.07869479e+08  1.48e+00 2.41e-01  5.59e+00     0s
+  90   4.21755313e+08 -4.06454150e+08  1.46e+00 2.38e-01  5.67e+00     0s
+  91   4.24773904e+08 -4.02363892e+08  1.47e+00 2.38e-01  6.46e+00     0s
+  92   4.13520489e+08 -3.99874583e+08  1.45e+00 2.35e-01  6.70e+00     0s
+  93   4.15191092e+08 -3.93088697e+08  1.45e+00 2.35e-01  8.15e+00     0s
+  94   4.04392871e+08 -3.89463488e+08  1.43e+00 2.32e-01  8.65e+00     0s
+  95   3.95219118e+08 -3.85726596e+08  1.41e+00 2.29e-01  9.20e+00     0s
+  96   3.89719662e+08 -3.83296786e+08  1.40e+00 2.27e-01  9.58e+00     0s
+  97   3.80989704e+08 -3.79471253e+08  1.38e+00 2.25e-01  1.02e+01     0s
+  98   3.68561778e+08 -3.75481101e+08  1.36e+00 2.21e-01  1.07e+01     0s
+  99   2.87986493e+08 -3.69606685e+08  1.20e+00 1.96e-01  1.05e+01     0s
+ 100   2.36803729e+08 -3.55783966e+08  1.10e+00 1.79e-01  1.23e+01     0s
+ 101   2.19779940e+08 -3.52134618e+08  1.07e+00 1.73e-01  1.25e+01     0s
+ 102   2.12480077e+08 -3.50435754e+08  1.05e+00 1.71e-01  1.26e+01     0s
+ 103   2.01807136e+08 -3.46312164e+08  1.03e+00 1.67e-01  1.32e+01     0s
+ 104   1.91434083e+08 -3.22569826e+08  9.98e-01 1.62e-01  2.01e+01     0s
+ 105   1.68315059e+08 -2.82920986e+08  9.15e-01 1.49e-01  3.11e+01     0s
+ 106   1.42283478e+08 -2.64365706e+08  8.34e-01 1.35e-01  3.23e+01     0s
+ 107   1.40240284e+08 -2.59061815e+08  8.25e-01 1.34e-01  3.38e+01     0s
+ 108   1.18688433e+08 -2.44914308e+08  7.54e-01 1.22e-01  3.26e+01     0s
+ 109   1.14683741e+08 -2.40142115e+08  7.38e-01 1.20e-01  3.29e+01     0s
+ 110   9.01963956e+07 -2.15503765e+08  6.46e-01 1.05e-01  3.32e+01     0s
+ 111   8.45087001e+07 -2.07218936e+08  6.21e-01 1.01e-01  3.40e+01     0s
+ 112   8.21543083e+07 -2.02511953e+08  6.09e-01 9.89e-02  3.48e+01     0s
+ 113   7.81605460e+07 -1.91900489e+08  5.86e-01 9.51e-02  3.66e+01     0s
+ 114   7.43489152e+07 -1.74330797e+08  5.51e-01 8.95e-02  3.97e+01     0s
+ 115   7.06978261e+07 -1.61707843e+08  5.21e-01 8.47e-02  4.00e+01     0s
+ 116   6.96757310e+07 -1.55650494e+08  5.09e-01 8.26e-02  4.02e+01     0s
+ 117   6.71434288e+07 -1.49248724e+08  4.90e-01 7.95e-02  3.90e+01     0s
+ 118   6.45453532e+07 -1.33967970e+08  4.56e-01 7.40e-02  3.83e+01     0s
+ 119   5.99042754e+07 -1.17293771e+08  4.11e-01 6.67e-02  3.54e+01     0s
+ 120   5.61098444e+07 -9.62681214e+07  3.60e-01 5.85e-02  3.26e+01     0s
+ 121   5.50186999e+07 -8.45855596e+07  3.33e-01 5.41e-02  3.17e+01     0s
+ 122   5.32105807e+07 -6.52595908e+07  2.90e-01 4.71e-02  2.95e+01     0s
+ 123   5.34304203e+07 -5.74439062e+07  2.74e-01 4.45e-02  2.88e+01     0s
+ 124   5.40917664e+07 -4.28744360e+07  2.41e-01 3.91e-02  2.59e+01     0s
+ 125   5.43986864e+07 -3.78912653e+07  2.32e-01 3.77e-02  2.59e+01     0s
+ 126   5.55717183e+07 -2.94026800e+07  2.20e-01 3.57e-02  2.66e+01     0s
+ 127   5.71406368e+07 -2.18783910e+07  2.11e-01 3.42e-02  2.73e+01     0s
+ 128   5.97679980e+07 -1.07551245e+07  1.99e-01 3.23e-02  2.90e+01     0s
+ 129   6.38618146e+07  1.44314439e+06  1.85e-01 3.01e-02  3.17e+01     0s
+ 130   6.88864361e+07  1.44313935e+07  1.75e-01 2.84e-02  3.49e+01     0s
+ 131   7.28523263e+07  2.30421404e+07  1.68e-01 2.72e-02  3.59e+01     0s
+ 132   7.78032725e+07  3.35310648e+07  1.61e-01 2.62e-02  3.93e+01     0s
+ 133   8.17042025e+07  4.12673574e+07  1.59e-01 2.58e-02  4.53e+01     0s
+ 134   9.22323528e+07  5.94569982e+07  1.51e-01 2.46e-02  5.62e+01     0s
+ 135   1.00214988e+08  7.11241835e+07  1.49e-01 2.42e-02  6.83e+01     0s
+ 136   1.25278065e+08  1.06212187e+08  1.46e-01 2.38e-02  1.38e+02     0s
+ 137   1.42056849e+08  1.27159116e+08  1.46e-01 2.37e-02  2.32e+02     0s
+ 138   1.53948484e+08  1.41539122e+08  1.47e-01 2.38e-02  4.74e+02     0s
+ 139   1.65336227e+08  1.65861645e+08  1.48e-01 2.41e-02  3.30e+03     0s
+ 140*  1.62688238e+08  1.36233300e+09  1.03e-02 1.22e-03  8.63e+00     0s
+ 141*  1.62688235e+08  8.48605642e+11  1.03e-05 1.82e-04  8.64e-03     0s
+ 142*  1.62688242e+08  8.47040179e+14  1.03e-08 3.90e-04  8.64e-06     0s
+ 143*  1.62688242e+08  8.47881130e+17  1.03e-11 1.21e-04  8.65e-09     0s
+
+Barrier performed 143 iterations in 0.27 seconds (0.24 work units)
+Infeasible model
+
+
+User-callback calls 232, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:31:15 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:31:15 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7197 columns and 18460 nonzeros (Min)
+Model fingerprint: 0x4c73ce2f
+Model has 2031 linear objective coefficients and an objective constant of 1.4779866394640002e+07
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3696 rows and 4645 columns
+Presolve time: 0.01s
+Presolved: 1446 rows, 2552 columns, 8433 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.771e+04
+ Factor NZ  : 4.919e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.192e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   4.10907534e+12 -3.53774873e+11  6.38e+03 5.13e+03  5.11e+06     0s
+   1   1.19151213e+12 -1.15298460e+11  1.93e+03 1.55e+03  1.57e+06     0s
+   2   1.47536071e+11 -9.48192734e+10  2.42e+02 1.95e+02  2.33e+05     0s
+   3   1.12909364e+10 -5.98215297e+10  1.90e+01 1.53e+01  2.65e+04     0s
+   4   2.11882603e+09 -2.88788988e+10  3.90e+00 3.14e+00  8.31e+03     0s
+   5   5.67948490e+08 -1.29023545e+10  1.23e+00 9.90e-01  3.23e+03     0s
+   6   3.34420788e+08 -8.56989871e+09  7.69e-01 6.18e-01  2.07e+03     0s
+   7   2.55887782e+08 -6.38233206e+09  4.93e-01 3.97e-01  1.50e+03     0s
+   8   1.37142755e+08 -2.82159923e+09  1.56e-01 1.26e-01  6.29e+02     0s
+   9   6.70100980e+07 -9.59779026e+08  1.28e-02 1.03e-02  2.04e+02     0s
+  10   2.90023228e+07 -2.62353663e+08  2.33e-03 1.87e-03  5.72e+01     0s
+  11   6.58416452e+06 -2.52551508e+07  2.11e-05 1.70e-05  6.22e+00     0s
+  12   2.18002211e+06  1.34798598e+05  1.99e-07 1.60e-07  3.99e-01     0s
+  13   1.76354745e+06  1.37216795e+06  1.28e-09 1.01e-11  7.64e-02     0s
+  14   1.69980695e+06  1.65159285e+06  1.73e-09 6.66e-12  9.41e-03     0s
+  15   1.69020465e+06  1.68851478e+06  2.33e-09 5.24e-12  3.30e-04     0s
+  16   1.68980886e+06  1.68980283e+06  2.71e-08 1.04e-11  1.16e-06     0s
+  17   1.68981257e+06  1.68980640e+06  5.96e-06 5.78e-12  2.17e-08     0s
+  18   1.68979354e+06  1.68980650e+06  2.97e-06 4.59e-12  4.30e-11     0s
+  19   1.68980785e+06  1.68980650e+06  3.01e-07 7.34e-12  4.30e-14     0s
+
+Barrier solved model in 19 iterations and 0.05 seconds (0.04 work units)
+Optimal objective 1.68980785e+06
+
+
+User-callback calls 70, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:24:45 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:24:45 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7443 columns and 18718 nonzeros (Min)
+Model fingerprint: 0xb8df5e53
+Model has 2199 linear objective coefficients and an objective constant of 1.6412532403653938e+07
+Model has 972 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3675 rows and 4727 columns
+Presolve time: 0.02s
+Presolved: 1471 rows, 2716 columns, 8680 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.792e+04
+ Factor NZ  : 4.966e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.237e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   4.41876528e+12 -1.21767459e+12  8.12e+03 3.80e+04  3.78e+07     0s
+   1   9.15507587e+11 -7.01642759e+11  1.76e+03 8.23e+03  8.47e+06     0s
+   2   6.64032788e+10 -6.91338207e+11  1.29e+02 6.05e+02  7.97e+05     0s
+   3   1.15878584e+10 -3.83934907e+11  2.29e+01 1.07e+02  1.73e+05     0s
+   4   1.73878601e+09 -1.90435385e+11  3.60e+00 1.68e+01  4.91e+04     0s
+   5   5.11319160e+08 -7.83878938e+10  1.02e+00 4.78e+00  1.78e+04     0s
+   6   2.84207046e+08 -4.16631425e+10  4.10e-01 1.92e+00  8.93e+03     0s
+   7   2.42190611e+08 -3.24901958e+10  2.91e-01 1.36e+00  6.86e+03     0s
+   8   2.30724542e+08 -2.93449661e+10  2.62e-01 1.22e+00  6.19e+03     0s
+   9   2.25842969e+08 -2.71403359e+10  2.43e-01 1.14e+00  5.92e+03     0s
+  10   2.20113712e+08 -2.28219506e+10  2.19e-01 1.03e+00  5.58e+03     0s
+  11   2.10134524e+08 -1.58113582e+10  1.94e-01 9.09e-01  4.91e+03     0s
+  12   2.04134424e+08 -9.72773923e+09  1.83e-01 8.56e-01  4.58e+03     0s
+  13   1.98691708e+08  9.69509697e+09  1.73e-01 8.09e-01  4.28e+03     0s
+  14   1.95746708e+08  7.15816385e+10  1.66e-01 7.75e-01  3.93e+03     0s
+  15   1.97115447e+08  1.82039837e+11  1.64e-01 7.67e-01  3.81e+03     0s
+  16   1.98243510e+08  5.81306563e+11  1.63e-01 7.64e-01  3.77e+03     0s
+  17   1.98249584e+08  2.20906803e+12  1.63e-01 7.63e-01  3.99e+03     0s
+  18   6.46146088e+13 -2.37059292e+13  8.13e+04 3.80e+04  3.77e+08     0s
+  19   1.25905155e+13 -2.61167705e+12  2.14e+04 9.98e+03  1.44e+08     0s
+  20   3.40663164e+11 -1.11178997e+12  6.58e+02 3.07e+02  5.14e+06     0s
+  21   1.62891757e+10 -7.70501880e+11  3.18e+01 1.49e+01  3.67e+05     0s
+  22   3.96266025e+09 -4.42999979e+11  7.77e+00 3.63e+00  1.35e+05     0s
+  23   3.47350826e+08 -1.23719983e+11  6.08e-01 2.84e-01  2.60e+04     0s
+  24   2.32961471e+08 -7.06684707e+10  2.91e-01 1.36e-01  1.44e+04     0s
+  25   2.19481670e+08 -6.23579073e+10  2.50e-01 1.17e-01  1.29e+04     0s
+  26   2.06090821e+08 -5.17994031e+10  2.15e-01 1.00e-01  1.11e+04     0s
+  27   2.02903518e+08 -4.49725188e+10  2.00e-01 9.36e-02  1.03e+04     0s
+  28   2.00630141e+08 -3.79810536e+10  1.91e-01 8.93e-02  9.78e+03     0s
+  29   1.96696104e+08 -2.83587238e+10  1.83e-01 8.56e-02  9.32e+03     0s
+  30   1.95725136e+08 -1.75173039e+10  1.78e-01 8.32e-02  9.03e+03     0s
+  31   1.94702569e+08 -2.90498067e+08  1.73e-01 8.10e-02  8.75e+03     0s
+  32   1.92746454e+08  4.86346357e+10  1.67e-01 7.82e-02  8.20e+03     0s
+  33   1.93344918e+08  1.79306604e+11  1.64e-01 7.68e-02  7.80e+03     0s
+  34   1.95121464e+08  5.92002452e+11  1.64e-01 7.65e-02  7.76e+03     0s
+  35   1.95969543e+08  1.76810546e+12  1.63e-01 7.64e-02  8.00e+03     0s
+  36   1.96355064e+08  5.16015038e+12  1.63e-01 6.44e-02  8.68e+03     0s
+  37   1.99597431e+08  1.40984489e+13  1.63e-01 2.08e-01  1.03e+04     0s
+  38   2.01613869e+08  4.16527652e+13  1.63e-01 1.53e-01  1.45e+04     0s
+  39   2.04152244e+08  1.37896120e+14  1.63e-01 3.92e-01  2.65e+04     0s
+  40   6.46146088e+13 -2.37059292e+13  8.13e+04 3.80e+04  3.77e+08     0s
+  41   1.03188785e+13 -1.56591386e+12  1.93e+04 9.02e+03  2.53e+07     0s
+  42   9.65245604e+11 -6.15367919e+10  2.31e+03 1.08e+03  5.33e+05     0s
+  43   8.40448426e+10 -5.58593130e+09  2.16e+02 1.01e+02  8.96e+03     0s
+  44   1.24596523e+10 -1.35094594e+09  3.36e+01 1.57e+01  5.38e+02     0s
+  45   1.00157642e+10 -1.21393371e+09  2.74e+01 1.28e+01  4.13e+02     0s
+  46   3.37511447e+09 -8.29270021e+08  1.02e+01 4.79e+00  1.27e+02     0s
+  47   2.24864187e+09 -7.53634559e+08  7.32e+00 3.42e+00  8.88e+01     0s
+  48   1.35430368e+09 -6.85331103e+08  4.97e+00 2.32e+00  6.44e+01     0s
+  49   1.29303655e+09 -6.78777347e+08  4.81e+00 2.25e+00  6.36e+01     0s
+  50   1.06719522e+09 -6.57903229e+08  4.21e+00 1.97e+00  5.61e+01     0s
+  51   9.83686404e+08 -6.49469337e+08  3.99e+00 1.86e+00  5.37e+01     0s
+  52   8.67467251e+08 -6.32796218e+08  3.67e+00 1.72e+00  5.44e+01     0s
+  53   7.23428309e+08 -6.01273634e+08  3.26e+00 1.53e+00  6.16e+01     0s
+  54   5.48245462e+08 -5.71205000e+08  2.77e+00 1.29e+00  5.21e+01     0s
+  55   5.10731621e+08 -5.64087298e+08  2.66e+00 1.24e+00  5.09e+01     0s
+  56   4.40804386e+08 -5.51227737e+08  2.46e+00 1.15e+00  4.82e+01     0s
+  57   3.79632824e+08 -5.39539370e+08  2.28e+00 1.07e+00  4.65e+01     0s
+  58   2.70588624e+08 -5.16873295e+08  1.96e+00 9.17e-01  4.27e+01     0s
+  59   2.22168433e+08 -5.02162342e+08  1.81e+00 8.48e-01  4.26e+01     0s
+  60   2.03521160e+08 -4.95509392e+08  1.76e+00 8.21e-01  4.26e+01     0s
+  61   1.94058048e+08 -4.91915491e+08  1.73e+00 8.06e-01  4.26e+01     0s
+  62   1.73059582e+08 -4.83534102e+08  1.66e+00 7.74e-01  4.27e+01     0s
+  63   1.58614332e+08 -4.76245104e+08  1.61e+00 7.52e-01  4.35e+01     0s
+  64   1.63854586e+08 -4.45325616e+08  1.58e+00 7.39e-01  6.06e+01     0s
+  65   1.48407884e+08 -4.19043097e+08  1.49e+00 6.98e-01  6.86e+01     0s
+  66   1.36275322e+08 -3.97905181e+08  1.42e+00 6.63e-01  7.01e+01     0s
+  67   1.28667733e+08 -3.78166929e+08  1.36e+00 6.33e-01  7.23e+01     0s
+  68   1.19051074e+08 -3.57800324e+08  1.28e+00 5.99e-01  7.25e+01     0s
+  69   1.14969257e+08 -3.49071886e+08  1.25e+00 5.84e-01  7.23e+01     0s
+  70   9.74001154e+07 -2.88315733e+08  1.06e+00 4.96e-01  7.09e+01     0s
+  71   8.18620202e+07 -2.46151294e+08  9.06e-01 4.24e-01  6.14e+01     0s
+  72   7.17362307e+07 -2.13167779e+08  7.87e-01 3.68e-01  5.38e+01     0s
+  73   3.57689386e+07 -1.22817846e+08  4.32e-01 2.02e-01  2.98e+01     0s
+  74   3.19577049e+07 -1.11335962e+08  3.89e-01 1.82e-01  2.72e+01     0s
+  75   2.28310653e+07 -7.43046361e+07  2.69e-01 1.26e-01  1.90e+01     0s
+  76   2.38662275e+07 -7.22763993e+07  2.70e-01 1.26e-01  2.06e+01     0s
+  77   2.89194402e+07 -6.54454482e+07  2.81e-01 1.31e-01  2.81e+01     0s
+  78   2.97494634e+07 -5.96327836e+07  2.72e-01 1.27e-01  2.92e+01     0s
+  79   3.06867602e+07 -5.51585512e+07  2.62e-01 1.23e-01  2.82e+01     0s
+  80   3.11973072e+07 -5.29349684e+07  2.59e-01 1.21e-01  2.88e+01     0s
+  81   3.14722811e+07 -5.18472964e+07  2.58e-01 1.20e-01  2.89e+01     0s
+  82   3.22636902e+07 -4.86949587e+07  2.52e-01 1.18e-01  2.86e+01     0s
+  83   3.40971814e+07 -4.40207015e+07  2.47e-01 1.16e-01  3.02e+01     0s
+  84   3.51712812e+07 -4.06338713e+07  2.43e-01 1.13e-01  3.06e+01     0s
+  85   3.61712069e+07 -3.76681520e+07  2.39e-01 1.12e-01  3.09e+01     0s
+  86   3.70591406e+07 -3.51788107e+07  2.36e-01 1.10e-01  3.16e+01     0s
+  87   3.87068147e+07 -3.07911667e+07  2.32e-01 1.08e-01  3.27e+01     0s
+  88   3.99261732e+07 -2.77930554e+07  2.28e-01 1.07e-01  3.30e+01     0s
+  89   4.07620732e+07 -2.57400465e+07  2.27e-01 1.06e-01  3.38e+01     0s
+  90   4.26496399e+07 -2.12385273e+07  2.23e-01 1.04e-01  3.57e+01     0s
+  91   4.70956960e+07 -1.13629076e+07  2.18e-01 1.02e-01  4.07e+01     0s
+  92   5.51491707e+07  5.11122653e+06  2.12e-01 9.90e-02  5.12e+01     0s
+  93   6.71195632e+07  2.63080338e+07  2.05e-01 9.60e-02  6.54e+01     0s
+  94   7.01882576e+07  3.10412659e+07  2.04e-01 9.52e-02  6.82e+01     0s
+  95   8.04985201e+07  4.68543465e+07  2.00e-01 9.34e-02  7.97e+01     0s
+  96   9.32205579e+07  6.54059765e+07  1.95e-01 9.12e-02  9.46e+01     0s
+  97   1.07963438e+08  8.59360327e+07  1.92e-01 8.96e-02  1.17e+02     0s
+  98   1.38366164e+08  1.28452184e+08  1.90e-01 8.86e-02  2.07e+02     0s
+  99   1.58178100e+08  1.54829196e+08  1.88e-01 8.79e-02  2.69e+02     0s
+ 100   2.22261219e+08  2.51765556e+08  1.89e-01 8.84e-02  8.84e+02     0s
+ 101   2.36534254e+08  3.14059409e+08  1.90e-01 8.88e-02  5.66e+03     0s
+ 102*  2.29948045e+08  1.93250186e+09  2.40e-02 1.64e-02  5.59e+01     0s
+ 103*  2.29948019e+08  7.41917426e+11  2.40e-05 9.98e-04  5.59e-02     0s
+ 104*  2.29948019e+08  7.35772419e+14  2.40e-08 7.70e-04  5.60e-05     0s
+ 105*  2.29948019e+08  7.36496887e+17  2.40e-11 3.36e-03  5.60e-08     0s
+ 106*  2.29948019e+08  7.37236829e+20  2.40e-14 1.23e-02  5.61e-11     0s
+ 107*  2.29948019e+08  7.37965716e+23  2.40e-17 5.42e-03  5.61e-14     0s
+ 108*  2.29948019e+08  7.37970148e+26  2.40e-20 1.70e-04  5.61e-17     0s
+
+Barrier performed 108 iterations in 0.33 seconds (0.19 work units)
+Infeasible model
+
+
+User-callback calls 189, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:27:52 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:27:52 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7443 columns and 18718 nonzeros (Min)
+Model fingerprint: 0x2d091962
+Model has 2199 linear objective coefficients and an objective constant of 1.6412527592799980e+07
+Model has 972 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3674 rows and 4727 columns
+Presolve time: 0.02s
+Presolved: 1472 rows, 2716 columns, 8689 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.795e+04
+ Factor NZ  : 4.917e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.126e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.16597461e+12 -1.39440207e+12  7.31e+03 3.77e+04  3.76e+07     0s
+   1   1.11737916e+12 -8.05009904e+11  1.65e+03 8.48e+03  8.73e+06     0s
+   2   9.42321044e+10 -7.44588169e+11  1.40e+02 7.23e+02  9.11e+05     0s
+   3   1.47421242e+10 -4.20565442e+11  2.24e+01 1.15e+02  1.85e+05     0s
+   4   2.28336169e+09 -2.06575858e+11  3.67e+00 1.89e+01  5.38e+04     0s
+   5   7.40965423e+08 -9.00252597e+10  1.24e+00 6.38e+00  2.10e+04     0s
+   6   4.07797887e+08 -5.73157738e+10  5.39e-01 2.78e+00  1.27e+04     0s
+   7   2.33899342e+08 -2.49085042e+10  2.04e-01 1.05e+00  5.22e+03     0s
+   8   1.33355892e+08 -8.67793890e+09  2.48e-02 1.28e-01  1.68e+03     0s
+   9   1.01521786e+08 -1.88176408e+09  4.63e-03 2.39e-02  3.68e+02     0s
+  10   5.63510319e+07 -5.93141421e+08  5.94e-04 3.06e-03  1.19e+02     0s
+  11   1.33485120e+07 -8.69559512e+07  4.70e-06 2.42e-05  1.84e+01     0s
+  12   2.56570984e+06 -2.17221912e+06  8.42e-08 4.34e-07  8.69e-01     0s
+  13   1.82791965e+06  8.33089108e+05  1.45e-08 7.49e-08  1.82e-01     0s
+  14   1.64408549e+06  1.37323123e+06  2.28e-09 7.27e-09  4.97e-02     0s
+  15   1.60660129e+06  1.48231206e+06  6.07e-10 3.13e-09  2.28e-02     0s
+  16   1.58392184e+06  1.53432833e+06  3.86e-09 1.04e-09  9.10e-03     0s
+  17   1.57241977e+06  1.56061877e+06  1.18e-08 9.29e-12  2.16e-03     0s
+  18   1.56980290e+06  1.56932927e+06  1.43e-08 1.24e-11  8.69e-05     0s
+  19   1.56968846e+06  1.56968659e+06  2.38e-08 1.08e-11  3.44e-07     0s
+  20   1.56968810e+06  1.56968794e+06  9.31e-07 6.84e-12  1.74e-09     0s
+  21   1.56968797e+06  1.56968794e+06  1.77e-07 1.49e-11  4.22e-12     0s
+
+Barrier solved model in 21 iterations and 0.08 seconds (0.05 work units)
+Optimal objective 1.56968797e+06
+
+
+User-callback calls 67, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:30:11 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:30:11 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7443 columns and 18718 nonzeros (Min)
+Model fingerprint: 0x2c285b87
+Model has 2199 linear objective coefficients and an objective constant of 1.6412527592799980e+07
+Model has 972 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3686 rows and 4740 columns
+Presolve time: 0.02s
+Presolved: 1460 rows, 2703 columns, 8681 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.783e+04
+ Factor NZ  : 4.965e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.221e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.21997941e+12 -1.77114111e+12  7.69e+03 3.77e+04  3.76e+07     0s
+   1   1.13005072e+12 -1.07019073e+12  1.73e+03 8.49e+03  8.75e+06     0s
+   2   8.13638111e+10 -9.32681329e+11  1.26e+02 6.19e+02  8.15e+05     0s
+   3   1.86193590e+10 -5.35107906e+11  2.95e+01 1.45e+02  2.30e+05     0s
+   4   2.94807379e+09 -2.79367632e+11  4.94e+00 2.42e+01  7.57e+04     0s
+   5   9.61264375e+08 -1.36282904e+11  1.75e+00 8.60e+00  3.28e+04     0s
+   6   4.64598950e+08 -7.99922731e+10  6.58e-01 3.23e+00  1.80e+04     0s
+   7   3.05071428e+08 -4.44799363e+10  3.36e-01 1.65e+00  9.58e+03     0s
+   8   1.45107641e+08 -1.77412665e+10  3.94e-02 1.93e-01  3.46e+03     0s
+   9   1.14876101e+08 -2.36999727e+09  3.20e-03 1.57e-02  4.63e+02     0s
+  10   7.09530235e+07 -7.35336600e+08  4.97e-04 2.44e-03  1.49e+02     0s
+  11   1.36953036e+07 -6.45617995e+07  4.97e-10 2.44e-09  1.44e+01     0s
+  12   2.15848848e+06 -8.47859549e+06  1.31e-10 1.47e-10  1.96e+00     0s
+  13   7.15586079e+05 -3.71181709e+05  7.04e-10 1.03e-11  2.00e-01     0s
+  14   5.26379610e+05  2.71614301e+05  6.17e-10 4.07e-12  4.70e-02     0s
+  15   4.64945334e+05  4.34880703e+05  6.03e-10 1.18e-11  5.54e-03     0s
+  16   4.57231524e+05  4.55592015e+05  2.14e-09 2.13e-11  3.02e-04     0s
+  17   4.56755592e+05  4.56658491e+05  1.41e-07 1.08e-11  1.79e-05     0s
+  18   4.56720947e+05  4.56709739e+05  2.10e-06 1.47e-11  2.08e-06     0s
+  19   4.56716598e+05  4.56715189e+05  8.15e-08 5.31e-12  2.63e-07     0s
+  20   4.56716023e+05  4.56715825e+05  3.65e-09 6.27e-12  3.65e-08     0s
+  21   4.56715937e+05  4.56715909e+05  3.07e-09 1.19e-11  5.03e-09     0s
+
+Barrier solved model in 21 iterations and 0.08 seconds (0.05 work units)
+Optimal objective 4.56715937e+05
+
+
+User-callback calls 73, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 18:00:39 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 18:00:39 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7443 columns and 18718 nonzeros (Min)
+Model fingerprint: 0x173a2303
+Model has 2199 linear objective coefficients and an objective constant of 1.6412527592799980e+07
+Model has 972 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3681 rows and 4735 columns
+Presolve time: 0.03s
+Presolved: 1465 rows, 2708 columns, 8687 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.01s
+
+Barrier statistics:
+ AA' NZ     : 1.782e+04
+ Factor NZ  : 4.906e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.142e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   6.15487674e+12 -2.08391249e+12  7.44e+03 3.76e+04  3.76e+07     0s
+   1   1.39314223e+12 -1.30013012e+12  1.74e+03 8.80e+03  9.13e+06     0s
+   2   1.47828729e+11 -1.11975079e+12  1.87e+02 9.44e+02  1.20e+06     0s
+   3   2.24585056e+10 -5.82251744e+11  2.90e+01 1.46e+02  2.41e+05     0s
+   4   4.09932601e+09 -2.59968504e+11  5.64e+00 2.85e+01  6.99e+04     0s
+   5   1.20080492e+09 -1.07323003e+11  1.82e+00 9.21e+00  2.56e+04     0s
+   6   8.35406161e+08 -8.24287833e+10  1.16e+00 5.87e+00  1.93e+04     0s
+   7   3.93128863e+08 -3.50186792e+10  4.16e-01 2.10e+00  7.67e+03     0s
+   8   1.51713251e+08 -1.27242650e+10  6.11e-02 3.09e-01  2.54e+03     0s
+   9   1.05032378e+08 -1.99968733e+09  8.56e-03 4.32e-02  3.97e+02     0s
+  10   5.47656698e+07 -5.87658675e+08  6.48e-04 3.27e-03  1.19e+02     0s
+  11   9.79234429e+06 -3.82946993e+07  6.48e-10 3.27e-09  8.85e+00     0s
+  12   1.12658428e+06 -2.57676038e+06  1.90e-10 2.04e-11  6.81e-01     0s
+  13   6.91808190e+05 -4.73956046e+05  1.48e-09 1.67e-11  2.14e-01     0s
+  14   5.04960793e+05  3.26797488e+05  1.48e-09 6.25e-12  3.28e-02     0s
+  15   4.61049156e+05  4.47242280e+05  3.06e-09 3.27e-11  2.54e-03     0s
+  16   4.57039896e+05  4.56093764e+05  3.89e-09 1.13e-11  1.74e-04     0s
+  17   4.56750690e+05  4.56662613e+05  4.30e-07 1.94e-11  1.62e-05     0s
+  18   4.56719907e+05  4.56711245e+05  1.94e-06 2.53e-11  1.62e-06     0s
+  19   4.56716510e+05  4.56715304e+05  4.84e-08 7.53e-12  2.22e-07     0s
+  20   4.56715996e+05  4.56715841e+05  3.72e-08 8.02e-12  3.07e-08     0s
+  21   4.56715934e+05  4.56715911e+05  4.27e-09 1.35e-11  4.22e-09     0s
+
+Barrier solved model in 21 iterations and 0.10 seconds (0.05 work units)
+Optimal objective 4.56715934e+05
+
+
+User-callback calls 77, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 15:27:22 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 15:27:22 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7443 columns and 18718 nonzeros (Min)
+Model fingerprint: 0x173a2303
+Model has 2199 linear objective coefficients and an objective constant of 1.6412527592799980e+07
+Model has 972 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3681 rows and 4735 columns
+Presolve time: 0.01s
+Presolved: 1465 rows, 2708 columns, 8687 nonzeros
+Presolved model has 454 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.782e+04
+ Factor NZ  : 4.906e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.142e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   6.15487674e+12 -2.08391249e+12  7.44e+03 3.76e+04  3.76e+07     0s
+   1   1.39314223e+12 -1.30013012e+12  1.74e+03 8.80e+03  9.13e+06     0s
+   2   1.47828729e+11 -1.11975079e+12  1.87e+02 9.44e+02  1.20e+06     0s
+   3   2.24585056e+10 -5.82251744e+11  2.90e+01 1.46e+02  2.41e+05     0s
+   4   4.09932601e+09 -2.59968504e+11  5.64e+00 2.85e+01  6.99e+04     0s
+   5   1.20080492e+09 -1.07323003e+11  1.82e+00 9.21e+00  2.56e+04     0s
+   6   8.35406161e+08 -8.24287833e+10  1.16e+00 5.87e+00  1.93e+04     0s
+   7   3.93128863e+08 -3.50186792e+10  4.16e-01 2.10e+00  7.67e+03     0s
+   8   1.51713251e+08 -1.27242650e+10  6.11e-02 3.09e-01  2.54e+03     0s
+   9   1.05032378e+08 -1.99968733e+09  8.56e-03 4.32e-02  3.97e+02     0s
+  10   5.47656698e+07 -5.87658675e+08  6.48e-04 3.27e-03  1.19e+02     0s
+  11   9.79234429e+06 -3.82946993e+07  6.48e-10 3.27e-09  8.85e+00     0s
+  12   1.12658428e+06 -2.57676038e+06  1.90e-10 2.04e-11  6.81e-01     0s
+  13   6.91808190e+05 -4.73956046e+05  1.48e-09 1.67e-11  2.14e-01     0s
+  14   5.04960793e+05  3.26797488e+05  1.48e-09 6.25e-12  3.28e-02     0s
+  15   4.61049156e+05  4.47242280e+05  3.06e-09 3.27e-11  2.54e-03     0s
+  16   4.57039896e+05  4.56093764e+05  3.89e-09 1.13e-11  1.74e-04     0s
+  17   4.56750690e+05  4.56662613e+05  4.30e-07 1.94e-11  1.62e-05     0s
+  18   4.56719907e+05  4.56711245e+05  1.94e-06 2.53e-11  1.62e-06     0s
+  19   4.56716510e+05  4.56715304e+05  4.84e-08 7.53e-12  2.22e-07     0s
+  20   4.56715996e+05  4.56715841e+05  3.72e-08 8.02e-12  3.07e-08     0s
+  21   4.56715934e+05  4.56715911e+05  4.27e-09 1.35e-11  4.22e-09     0s
+
+Barrier solved model in 21 iterations and 0.06 seconds (0.05 work units)
+Optimal objective 4.56715934e+05
+
+
+User-callback calls 72, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:07:59 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:07:59 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7859 columns and 19134 nonzeros (Min)
+Model fingerprint: 0x44277633
+Model has 2587 linear objective coefficients and an objective constant of 1.6140924362122862e+07
+Model has 1482 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [2e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3648 rows and 4607 columns
+Presolve time: 0.02s
+Presolved: 1498 rows, 3252 columns, 9329 nonzeros
+Presolved model has 964 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.778e+04
+ Factor NZ  : 4.887e+04 (roughly 2 MB of memory)
+ Factor Ops : 2.080e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   6.82562397e+12 -2.42908152e+12  8.06e+03 3.76e+04  3.76e+07     0s
+   1   1.55385653e+12 -1.39326613e+12  1.95e+03 9.10e+03  9.41e+06     0s
+   2   1.62669663e+11 -1.16223469e+12  2.08e+02 9.72e+02  1.18e+06     0s
+   3   2.54971999e+10 -6.18239200e+11  3.33e+01 1.56e+02  2.36e+05     0s
+   4   4.15063550e+09 -2.80220475e+11  5.85e+00 2.73e+01  6.42e+04     0s
+   5   1.18110759e+09 -1.16139539e+11  1.89e+00 8.84e+00  2.34e+04     0s
+   6   8.15866856e+08 -8.86472902e+10  1.22e+00 5.69e+00  1.75e+04     0s
+   7   4.02215364e+08 -4.25637331e+10  5.00e-01 2.34e+00  7.90e+03     0s
+   8   2.01479632e+08 -2.67782767e+10  1.67e-01 7.78e-01  4.68e+03     0s
+   9   1.09441525e+08 -3.11692502e+09  1.55e-02 7.21e-02  5.19e+02     0s
+  10   7.37483071e+07 -1.30390507e+09  5.47e-03 2.55e-02  2.17e+02     0s
+  11   3.47123394e+07 -6.01055837e+08  7.76e-05 3.62e-04  9.72e+01     0s
+  12   7.20443038e+06 -2.28457685e+07  4.16e-07 1.94e-06  4.59e+00     0s
+  13   7.58119429e+05 -1.48316928e+06  1.29e-09 6.00e-09  3.42e-01     0s
+  14   3.72908725e+05  2.16128188e+04  1.05e-09 4.90e-10  5.36e-02     0s
+  15   2.94986086e+05  2.38259020e+05  9.58e-09 4.65e-11  8.66e-03     0s
+  16   2.79634872e+05  2.75046234e+05  6.58e-08 7.79e-12  7.01e-04     0s
+  17   2.78196345e+05  2.77569790e+05  3.60e-07 8.59e-12  9.57e-05     0s
+  18   2.77964122e+05  2.77739040e+05  6.07e-08 1.91e-11  3.44e-05     0s
+  19   2.77916437e+05  2.77911308e+05  9.45e-08 1.51e-11  7.83e-07     0s
+  20   2.77915068e+05  2.77914863e+05  3.82e-08 1.39e-11  3.13e-08     0s
+  21   2.77915021e+05  2.77915021e+05  6.22e-09 1.75e-11  3.31e-11     0s
+
+Barrier solved model in 21 iterations and 0.10 seconds (0.05 work units)
+Optimal objective 2.77915021e+05
+
+
+User-callback calls 83, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:15:17 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:15:17 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7859 columns and 19134 nonzeros (Min)
+Model fingerprint: 0x45036328
+Model has 2587 linear objective coefficients and an objective constant of 1.6140924362122862e+07
+Model has 1482 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [2e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3651 rows and 4608 columns
+Presolve time: 0.02s
+Presolved: 1495 rows, 3251 columns, 9293 nonzeros
+Presolved model has 964 quadratic objective terms
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 1.802e+04
+ Factor NZ  : 4.792e+04 (roughly 2 MB of memory)
+ Factor Ops : 1.995e+06 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   5.20826395e+12 -1.28002705e+12  7.88e+03 3.82e+04  3.81e+07     0s
+   1   1.00481382e+12 -5.98959642e+11  1.65e+03 7.98e+03  8.21e+06     0s
+   2   7.56353475e+10 -6.20800832e+11  1.26e+02 6.13e+02  8.08e+05     0s
+   3   9.14121248e+09 -3.74430618e+11  1.55e+01 7.51e+01  1.35e+05     0s
+   4   1.30731477e+09 -2.29317647e+11  2.30e+00 1.12e+01  4.81e+04     0s
+   5   3.37426186e+08 -7.90532083e+10  5.01e-01 2.43e+00  1.44e+04     0s
+   6   2.02228906e+08 -3.79548756e+10  2.13e-01 1.03e+00  6.60e+03     0s
+   7   1.43075360e+08 -2.04915275e+10  5.91e-02 2.87e-01  3.38e+03     0s
+   8   1.06697837e+08 -2.57758140e+09  6.48e-03 3.14e-02  4.21e+02     0s
+   9   6.54685842e+07 -1.16530073e+09  1.46e-03 7.07e-03  1.90e+02     0s
+  10   2.08227678e+07 -1.97363009e+08  6.14e-05 2.98e-04  3.34e+01     0s
+  11   4.06656650e+06 -2.34749526e+07  3.21e-06 1.56e-05  4.21e+00     0s
+  12   7.48217141e+05 -9.26277289e+05  4.30e-08 2.09e-07  2.56e-01     0s
+  13   4.23061937e+05  1.12521733e+05  4.03e-10 9.04e-12  4.74e-02     0s
+  14   3.70524921e+05  2.75162006e+05  1.60e-09 1.03e-11  1.46e-02     0s
+  15   3.57402422e+05  3.09860900e+05  1.43e-09 2.36e-11  7.26e-03     0s
+  16   3.45505290e+05  3.34045591e+05  1.15e-08 1.02e-11  1.75e-03     0s
+  17   3.43794779e+05  3.38782570e+05  6.88e-09 8.64e-12  7.65e-04     0s
+  18   3.42922880e+05  3.41600275e+05  8.26e-09 2.70e-11  2.02e-04     0s
+  19   3.42640653e+05  3.42576266e+05  1.58e-08 1.87e-11  9.83e-06     0s
+  20   3.42626611e+05  3.42617780e+05  4.00e-08 1.32e-11  1.35e-06     0s
+  21   3.42624674e+05  3.42623502e+05  7.42e-08 1.27e-11  1.79e-07     0s
+  22   3.42624404e+05  3.42624355e+05  1.24e-07 1.64e-11  5.02e-09     0s
+
+Barrier solved model in 22 iterations and 0.07 seconds (0.05 work units)
+Optimal objective 3.42624404e+05
+
+
+User-callback calls 79, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:23:45 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:23:45 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 7859 columns and 19134 nonzeros (Min)
+Model fingerprint: 0x1fa99d28
+Model has 2537 linear objective coefficients and an objective constant of 1.6140916652079985e+07
+Model has 1482 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3655 rows and 4196 columns
+Presolve time: 0.01s
+
+Barrier solved model in 0 iterations and 0.01 seconds (0.01 work units)
+Model is infeasible
+
+User-callback calls 27, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0      handle free variables                          0s
+
+IIS computed: 5 constraints and 11 bounds
+IIS runtime: 0.20 seconds (0.38 work units)
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:54:22 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:54:22 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 8031 columns and 19306 nonzeros (Min)
+Model fingerprint: 0xb99c5e7b
+Model has 2750 linear objective coefficients and an objective constant of 2.0223079396018814e+07
+Model has 1660 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [2e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3652 rows and 4191 columns
+Presolve time: 0.01s
+
+Barrier solved model in 0 iterations and 0.01 seconds (0.01 work units)
+Model is infeasible
+
+User-callback calls 27, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0      handle free variables                          0s
+
+IIS computed: 5 constraints and 13 bounds
+IIS runtime: 0.31 seconds (0.39 work units)
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:56:52 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:56:52 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 8031 columns and 19306 nonzeros (Min)
+Model fingerprint: 0xd982c503
+Model has 2523 linear objective coefficients and an objective constant of 25278843.1887
+Model has 1660 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3652 rows and 4191 columns
+Presolve time: 0.02s
+
+Barrier solved model in 0 iterations and 0.02 seconds (0.01 work units)
+Model is infeasible
+
+User-callback calls 27, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0      handle free variables                          0s
+
+IIS computed: 5 constraints and 13 bounds
+IIS runtime: 0.32 seconds (0.39 work units)
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:58:37 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:58:37 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-12-02_h01.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5146 rows, 8031 columns and 19306 nonzeros (Min)
+Model fingerprint: 0xaeb83d44
+Model has 2523 linear objective coefficients and an objective constant of 30334611.82644
+Model has 1660 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-06, 8e+00]
+
+Presolve removed 3652 rows and 4191 columns
+Presolve time: 0.02s
+
+Barrier solved model in 0 iterations and 0.02 seconds (0.01 work units)
+Model is infeasible
+
+User-callback calls 28, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0      handle free variables                          0s
+
+IIS computed: 5 constraints and 13 bounds
+IIS runtime: 0.29 seconds (0.39 work units)

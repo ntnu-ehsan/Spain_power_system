@@ -1,0 +1,19 @@
+\ Model Obj_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ c_e_installedCapDefinitionTrans(ES113_Portugal_1)_:
+   transmisionInvCap(ES113_Portugal_1)
+   - transmissionInstalledCap(ES113_Portugal_1) = -14299.81146728865
+ c_e_bc_transmission(Spain_Portugal_1)_:
+   transmissionInstalledCap(ES113_Portugal_1)
+   + transmissionInstalledCap(ES114_Portugal_1)
+   + transmissionInstalledCap(ES415_Portugal_1)
+   + transmissionInstalledCap(ES419_Portugal_1)
+   + transmissionInstalledCap(ES431_Portugal_1)
+   + transmissionInstalledCap(ES432_Portugal_1)
+   + transmissionInstalledCap(ES615_Portugal_1) = 4000.000014491456
+Bounds
+ transmissionInstalledCap(ES113_Portugal_1) free
+End

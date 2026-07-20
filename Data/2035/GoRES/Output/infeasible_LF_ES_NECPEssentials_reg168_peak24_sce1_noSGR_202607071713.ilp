@@ -1,0 +1,11 @@
+\ Model Obj_copy
+\ LP format - for model browsing. Use MPS format to capture full model detail.
+Minimize
+ 
+Subject To
+ c_u_installed_gen_cap(Geo_EU_1)_: genInstalledCap(EU_Geo_1) <= 1499.9
+ c_e_bc_gen_direct(EU_Geo_1)_: genInstalledCap(EU_Geo_1)
+   = 1523.399798554221
+Bounds
+ genInstalledCap(EU_Geo_1) free
+End

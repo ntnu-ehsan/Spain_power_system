@@ -173,13 +173,41 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          #                   BESS fleet placed on the grid
                          unit_scale::Union{Dict{Tuple{String,String},Float64},Nothing} = nothing,
                          cost_override::Union{Dict{Tuple{String,String},Float64},Nothing} = nothing,
-                         bess_units = nothing)
+                         bess_units = nothing,
+                         # nodal disaggregation (empire_nodal.jl; all `nothing`
+                         # for the 2024 run and for disaggregation = "zonal"):
+                         #   unit_scale_by_id : unit_id ⇒ factor, takes precedence
+                         #                      over the (fuel, tech) unit_scale
+                         #   extra_units      : greenfield units appended to the
+                         #                      generations.csv fleet
+                         #   line_scale       : line_id ⇒ expansion factor ≥ 1,
+                         #                      applied as parallel circuits
+                         #   extra_lines      : synthetic lines appended to lines.csv
+                         unit_scale_by_id::Union{Dict{String,Float64},Nothing} = nothing,
+                         extra_units = nothing,
+                         line_scale::Union{Dict{String,Float64},Nothing} = nothing,
+                         extra_lines = nothing)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
     load_df  = CSV.read(joinpath(DATA, "load.csv"),                          DataFrame)
     cost_df  = CSV.read(joinpath(DATA, "generation_cost_pypsa_2024.csv"),    DataFrame)
     xfmr_df  = CSV.read(joinpath(DATA, "transformers_reactance.csv"),        DataFrame)
+
+    # nodal scenario: greenfield units / synthetic corridor lines join the
+    # 2024 tables before anything downstream (totals, siting, network build).
+    if extra_units !== nothing && nrow(DataFrame(extra_units)) > 0
+        allowmissing!(gen_df)
+        for r in eachrow(DataFrame(extra_units))
+            push!(gen_df, (unit_id = r.unit_id, bus_id = r.bus_id,
+                           primary_fuel = r.primary_fuel, technology = r.technology,
+                           name = r.name, capacity_mw = r.capacity_mw);
+                  cols = :subset)
+        end
+    end
+    if extra_lines !== nothing && nrow(DataFrame(extra_lines)) > 0
+        line_df = vcat(line_df, DataFrame(extra_lines); cols = :intersect)
+    end
 
     bus_idx  = Dict(row.bus_id => i for (i, row) in enumerate(eachrow(bus_df)))
     gen_buses = Set(gen_df.bus_id)
@@ -190,9 +218,21 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                                 if !(row.primary_fuel == "Wind" || row.primary_fuel == "Solar"))
 
     # Total installed capacity of modelled solar/wind generators (for proportional scaling)
-    # Per-unit capacity scale factor from the scenario ((fuel, tech) ⇒ factor)
-    uscale(row) = unit_scale === nothing ? 1.0 :
-                  get(unit_scale, (String(row.primary_fuel), String(row.technology)), 1.0)
+    # Per-unit capacity scale factor from the scenario: the nodal per-unit
+    # factor wins where present; the zonal (fuel, tech) growth is the fallback.
+    uscale(row) = begin
+        if unit_scale_by_id !== nothing && haskey(unit_scale_by_id, String(row.unit_id))
+            unit_scale_by_id[String(row.unit_id)]
+        elseif unit_scale !== nothing
+            get(unit_scale, (String(row.primary_fuel), String(row.technology)), 1.0)
+        else
+            1.0
+        end
+    end
+    # Per-line corridor expansion factor (nodal scenario): f parallel copies of
+    # the line — series impedance /f, shunt charging and thermal rating ×f.
+    lscale(line_id) = line_scale === nothing ? 1.0 :
+                      get(line_scale, String(line_id), 1.0)
     total_solar_mw = sum(Float64(row.capacity_mw) * uscale(row) for row in eachrow(gen_df)
                          if row.primary_fuel == "Solar" && haskey(bus_idx, row.bus_id);
                          init = 0.0)
@@ -237,10 +277,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         L      = Float64(row.length)
         z_base = vn^2 / BASEMVA
         # N identical circuits in parallel: series R,X divide by N; shunt B and
-        # thermal rating (√3·V·Imax per circuit) multiply by N.
-        # N identical circuits in parallel: series R,X divide by N; shunt B and
-        # thermal rating (√3·V·Imax per circuit) multiply by N.
-        nc     = max(Float64(row.circuits), 1.0)
+        # thermal rating (√3·V·Imax per circuit) multiply by N.  The corridor
+        # expansion factor of the nodal scenario acts as extra parallel circuits.
+        nc     = max(Float64(row.circuits), 1.0) * lscale(row.line_id)
         r_pu   = (Float64(row.r_per_length) * L) / z_base / nc
         x_pu   = max((Float64(row.x_per_length) * L) / z_base / nc, 1e-4)
         c_F    = Float64(row.c_per_length) * 1e-9 * L
@@ -301,8 +340,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         vn   = Float64(row.voltage)
         # Rating from terminal voltage and current limit (same voltage/Imax
         # columns as AC lines), expressed in per-unit on the system base.
-        # Parallel circuits scale the converter power rating (no series R/X here).
-        nc   = max(Float64(row.circuits), 1.0)
+        # Parallel circuits — and the nodal corridor expansion factor — scale
+        # the converter power rating (no series R/X here).
+        nc   = max(Float64(row.circuits), 1.0) * lscale(row.line_id)
         rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc
         dc_count += 1
         dclines[string(dc_count)] = Dict{String,Any}(
@@ -505,9 +545,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     # Each battery is a generator with pmin = −pmax: positive output discharges,
     # negative charges.  In the copper-plate market stages the daily energy
     # balance / SOC window is enforced in solve_da (da.jl) via the "energy_mwh"
-    # field; in the redispatch stage the unit is FROZEN at its cleared market
-    # schedule (like nuclear), so the AC OPF cannot re-optimise storage without
-    # an energy constraint.
+    # field.  In the redispatch stage the unit stays FREE within ±rated power
+    # and is ANCHORED to its cleared market schedule by the redispatch
+    # objective (see solve_anchored_opf), like any other redispatchable unit —
+    # freezing it (pmin = pmax) made hours hard-infeasible whenever the market
+    # cleared a battery beyond what its bus's lines can carry.  The hourly
+    # anchor deviation is not energy-constrained; the market SOC window only
+    # holds for the anchored schedule itself.  Units missing from the schedule
+    # are anchored to 0 MW in the objective, so a stale saved schedule cannot
+    # turn a battery into a free energy source.
     if bess_units !== nothing
         for b in bess_units
             haskey(bus_idx, b.bus_id) || continue
@@ -515,7 +561,6 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             name   = "BESS_" * b.bus_id
             da_pu  = (!isnothing(da_dispatch) && haskey(da_dispatch, name)) ?
                      da_dispatch[name] / BASEMVA : nothing
-            frozen = da_pu !== nothing
             gen_count += 1
             gens[string(gen_count)] = Dict{String,Any}(
                 "index"        => gen_count,
@@ -525,9 +570,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                 "technology"   => "Li-Ion",
                 "installed_mw" => b.power_mw,
                 "energy_mwh"   => b.energy_mwh,
-                "pmax"         => frozen ? da_pu :  p_pu,
-                "pmin"         => frozen ? da_pu : -p_pu,
-                "pg"           => frozen ? da_pu : 0.0,
+                "pmax"         =>  p_pu,
+                "pmin"         => -p_pu,
+                "pg"           => da_pu !== nothing ? clamp(da_pu, -p_pu, p_pu) : 0.0,
                 "qmax"         => p_pu,   "qmin" => -p_pu,
                 "qg"           => 0.0,
                 "vg"           => 1.0,

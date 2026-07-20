@@ -1,0 +1,117 @@
+START GoRES Mon Jul 20 13:52:59 WEDT 2026
+Set parameter Username
+Set parameter LicenseID to value 2754836
+Academic license - for non-commercial use only - expires 2026-12-14
+Scenario GoRES: EMPIRE period 2, CO2 0.0 EUR/t — overriding 2024 system
+Mid-term SDDP (4 nodes, hybrid, scenario GoRES): 78 weekly stages × 84 blocks of 2 h,
+  37 scenarios = EDF climate years 1982–2018 (ES/PT), each paired
+  with EMPIRE year 2015+(i-1)%5 (FR/EU); solver=gurobi
+-------------------------------------------------------------------
+         SDDP.jl (c) Oscar Dowson and contributors, 2017-26
+-------------------------------------------------------------------
+problem
+  nodes           : 78
+  state variables : 3
+  scenarios       : 2.08802e+122
+  existing cuts   : false
+options
+  solver          : serial mode
+  risk measure    : SDDP.Expectation()
+  sampling scheme : SDDP.InSampleMonteCarlo
+subproblem structure
+  VariableRef                             : [6570, 6570]
+  AffExpr in MOI.EqualTo{Float64}         : [1282, 1282]
+  AffExpr in MOI.LessThan{Float64}        : [1, 1]
+  VariableRef in MOI.GreaterThan{Float64} : [6567, 6567]
+  VariableRef in MOI.LessThan{Float64}    : [5642, 5643]
+numerical stability report
+  matrix range     [1e+00, 2e+00]
+  objective range  [3e-01, 6e+03]
+  bounds range     [2e-02, 1e+08]
+  rhs range        [2e-02, 8e+05]
+WARNING: numerical stability issues detected
+  - bounds range contains large coefficients
+Very large or small absolute values of coefficients
+can cause numerical stability issues. Consider
+reformulating the model.
+-------------------------------------------------------------------
+ iteration    simulation      bound        time (s)     solves  pid
+-------------------------------------------------------------------
+         1   2.998776e+10  2.453559e+10  5.450100e+01      2964   1
+         2   3.067261e+10  2.453779e+10  1.066610e+02      5928   1
+         3   2.855566e+10  2.502306e+10  1.658490e+02      8892   1
+         4   2.776280e+10  2.507104e+10  2.222090e+02     11856   1
+         5   2.866118e+10  2.521048e+10  2.776710e+02     14820   1
+         6   2.765002e+10  2.591930e+10  3.348880e+02     17784   1
+         7   2.805648e+10  2.611961e+10  3.913030e+02     20748   1
+         8   2.581828e+10  2.627110e+10  4.435600e+02     23712   1
+         9   2.617121e+10  2.627565e+10  4.998880e+02     26676   1
+        10   2.637826e+10  2.627566e+10  5.600920e+02     29640   1
+        11   2.543293e+10  2.627608e+10  6.198010e+02     32604   1
+        12   2.599488e+10  2.627626e+10  6.810820e+02     35568   1
+        13   2.636117e+10  2.627836e+10  7.392980e+02     38532   1
+        14   2.562717e+10  2.627906e+10  7.979290e+02     41496   1
+        15   2.707217e+10  2.628498e+10  8.554890e+02     44460   1
+        16   2.821063e+10  2.628645e+10  9.126990e+02     47424   1
+        17   2.566970e+10  2.628898e+10  9.716860e+02     50388   1
+        18   2.692068e+10  2.628966e+10  1.027502e+03     53352   1
+        19   2.404911e+10  2.629013e+10  1.087645e+03     56316   1
+        20   2.626950e+10  2.629018e+10  1.151232e+03     59280   1
+        21   2.768263e+10  2.632071e+10  1.208579e+03     62244   1
+        22   2.762737e+10  2.632074e+10  1.267774e+03     65208   1
+        23   2.626862e+10  2.632293e+10  1.328758e+03     68172   1
+        24   2.656602e+10  2.632310e+10  1.385795e+03     71136   1
+        25   2.602838e+10  2.632317e+10  1.442949e+03     74100   1
+        26   2.614906e+10  2.632339e+10  1.502655e+03     77064   1
+        27   2.732243e+10  2.633837e+10  1.561362e+03     80028   1
+        28   2.796081e+10  2.633892e+10  1.617274e+03     82992   1
+        29   2.739272e+10  2.633906e+10  1.673774e+03     85956   1
+        30   2.679385e+10  2.633953e+10  1.731254e+03     88920   1
+        31   2.830578e+10  2.633975e+10  1.787953e+03     91884   1
+        32   2.691163e+10  2.633987e+10  1.842998e+03     94848   1
+        33   2.827388e+10  2.633994e+10  1.898824e+03     97812   1
+        34   2.634737e+10  2.634352e+10  1.958670e+03    100776   1
+        35   2.578969e+10  2.634473e+10  2.020982e+03    103740   1
+        36   2.767762e+10  2.634682e+10  2.075820e+03    106704   1
+        37   2.751163e+10  2.634696e+10  2.134495e+03    109668   1
+        38   2.536138e+10  2.634711e+10  2.190070e+03    112632   1
+        39   2.585468e+10  2.634729e+10  2.247047e+03    115596   1
+        40   2.841941e+10  2.634741e+10  2.300155e+03    118560   1
+        41   2.409391e+10  2.634751e+10  2.350869e+03    121524   1
+        42   2.617440e+10  2.634759e+10  2.401080e+03    124488   1
+        43   2.594901e+10  2.634773e+10  2.452846e+03    127452   1
+        44   2.707471e+10  2.634778e+10  2.503178e+03    130416   1
+        45   2.841257e+10  2.634795e+10  2.555756e+03    133380   1
+        46   2.792895e+10  2.634808e+10  2.607002e+03    136344   1
+        47   2.848033e+10  2.634811e+10  2.658492e+03    139308   1
+        48   2.535296e+10  2.634830e+10  2.709187e+03    142272   1
+        49   2.579892e+10  2.634841e+10  2.759639e+03    145236   1
+        50   2.717457e+10  2.634849e+10  2.809893e+03    148200   1
+        51   2.779970e+10  2.634865e+10  2.859994e+03    151164   1
+        52   2.466623e+10  2.635073e+10  2.909965e+03    154128   1
+        53   2.602082e+10  2.635083e+10  2.960186e+03    157092   1
+        54   2.682830e+10  2.635105e+10  3.010750e+03    160056   1
+        55   2.741612e+10  2.635135e+10  3.061683e+03    163020   1
+        56   2.775303e+10  2.635141e+10  3.112528e+03    165984   1
+        57   2.577663e+10  2.635145e+10  3.165934e+03    168948   1
+        58   2.549210e+10  2.635150e+10  3.217929e+03    171912   1
+        59   2.503803e+10  2.635150e+10  3.269073e+03    174876   1
+        60   2.491090e+10  2.635152e+10  3.318492e+03    177840   1
+-------------------------------------------------------------------
+status         : iteration_limit
+total time (s) : 3.318492e+03
+total solves   : 177840
+best bound     :  2.635152e+10
+simulation ci  :  2.682849e+10 ± 3.365471e+08
+numeric issues : 0
+-------------------------------------------------------------------
+
+Training done: 60 iterations, lower bound 2.6352e+10 EUR
+Cut intercept convention: |Δ| absolute 1.782e+09, relative 0.000e+00 → using relative
+Wrote 4621 cuts → C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\Data/BellmanValuesOUT_sddp4_GoRES.csv
+Wrote volume trajectory (climate year 1982) → C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\Data/Volume_Scen0_OUT_sddp4_GoRES.csv
+
+To use these cuts in the market chain, point [bellman] in config.toml at:
+  bellman_file = "Data/BellmanValuesOUT_sddp4.csv"
+  volume_file  = "Data/Volume_Scen0_OUT_sddp4.csv"
+END GoRES Mon Jul 20 14:50:00 WEDT 2026 elapsed=3421s exit=0

@@ -1,0 +1,127 @@
+This is Ipopt version 3.14.19, running with linear solver ma57.
+
+Number of nonzeros in equality constraint Jacobian...:    60601
+Number of nonzeros in inequality constraint Jacobian.:    14048
+Number of nonzeros in Lagrangian Hessian.............:   105238
+
+Total number of variables............................:    14954
+                     variables with only lower bounds:        0
+                variables with lower and upper bounds:    13718
+                     variables with only upper bounds:        0
+Total number of equality constraints.................:    11850
+Total number of inequality constraints...............:     7951
+        inequality constraints with only lower bounds:      730
+   inequality constraints with lower and upper bounds:     1560
+        inequality constraints with only upper bounds:     5661
+
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+   0  7.2562685e+06 2.09e+01 1.00e+02  -1.0 0.00e+00    -  0.00e+00 0.00e+00   0
+   1  7.2561679e+06 2.09e+01 9.92e+01  -1.0 1.76e+01  -4.0 1.64e-02 1.12e-05f  1
+   2  6.1006394e+06 2.05e+01 9.84e+01  -1.0 1.68e+01    -  7.07e-03 2.16e-02f  1
+   3  5.8819619e+06 1.85e+01 9.66e+01  -1.0 1.58e+01    -  3.00e-02 9.73e-02f  1
+   4  5.2359113e+06 1.70e+01 8.69e+01  -1.0 5.82e+01  -4.5 9.70e-02 7.77e-02f  1
+   5  3.4465820e+06 9.38e+00 6.76e+01  -1.0 8.71e+01    -  2.53e-01 4.50e-01f  1
+   6  2.2980271e+06 4.26e+00 1.83e+01  -1.0 1.66e+02  -5.0 7.21e-01 5.46e-01f  1
+   7  1.5424883e+06 4.26e-02 2.68e+00  -1.0 1.31e+02  -5.4 9.35e-01 9.90e-01h  1
+   8  1.2857217e+06 7.45e-03 6.05e+02  -1.0 6.50e+01    -  9.91e-01 8.67e-01h  1
+   9  1.2362267e+06 4.49e-03 2.37e+02  -1.0 2.36e+01    -  1.00e+00 9.94e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  10  1.2282148e+06 1.00e-03 2.42e-01  -1.0 5.13e+00  -5.9 1.00e+00 1.00e+00h  1
+  11  3.9299073e+05 5.36e-04 2.42e+05  -1.7 1.33e+01  -6.4 8.59e-01 1.00e+00f  1
+  12  3.4464539e+05 1.84e-04 8.08e-03  -1.7 3.07e+00  -6.9 1.00e+00 1.00e+00h  1
+  13  3.4256441e+05 5.52e-05 3.08e-03  -1.7 9.72e-01  -7.3 1.00e+00 1.00e+00h  1
+  14  1.9738047e+05 4.20e-05 3.36e+05  -2.5 4.61e+00  -7.8 9.28e-01 7.32e-01f  1
+  15  1.3902872e+05 3.83e-05 2.50e-03  -2.5 2.10e+00  -8.3 1.00e+00 1.00e+00f  1
+  16  1.0605583e+05 2.87e-05 5.68e+04  -3.8 1.61e+00  -8.8 7.88e-01 1.00e+00f  1
+  17  1.0532991e+05 5.85e-05 3.23e+03  -3.8 6.20e-01    -  9.43e-01 1.00e+00h  1
+  18  1.0518564e+05 4.11e-04 6.39e-05  -3.8 1.00e+00  -9.2 1.00e+00 1.00e+00h  1
+  19  1.0516704e+05 1.27e-05 2.52e-06  -3.8 6.48e-02  -9.7 1.00e+00 1.00e+00h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  20  1.0516636e+05 7.95e-10 1.50e-09  -3.8 2.25e-03 -10.2 1.00e+00 1.00e+00h  1
+  21  1.0329831e+05 8.64e-04 2.89e+03  -5.7 1.12e+00    -  8.05e-01 1.00e+00f  1
+  22  1.0327951e+05 2.15e-03 5.66e+02  -5.7 2.25e+00    -  8.04e-01 6.41e-01h  1
+  23  1.0326368e+05 7.51e-03 2.61e+01  -5.7 3.10e+00    -  9.54e-01 1.00e+00h  1
+  24  1.0325986e+05 3.94e-03 6.00e-04  -5.7 9.71e-01  -8.0 1.00e+00 7.48e-01h  1
+  25  1.0325919e+05 1.72e-04 1.83e-06  -5.7 2.98e-01  -8.4 1.00e+00 1.00e+00h  1
+  26  1.0325923e+05 4.71e-06 5.49e-08  -5.7 9.30e-02  -8.0 1.00e+00 1.00e+00h  1
+  27  1.0325923e+05 1.81e-08 1.69e-10  -5.7 2.79e-03  -8.5 1.00e+00 1.00e+00h  1
+  28  1.0324825e+05 2.52e-04 6.52e+01  -8.6 6.10e-01  -9.0 7.78e-01 4.24e-01h  1
+  29  1.0324212e+05 4.56e-04 4.67e+01  -8.6 1.76e+00  -9.5 5.74e-01 3.96e-01h  1
+iter    objective    inf_pr   inf_du lg(mu)  ||d||  lg(rg) alpha_du alpha_pr  ls
+  30  1.0323879e+05 4.88e-04 3.36e+01  -8.6 1.69e+00  -8.1 5.93e-01 3.65e-01h  1
+  31  1.0323687e+05 4.62e-04 2.37e+01  -8.6 1.22e+00  -8.6 5.36e-01 3.38e-01h  1
+  32  1.0323522e+05 4.22e-04 1.37e+01  -8.6 8.57e-01    -  6.73e-01 4.53e-01h  1
+  33  1.0323430e+05 3.14e-04 7.47e+00  -8.6 5.25e-01  -9.1 6.80e-01 4.70e-01h  1
+  34  1.0323357e+05 1.05e-03 2.18e+00  -8.6 2.95e-01  -8.7 1.00e+00 7.21e-01h  1
+  35  1.0323345e+05 6.27e-04 1.18e+00  -8.6 1.61e-01  -9.1 1.00e+00 4.58e-01h  1
+  36  1.0323332e+05 6.66e-05 1.37e-01  -8.6 1.09e-01    -  1.00e+00 8.84e-01h  1
+  37  1.0323331e+05 9.12e-07 2.53e-08  -8.6 8.00e-02    -  1.00e+00 1.00e+00h  1
+
+Number of Iterations....: 37
+
+                                   (scaled)                 (unscaled)
+Objective...............:   1.0323330631143568e+01    1.0323330631143568e+05
+Dual infeasibility......:   2.5305949656243728e-08    2.5305949656243725e-04
+Constraint violation....:   9.1204098351393981e-07    9.1204098351393981e-07
+Variable bound violation:   2.2844463654081437e-08    2.2844463654081437e-08
+Complementarity.........:   2.7394225878617478e-09    2.7394225878617475e-05
+Overall NLP error.......:   9.1204098351393981e-07    2.5305949656243725e-04
+
+
+Number of objective function evaluations             = 38
+Number of objective gradient evaluations             = 38
+Number of equality constraint evaluations            = 38
+Number of inequality constraint evaluations          = 38
+Number of equality constraint Jacobian evaluations   = 38
+Number of inequality constraint Jacobian evaluations = 38
+Number of Lagrangian Hessian evaluations             = 37
+Total seconds in IPOPT                               = 2.944
+
+EXIT: Optimal Solution Found.
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 16:41:06 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\ipopt_logs\2024-12-02_h05.log"
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 16:41:06 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\ipopt_logs\2024-12-02_h05.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 5142 rows, 7177 columns and 18440 nonzeros (Min)
+Model fingerprint: 0x8fb6507c
+Model has 2031 linear objective coefficients and an objective constant of 9.8773171118144765e+06
+Model has 973 quadratic objective terms
+Coefficient statistics:
+  Matrix range     [1e+00, 1e+04]
+  Objective range  [4e-01, 1e+06]
+  QObjective range [2e+04, 2e+04]
+  Bounds range     [1e-06, 1e+04]
+  RHS range        [1e-06, 5e+00]
+
+Presolve removed 9 rows and 532 columns
+Presolve time: 0.00s
+
+Barrier solved model in 0 iterations and 0.00 seconds (0.00 work units)
+Model is infeasible
+
+User-callback calls 25, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0      handle free variables                          0s
+
+IIS computed: 2 constraints and 2 bounds
+IIS runtime: 0.31 seconds (0.38 work units)

@@ -1,0 +1,8 @@
+Set parameter Username
+Set parameter LicenseID to value 2754836
+Academic license - for non-commercial use only - expires 2026-12-14
+  override: ES>PT NTC → ±3000.0 MW
+  override: ES>FR NTC → ±2800.0 MW
+Mid-term SDDP: 78 weekly stages × 84 blocks of 2 h, 37 climate-year scenarios (1982–2018), solver=gurobi
+  FR/PT shapes from Data/ts/EMPIRE (EU = rest-of-Europe → FR zone), scenario years paired cyclically with EMPIRE 2015–2019
+Wrote 131040 diagnostic rows (20 replications) → C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\midterm_diag_ntc.csv

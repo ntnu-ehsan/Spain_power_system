@@ -1,0 +1,819 @@
+2026-07-12 15:30:13,529 - empire - INFO - Running EMPIRE Model
+2026-07-12 15:30:14,174 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:30:14,175 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-12 15:30:14,175 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:30:14,175 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-12 15:30:14,176 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-12 15:30:14,176 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-12 15:30:14,177 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:30:14,177 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce3_noSGR_202607121530
+2026-07-12 15:30:14,177 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:32:16,307 - empire - INFO - Running EMPIRE Model
+2026-07-12 15:32:17,094 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:32:17,095 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-12 15:32:17,095 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:32:17,095 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-12 15:32:17,097 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-12 15:32:17,097 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-12 15:32:17,097 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:32:17,098 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce3_noSGR_202607121532
+2026-07-12 15:32:17,098 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:32:17,099 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-12 15:32:27,595 - empire.core.scenario_random - INFO - Done generating scenarios.
+2026-07-12 15:32:28,817 - empire.core.scenario_random - INFO - Saving 'sampling_key.csv'.
+2026-07-12 15:32:28,822 - empire.core.scenario_random - INFO - Saving 'Stochastic_StochasticAvailability.tab'.
+2026-07-12 15:32:30,789 - empire.core.scenario_random - INFO - Saving 'Stochastic_ElectricLoadRaw.tab'.
+2026-07-12 15:32:31,508 - empire.core.scenario_random - INFO - Saving 'Stochastic_HydroGenMaxSeasonalProduction.tab'.
+2026-07-12 15:32:31,859 - empire.core.reader - INFO - Generating .tab-files...
+2026-07-12 15:32:31,860 - empire.core.reader - INFO - Reading Sets.xlsx
+2026-07-12 15:32:32,155 - empire.core.reader - INFO - Reading Nodes sheet from Sets.xlsx
+2026-07-12 15:32:32,159 - empire.core.reader - INFO - Reading OffshoreNodes sheet from Sets.xlsx
+2026-07-12 15:32:32,161 - empire.core.reader - INFO - Reading Horizon sheet from Sets.xlsx
+2026-07-12 15:32:32,163 - empire.core.reader - INFO - Reading LineType sheet from Sets.xlsx
+2026-07-12 15:32:32,165 - empire.core.reader - INFO - Reading Technology sheet from Sets.xlsx
+2026-07-12 15:32:32,168 - empire.core.reader - INFO - Reading Storage sheet from Sets.xlsx
+2026-07-12 15:32:32,172 - empire.core.reader - INFO - Reading Generators sheet from Sets.xlsx
+2026-07-12 15:32:32,179 - empire.core.reader - INFO - Reading StorageOfNodes sheet from Sets.xlsx
+2026-07-12 15:32:32,182 - empire.core.reader - INFO - Reading GeneratorsOfNode sheet from Sets.xlsx
+2026-07-12 15:32:32,186 - empire.core.reader - INFO - Reading GeneratorsOfTechnology sheet from Sets.xlsx
+2026-07-12 15:32:32,188 - empire.core.reader - INFO - Reading DirectionalLines sheet from Sets.xlsx
+2026-07-12 15:32:32,191 - empire.core.reader - INFO - Reading LineTypeOfDirectionalLines sheet from Sets.xlsx
+2026-07-12 15:32:32,234 - empire.core.reader - INFO - Reading Generator.xlsx
+2026-07-12 15:32:32,397 - empire.core.reader - INFO - Reading FixedOMCosts sheet from Generator.xlsx
+2026-07-12 15:32:32,406 - empire.core.reader - INFO - Reading CapitalCosts sheet from Generator.xlsx
+2026-07-12 15:32:32,411 - empire.core.reader - INFO - Reading VariableOMCosts sheet from Generator.xlsx
+2026-07-12 15:32:32,416 - empire.core.reader - INFO - Reading FuelCosts sheet from Generator.xlsx
+2026-07-12 15:32:32,421 - empire.core.reader - INFO - Reading CCSCostTSVariable sheet from Generator.xlsx
+2026-07-12 15:32:32,436 - empire.core.reader - INFO - Reading Efficiency sheet from Generator.xlsx
+2026-07-12 15:32:32,440 - empire.core.reader - INFO - Reading RefInitialCap sheet from Generator.xlsx
+2026-07-12 15:32:32,445 - empire.core.reader - INFO - Reading ScaleFactorInitialCap sheet from Generator.xlsx
+2026-07-12 15:32:32,449 - empire.core.reader - INFO - Reading InitialCapacity sheet from Generator.xlsx
+2026-07-12 15:32:32,503 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Generator.xlsx
+2026-07-12 15:32:32,508 - empire.core.reader - INFO - Reading MaxInstalledCapacity sheet from Generator.xlsx
+2026-07-12 15:32:32,514 - empire.core.reader - INFO - Reading RampRate sheet from Generator.xlsx
+2026-07-12 15:32:32,517 - empire.core.reader - INFO - Reading GeneratorTypeAvailability sheet from Generator.xlsx
+2026-07-12 15:32:32,519 - empire.core.reader - INFO - Reading CO2Content sheet from Generator.xlsx
+2026-07-12 15:32:32,522 - empire.core.reader - INFO - Reading Lifetime sheet from Generator.xlsx
+2026-07-12 15:32:32,524 - empire.core.reader - INFO - Reading Transmission.xlsx
+2026-07-12 15:32:32,786 - empire.core.reader - INFO - Reading lineEfficiency sheet from Transmission.xlsx
+2026-07-12 15:32:32,790 - empire.core.reader - INFO - Reading MaxInstallCapacityRaw sheet from Transmission.xlsx
+2026-07-12 15:32:32,798 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Transmission.xlsx
+2026-07-12 15:32:32,802 - empire.core.reader - INFO - Reading Length sheet from Transmission.xlsx
+2026-07-12 15:32:32,805 - empire.core.reader - INFO - Reading TypeCapitalCost sheet from Transmission.xlsx
+2026-07-12 15:32:32,807 - empire.core.reader - INFO - Reading TypeFixedOMCost sheet from Transmission.xlsx
+2026-07-12 15:32:32,809 - empire.core.reader - INFO - Reading InitialCapacity sheet from Transmission.xlsx
+2026-07-12 15:32:32,814 - empire.core.reader - INFO - Reading Lifetime sheet from Transmission.xlsx
+2026-07-12 15:32:32,817 - empire.core.reader - INFO - Reading CandidateTransmission sheet from Transmission.xlsx
+2026-07-12 15:32:32,819 - empire.core.reader - INFO - Reading LineBlockCapacity sheet from Transmission.xlsx
+2026-07-12 15:32:32,822 - empire.core.reader - INFO - Reading LineBlockReactance sheet from Transmission.xlsx
+2026-07-12 15:32:32,825 - empire.core.reader - INFO - Reading Node.xlsx
+2026-07-12 15:32:32,847 - empire.core.reader - INFO - Reading ElectricAnnualDemand sheet from Node.xlsx
+2026-07-12 15:32:32,851 - empire.core.reader - INFO - Reading NodeLostLoadCost sheet from Node.xlsx
+2026-07-12 15:32:32,854 - empire.core.reader - INFO - Reading HydroGenMaxAnnualProduction sheet from Node.xlsx
+2026-07-12 15:32:32,857 - empire.core.reader - INFO - Reading General.xlsx
+2026-07-12 15:32:32,875 - empire.core.reader - INFO - Reading seasonScale sheet from General.xlsx
+2026-07-12 15:32:32,880 - empire.core.reader - INFO - Reading CO2Cap sheet from General.xlsx
+2026-07-12 15:32:32,884 - empire.core.reader - INFO - Reading CO2Price sheet from General.xlsx
+2026-07-12 15:32:32,889 - empire.core.reader - INFO - Wrote General_LineBlockCapacityGlobal.tab (transmissionLineBlockCapGlobal = 1500.0).
+2026-07-12 15:32:32,891 - empire.core.reader - INFO - Wrote General_LineBlockReactanceGlobal.tab (LineBlockReactanceGlobal = 24.6).
+2026-07-12 15:32:32,893 - empire.core.reader - INFO - Wrote General_NominalVoltage.tab (NominalVoltage = 400.0).
+2026-07-12 15:32:32,894 - empire.core.reader - INFO - Reading Storage.xlsx
+2026-07-12 15:32:33,170 - empire.core.reader - INFO - Reading StorageBleedEfficiency sheet from Storage.xlsx
+2026-07-12 15:32:33,211 - empire.core.reader - INFO - Reading StorageChargeEff sheet from Storage.xlsx
+2026-07-12 15:32:33,216 - empire.core.reader - INFO - Reading StorageDischargeEff sheet from Storage.xlsx
+2026-07-12 15:32:33,220 - empire.core.reader - INFO - Reading StoragePowToEnergy sheet from Storage.xlsx
+2026-07-12 15:32:33,225 - empire.core.reader - INFO - Reading StorageInitialEnergyLevel sheet from Storage.xlsx
+2026-07-12 15:32:33,230 - empire.core.reader - INFO - Reading InitialPowerCapacity sheet from Storage.xlsx
+2026-07-12 15:32:33,238 - empire.core.reader - INFO - Reading PowerCapitalCost sheet from Storage.xlsx
+2026-07-12 15:32:33,243 - empire.core.reader - INFO - Reading PowerFixedOMCost sheet from Storage.xlsx
+2026-07-12 15:32:33,247 - empire.core.reader - INFO - Reading PowerMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-12 15:32:33,257 - empire.core.reader - INFO - Reading EnergyCapitalCost sheet from Storage.xlsx
+2026-07-12 15:32:33,260 - empire.core.reader - INFO - Reading EnergyFixedOMCost sheet from Storage.xlsx
+2026-07-12 15:32:33,263 - empire.core.reader - INFO - Reading EnergyInitialCapacity sheet from Storage.xlsx
+2026-07-12 15:32:33,268 - empire.core.reader - INFO - Reading EnergyMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-12 15:32:33,273 - empire.core.reader - INFO - Reading EnergyMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-12 15:32:33,276 - empire.core.reader - INFO - Reading PowerMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-12 15:32:33,279 - empire.core.reader - INFO - Reading Lifetime sheet from Storage.xlsx
+2026-07-12 15:32:33,282 - empire.core.empire - INFO - Solver: Gurobi
+2026-07-12 15:32:33,282 - empire.core.empire - INFO - Absolute emission cap in each scenario...
+2026-07-12 15:32:33,283 - empire.core.empire - INFO - Declaring sets...
+2026-07-12 15:32:33,284 - empire.core.empire - INFO - Reading sets...
+2026-07-12 15:32:33,303 - empire.core.empire - INFO - Constructing sub sets...
+2026-07-12 15:32:33,303 - empire.core.empire - INFO - Declaring parameters...
+2026-07-12 15:32:33,309 - empire.core.empire - INFO - Reading parameters...
+2026-07-12 15:32:33,309 - empire.core.empire - INFO - Reading parameters for Generator...
+2026-07-12 15:32:33,343 - empire.core.empire - INFO - Reading parameters for Transmission...
+2026-07-12 15:32:33,375 - empire.core.empire - INFO - Reading parameters for Storage...
+2026-07-12 15:32:33,406 - empire.core.empire - INFO - Reading parameters for Node...
+2026-07-12 15:32:33,413 - empire.core.empire - INFO - Reading parameters for Stochastic...
+2026-07-12 15:32:49,483 - empire.core.empire - INFO - Reading parameters for General...
+2026-07-12 15:32:49,492 - empire.core.empire - INFO - Constructing parameter values...
+2026-07-12 15:32:49,493 - empire.core.empire - INFO - Sets and parameters declared and read...
+2026-07-12 15:32:49,494 - empire.core.empire - INFO - Declaring variables...
+2026-07-12 15:32:49,495 - empire.core.empire - INFO - Ramping constraints disabled (use_ramping=False)...
+2026-07-12 15:32:49,496 - empire.core.empire - INFO - Transmission availability (usable share of installed line capacity): 1.0
+2026-07-12 15:32:49,506 - empire.core.empire - INFO - LOPF constraints not activated.
+2026-07-12 15:32:49,506 - empire.core.empire - INFO - Objective and constraints read...
+2026-07-12 15:32:49,507 - empire.core.empire - INFO - Building instance...
+2026-07-12 15:42:04,464 - empire - INFO - Running EMPIRE Model
+2026-07-12 15:42:05,349 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:42:05,350 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-12 15:42:05,350 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:42:05,351 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-12 15:42:05,352 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-12 15:42:05,352 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-12 15:42:05,352 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:42:05,353 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce3_noSGR_202607121542
+2026-07-12 15:42:05,353 - empire.core.model_runner - INFO - ++++++++
+2026-07-12 15:42:05,354 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-12 15:42:16,756 - empire.core.scenario_random - INFO - Done generating scenarios.
+2026-07-12 15:42:18,110 - empire.core.scenario_random - INFO - Saving 'sampling_key.csv'.
+2026-07-12 15:42:18,115 - empire.core.scenario_random - INFO - Saving 'Stochastic_StochasticAvailability.tab'.
+2026-07-12 15:42:20,120 - empire.core.scenario_random - INFO - Saving 'Stochastic_ElectricLoadRaw.tab'.
+2026-07-12 15:42:20,938 - empire.core.scenario_random - INFO - Saving 'Stochastic_HydroGenMaxSeasonalProduction.tab'.
+2026-07-12 15:42:21,291 - empire.core.reader - INFO - Generating .tab-files...
+2026-07-12 15:42:21,299 - empire.core.reader - INFO - Reading Sets.xlsx
+2026-07-12 15:42:21,602 - empire.core.reader - INFO - Reading Nodes sheet from Sets.xlsx
+2026-07-12 15:42:21,605 - empire.core.reader - INFO - Reading OffshoreNodes sheet from Sets.xlsx
+2026-07-12 15:42:21,607 - empire.core.reader - INFO - Reading Horizon sheet from Sets.xlsx
+2026-07-12 15:42:21,610 - empire.core.reader - INFO - Reading LineType sheet from Sets.xlsx
+2026-07-12 15:42:21,613 - empire.core.reader - INFO - Reading Technology sheet from Sets.xlsx
+2026-07-12 15:42:21,615 - empire.core.reader - INFO - Reading Storage sheet from Sets.xlsx
+2026-07-12 15:42:21,620 - empire.core.reader - INFO - Reading Generators sheet from Sets.xlsx
+2026-07-12 15:42:21,629 - empire.core.reader - INFO - Reading StorageOfNodes sheet from Sets.xlsx
+2026-07-12 15:42:21,635 - empire.core.reader - INFO - Reading GeneratorsOfNode sheet from Sets.xlsx
+2026-07-12 15:42:21,639 - empire.core.reader - INFO - Reading GeneratorsOfTechnology sheet from Sets.xlsx
+2026-07-12 15:42:21,643 - empire.core.reader - INFO - Reading DirectionalLines sheet from Sets.xlsx
+2026-07-12 15:42:21,647 - empire.core.reader - INFO - Reading LineTypeOfDirectionalLines sheet from Sets.xlsx
+2026-07-12 15:42:21,651 - empire.core.reader - INFO - Reading Generator.xlsx
+2026-07-12 15:42:21,789 - empire.core.reader - INFO - Reading FixedOMCosts sheet from Generator.xlsx
+2026-07-12 15:42:21,795 - empire.core.reader - INFO - Reading CapitalCosts sheet from Generator.xlsx
+2026-07-12 15:42:21,799 - empire.core.reader - INFO - Reading VariableOMCosts sheet from Generator.xlsx
+2026-07-12 15:42:21,802 - empire.core.reader - INFO - Reading FuelCosts sheet from Generator.xlsx
+2026-07-12 15:42:21,807 - empire.core.reader - INFO - Reading CCSCostTSVariable sheet from Generator.xlsx
+2026-07-12 15:42:21,815 - empire.core.reader - INFO - Reading Efficiency sheet from Generator.xlsx
+2026-07-12 15:42:21,820 - empire.core.reader - INFO - Reading RefInitialCap sheet from Generator.xlsx
+2026-07-12 15:42:21,825 - empire.core.reader - INFO - Reading ScaleFactorInitialCap sheet from Generator.xlsx
+2026-07-12 15:42:21,828 - empire.core.reader - INFO - Reading InitialCapacity sheet from Generator.xlsx
+2026-07-12 15:42:21,832 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Generator.xlsx
+2026-07-12 15:42:21,837 - empire.core.reader - INFO - Reading MaxInstalledCapacity sheet from Generator.xlsx
+2026-07-12 15:42:21,844 - empire.core.reader - INFO - Reading RampRate sheet from Generator.xlsx
+2026-07-12 15:42:21,847 - empire.core.reader - INFO - Reading GeneratorTypeAvailability sheet from Generator.xlsx
+2026-07-12 15:42:21,850 - empire.core.reader - INFO - Reading CO2Content sheet from Generator.xlsx
+2026-07-12 15:42:21,853 - empire.core.reader - INFO - Reading Lifetime sheet from Generator.xlsx
+2026-07-12 15:42:21,857 - empire.core.reader - INFO - Reading Transmission.xlsx
+2026-07-12 15:42:22,109 - empire.core.reader - INFO - Reading lineEfficiency sheet from Transmission.xlsx
+2026-07-12 15:42:22,114 - empire.core.reader - INFO - Reading MaxInstallCapacityRaw sheet from Transmission.xlsx
+2026-07-12 15:42:22,122 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Transmission.xlsx
+2026-07-12 15:42:22,128 - empire.core.reader - INFO - Reading Length sheet from Transmission.xlsx
+2026-07-12 15:42:22,132 - empire.core.reader - INFO - Reading TypeCapitalCost sheet from Transmission.xlsx
+2026-07-12 15:42:22,136 - empire.core.reader - INFO - Reading TypeFixedOMCost sheet from Transmission.xlsx
+2026-07-12 15:42:22,139 - empire.core.reader - INFO - Reading InitialCapacity sheet from Transmission.xlsx
+2026-07-12 15:42:22,146 - empire.core.reader - INFO - Reading Lifetime sheet from Transmission.xlsx
+2026-07-12 15:42:22,150 - empire.core.reader - INFO - Reading CandidateTransmission sheet from Transmission.xlsx
+2026-07-12 15:42:22,154 - empire.core.reader - INFO - Reading LineBlockCapacity sheet from Transmission.xlsx
+2026-07-12 15:42:22,158 - empire.core.reader - INFO - Reading LineBlockReactance sheet from Transmission.xlsx
+2026-07-12 15:42:22,162 - empire.core.reader - INFO - Reading Node.xlsx
+2026-07-12 15:42:22,196 - empire.core.reader - INFO - Reading ElectricAnnualDemand sheet from Node.xlsx
+2026-07-12 15:42:22,201 - empire.core.reader - INFO - Reading NodeLostLoadCost sheet from Node.xlsx
+2026-07-12 15:42:22,205 - empire.core.reader - INFO - Reading HydroGenMaxAnnualProduction sheet from Node.xlsx
+2026-07-12 15:42:22,209 - empire.core.reader - INFO - Reading General.xlsx
+2026-07-12 15:42:22,226 - empire.core.reader - INFO - Reading seasonScale sheet from General.xlsx
+2026-07-12 15:42:22,236 - empire.core.reader - INFO - Reading CO2Cap sheet from General.xlsx
+2026-07-12 15:42:22,240 - empire.core.reader - INFO - Reading CO2Price sheet from General.xlsx
+2026-07-12 15:42:22,245 - empire.core.reader - INFO - Wrote General_LineBlockCapacityGlobal.tab (transmissionLineBlockCapGlobal = 1500.0).
+2026-07-12 15:42:22,247 - empire.core.reader - INFO - Wrote General_LineBlockReactanceGlobal.tab (LineBlockReactanceGlobal = 24.6).
+2026-07-12 15:42:22,249 - empire.core.reader - INFO - Wrote General_NominalVoltage.tab (NominalVoltage = 400.0).
+2026-07-12 15:42:22,249 - empire.core.reader - INFO - Reading Storage.xlsx
+2026-07-12 15:42:22,483 - empire.core.reader - INFO - Reading StorageBleedEfficiency sheet from Storage.xlsx
+2026-07-12 15:42:22,488 - empire.core.reader - INFO - Reading StorageChargeEff sheet from Storage.xlsx
+2026-07-12 15:42:22,492 - empire.core.reader - INFO - Reading StorageDischargeEff sheet from Storage.xlsx
+2026-07-12 15:42:22,495 - empire.core.reader - INFO - Reading StoragePowToEnergy sheet from Storage.xlsx
+2026-07-12 15:42:22,499 - empire.core.reader - INFO - Reading StorageInitialEnergyLevel sheet from Storage.xlsx
+2026-07-12 15:42:22,502 - empire.core.reader - INFO - Reading InitialPowerCapacity sheet from Storage.xlsx
+2026-07-12 15:42:22,509 - empire.core.reader - INFO - Reading PowerCapitalCost sheet from Storage.xlsx
+2026-07-12 15:42:22,512 - empire.core.reader - INFO - Reading PowerFixedOMCost sheet from Storage.xlsx
+2026-07-12 15:42:22,516 - empire.core.reader - INFO - Reading PowerMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-12 15:42:22,524 - empire.core.reader - INFO - Reading EnergyCapitalCost sheet from Storage.xlsx
+2026-07-12 15:42:22,540 - empire.core.reader - INFO - Reading EnergyFixedOMCost sheet from Storage.xlsx
+2026-07-12 15:42:22,544 - empire.core.reader - INFO - Reading EnergyInitialCapacity sheet from Storage.xlsx
+2026-07-12 15:42:22,551 - empire.core.reader - INFO - Reading EnergyMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-12 15:42:22,570 - empire.core.reader - INFO - Reading EnergyMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-12 15:42:22,575 - empire.core.reader - INFO - Reading PowerMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-12 15:42:22,580 - empire.core.reader - INFO - Reading Lifetime sheet from Storage.xlsx
+2026-07-12 15:42:22,595 - empire.core.empire - INFO - Solver: Gurobi
+2026-07-12 15:42:22,596 - empire.core.empire - INFO - Absolute emission cap in each scenario...
+2026-07-12 15:42:22,596 - empire.core.empire - INFO - Declaring sets...
+2026-07-12 15:42:22,598 - empire.core.empire - INFO - Reading sets...
+2026-07-12 15:42:22,630 - empire.core.empire - INFO - Constructing sub sets...
+2026-07-12 15:42:22,631 - empire.core.empire - INFO - Declaring parameters...
+2026-07-12 15:42:22,636 - empire.core.empire - INFO - Reading parameters...
+2026-07-12 15:42:22,637 - empire.core.empire - INFO - Reading parameters for Generator...
+2026-07-12 15:42:22,693 - empire.core.empire - INFO - Reading parameters for Transmission...
+2026-07-12 15:42:22,762 - empire.core.empire - INFO - Reading parameters for Storage...
+2026-07-12 15:42:22,863 - empire.core.empire - INFO - Reading parameters for Node...
+2026-07-12 15:42:22,882 - empire.core.empire - INFO - Reading parameters for Stochastic...
+2026-07-12 15:42:39,352 - empire.core.empire - INFO - Reading parameters for General...
+2026-07-12 15:42:39,368 - empire.core.empire - INFO - Constructing parameter values...
+2026-07-12 15:42:39,368 - empire.core.empire - INFO - Sets and parameters declared and read...
+2026-07-12 15:42:39,369 - empire.core.empire - INFO - Declaring variables...
+2026-07-12 15:42:39,371 - empire.core.empire - INFO - Ramping constraints disabled (use_ramping=False)...
+2026-07-12 15:42:39,372 - empire.core.empire - INFO - Transmission availability (usable share of installed line capacity): 1.0
+2026-07-12 15:42:39,380 - empire.core.empire - INFO - LOPF constraints not activated.
+2026-07-12 15:42:39,380 - empire.core.empire - INFO - Objective and constraints read...
+2026-07-12 15:42:39,381 - empire.core.empire - INFO - Building instance...
+2026-07-12 15:45:34,080 - empire.core.empire - INFO - Building instance took [sec]: 174
+2026-07-12 15:45:34,081 - empire.core.empire - INFO - ----------------------Problem Statistics---------------------
+2026-07-12 15:45:34,081 - empire.core.empire - INFO - Nodes: 51
+2026-07-12 15:45:34,081 - empire.core.empire - INFO - Lines: 134
+2026-07-12 15:45:34,082 - empire.core.empire - INFO - 
+2026-07-12 15:45:34,082 - empire.core.empire - INFO - GeneratorTypes: 20
+2026-07-12 15:45:34,083 - empire.core.empire - INFO - TotalGenerators: 396
+2026-07-12 15:45:34,083 - empire.core.empire - INFO - StorageTypes: 2
+2026-07-12 15:45:34,084 - empire.core.empire - INFO - TotalStorages: 102
+2026-07-12 15:45:34,084 - empire.core.empire - INFO - 
+2026-07-12 15:45:34,084 - empire.core.empire - INFO - InvestmentUntil: 2030
+2026-07-12 15:45:34,085 - empire.core.empire - INFO - Scenarios: 3
+2026-07-12 15:45:34,085 - empire.core.empire - INFO - TotalOperationalHoursPerScenario: 720
+2026-07-12 15:45:34,086 - empire.core.empire - INFO - TotalOperationalHoursPerInvYear: 2160
+2026-07-12 15:45:34,086 - empire.core.empire - INFO - Seasons: 6
+2026-07-12 15:45:34,086 - empire.core.empire - INFO - RegularSeasons: 4
+2026-07-12 15:45:34,087 - empire.core.empire - INFO - LengthRegSeason: 168
+2026-07-12 15:45:34,087 - empire.core.empire - INFO - PeakSeasons: 2
+2026-07-12 15:45:34,088 - empire.core.empire - INFO - LengthPeakSeason: 24
+2026-07-12 15:45:34,088 - empire.core.empire - INFO - 
+2026-07-12 15:45:34,089 - empire.core.empire - INFO - Discount rate: 0.05
+2026-07-12 15:45:34,089 - empire.core.empire - INFO - Operational discount scale: 4.54595050416236
+2026-07-12 15:45:34,089 - empire.core.empire - INFO - --------------------------------------------------------------
+2026-07-12 15:45:34,093 - empire.core.empire - INFO - Solving...
+2026-07-12 15:45:34,097 - empire.core.empire - INFO - Gurobi options: {'Method': 2, 'Crossover': 0, 'Presolve': -1}
+2026-07-12 16:12:30,653 - empire.core.empire - INFO - Writing results to .csv...
+2026-07-12 16:22:35,868 - empire.core.model_runner - INFO - Writing config to: /mnt/beegfs/users/ehsanno/openempire/Results/basic_run/dataset_IT_ES_REPowerEU++/Input/Xlsx/config.txt
+2026-07-13 14:52:06,076 - empire - INFO - Running EMPIRE Model
+2026-07-13 14:52:06,861 - empire.core.model_runner - INFO - ++++++++
+2026-07-13 14:52:06,862 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-13 14:52:06,862 - empire.core.model_runner - INFO - ++++++++
+2026-07-13 14:52:06,862 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-13 14:52:06,863 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-13 14:52:06,863 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-13 14:52:06,864 - empire.core.model_runner - INFO - ++++++++
+2026-07-13 14:52:06,864 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce3_noSGR_202607131452
+2026-07-13 14:52:06,864 - empire.core.model_runner - INFO - ++++++++
+2026-07-13 14:52:06,865 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-13 14:52:17,251 - empire.core.scenario_random - INFO - Done generating scenarios.
+2026-07-13 14:52:18,545 - empire.core.scenario_random - INFO - Saving 'sampling_key.csv'.
+2026-07-13 14:52:18,551 - empire.core.scenario_random - INFO - Saving 'Stochastic_StochasticAvailability.tab'.
+2026-07-13 14:52:20,705 - empire.core.scenario_random - INFO - Saving 'Stochastic_ElectricLoadRaw.tab'.
+2026-07-13 14:52:21,354 - empire.core.scenario_random - INFO - Saving 'Stochastic_HydroGenMaxSeasonalProduction.tab'.
+2026-07-13 14:52:21,558 - empire.core.reader - INFO - Generating .tab-files...
+2026-07-13 14:52:21,558 - empire.core.reader - INFO - Reading Sets.xlsx
+2026-07-13 14:52:21,854 - empire.core.reader - INFO - Reading Nodes sheet from Sets.xlsx
+2026-07-13 14:52:21,857 - empire.core.reader - INFO - Reading OffshoreNodes sheet from Sets.xlsx
+2026-07-13 14:52:21,859 - empire.core.reader - INFO - Reading Horizon sheet from Sets.xlsx
+2026-07-13 14:52:21,861 - empire.core.reader - INFO - Reading LineType sheet from Sets.xlsx
+2026-07-13 14:52:21,863 - empire.core.reader - INFO - Reading Technology sheet from Sets.xlsx
+2026-07-13 14:52:21,865 - empire.core.reader - INFO - Reading Storage sheet from Sets.xlsx
+2026-07-13 14:52:21,869 - empire.core.reader - INFO - Reading Generators sheet from Sets.xlsx
+2026-07-13 14:52:21,876 - empire.core.reader - INFO - Reading StorageOfNodes sheet from Sets.xlsx
+2026-07-13 14:52:21,881 - empire.core.reader - INFO - Reading GeneratorsOfNode sheet from Sets.xlsx
+2026-07-13 14:52:21,887 - empire.core.reader - INFO - Reading GeneratorsOfTechnology sheet from Sets.xlsx
+2026-07-13 14:52:21,892 - empire.core.reader - INFO - Reading DirectionalLines sheet from Sets.xlsx
+2026-07-13 14:52:21,911 - empire.core.reader - INFO - Reading LineTypeOfDirectionalLines sheet from Sets.xlsx
+2026-07-13 14:52:21,917 - empire.core.reader - INFO - Reading Generator.xlsx
+2026-07-13 14:52:22,094 - empire.core.reader - INFO - Reading FixedOMCosts sheet from Generator.xlsx
+2026-07-13 14:52:22,136 - empire.core.reader - INFO - Reading CapitalCosts sheet from Generator.xlsx
+2026-07-13 14:52:22,142 - empire.core.reader - INFO - Reading VariableOMCosts sheet from Generator.xlsx
+2026-07-13 14:52:22,147 - empire.core.reader - INFO - Reading FuelCosts sheet from Generator.xlsx
+2026-07-13 14:52:22,153 - empire.core.reader - INFO - Reading CCSCostTSVariable sheet from Generator.xlsx
+2026-07-13 14:52:22,158 - empire.core.reader - INFO - Reading Efficiency sheet from Generator.xlsx
+2026-07-13 14:52:22,164 - empire.core.reader - INFO - Reading RefInitialCap sheet from Generator.xlsx
+2026-07-13 14:52:22,170 - empire.core.reader - INFO - Reading ScaleFactorInitialCap sheet from Generator.xlsx
+2026-07-13 14:52:22,173 - empire.core.reader - INFO - Reading InitialCapacity sheet from Generator.xlsx
+2026-07-13 14:52:22,177 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Generator.xlsx
+2026-07-13 14:52:22,182 - empire.core.reader - INFO - Reading MaxInstalledCapacity sheet from Generator.xlsx
+2026-07-13 14:52:22,190 - empire.core.reader - INFO - Reading RampRate sheet from Generator.xlsx
+2026-07-13 14:52:22,217 - empire.core.reader - INFO - Reading GeneratorTypeAvailability sheet from Generator.xlsx
+2026-07-13 14:52:22,222 - empire.core.reader - INFO - Reading CO2Content sheet from Generator.xlsx
+2026-07-13 14:52:22,226 - empire.core.reader - INFO - Reading Lifetime sheet from Generator.xlsx
+2026-07-13 14:52:22,231 - empire.core.reader - INFO - Reading Transmission.xlsx
+2026-07-13 14:52:22,507 - empire.core.reader - INFO - Reading lineEfficiency sheet from Transmission.xlsx
+2026-07-13 14:52:22,517 - empire.core.reader - INFO - Reading MaxInstallCapacityRaw sheet from Transmission.xlsx
+2026-07-13 14:52:22,528 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Transmission.xlsx
+2026-07-13 14:52:22,563 - empire.core.reader - INFO - Reading Length sheet from Transmission.xlsx
+2026-07-13 14:52:22,569 - empire.core.reader - INFO - Reading TypeCapitalCost sheet from Transmission.xlsx
+2026-07-13 14:52:22,574 - empire.core.reader - INFO - Reading TypeFixedOMCost sheet from Transmission.xlsx
+2026-07-13 14:52:22,579 - empire.core.reader - INFO - Reading InitialCapacity sheet from Transmission.xlsx
+2026-07-13 14:52:22,589 - empire.core.reader - INFO - Reading Lifetime sheet from Transmission.xlsx
+2026-07-13 14:52:22,595 - empire.core.reader - INFO - Reading CandidateTransmission sheet from Transmission.xlsx
+2026-07-13 14:52:22,599 - empire.core.reader - INFO - Reading LineBlockCapacity sheet from Transmission.xlsx
+2026-07-13 14:52:22,604 - empire.core.reader - INFO - Reading LineBlockReactance sheet from Transmission.xlsx
+2026-07-13 14:52:22,609 - empire.core.reader - INFO - Reading Node.xlsx
+2026-07-13 14:52:22,630 - empire.core.reader - INFO - Reading ElectricAnnualDemand sheet from Node.xlsx
+2026-07-13 14:52:22,634 - empire.core.reader - INFO - Reading NodeLostLoadCost sheet from Node.xlsx
+2026-07-13 14:52:22,636 - empire.core.reader - INFO - Reading HydroGenMaxAnnualProduction sheet from Node.xlsx
+2026-07-13 14:52:22,639 - empire.core.reader - INFO - Reading General.xlsx
+2026-07-13 14:52:22,650 - empire.core.reader - INFO - Reading seasonScale sheet from General.xlsx
+2026-07-13 14:52:22,653 - empire.core.reader - INFO - Reading CO2Cap sheet from General.xlsx
+2026-07-13 14:52:22,655 - empire.core.reader - INFO - Reading CO2Price sheet from General.xlsx
+2026-07-13 14:52:22,659 - empire.core.reader - INFO - Wrote General_LineBlockCapacityGlobal.tab (transmissionLineBlockCapGlobal = 1500.0).
+2026-07-13 14:52:22,661 - empire.core.reader - INFO - Wrote General_LineBlockReactanceGlobal.tab (LineBlockReactanceGlobal = 24.6).
+2026-07-13 14:52:22,662 - empire.core.reader - INFO - Wrote General_NominalVoltage.tab (NominalVoltage = 400.0).
+2026-07-13 14:52:22,662 - empire.core.reader - INFO - Reading Storage.xlsx
+2026-07-13 14:52:22,836 - empire.core.reader - INFO - Reading StorageBleedEfficiency sheet from Storage.xlsx
+2026-07-13 14:52:22,872 - empire.core.reader - INFO - Reading StorageChargeEff sheet from Storage.xlsx
+2026-07-13 14:52:22,877 - empire.core.reader - INFO - Reading StorageDischargeEff sheet from Storage.xlsx
+2026-07-13 14:52:22,894 - empire.core.reader - INFO - Reading StoragePowToEnergy sheet from Storage.xlsx
+2026-07-13 14:52:22,911 - empire.core.reader - INFO - Reading StorageInitialEnergyLevel sheet from Storage.xlsx
+2026-07-13 14:52:22,925 - empire.core.reader - INFO - Reading InitialPowerCapacity sheet from Storage.xlsx
+2026-07-13 14:52:22,940 - empire.core.reader - INFO - Reading PowerCapitalCost sheet from Storage.xlsx
+2026-07-13 14:52:22,964 - empire.core.reader - INFO - Reading PowerFixedOMCost sheet from Storage.xlsx
+2026-07-13 14:52:22,969 - empire.core.reader - INFO - Reading PowerMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-13 14:52:22,981 - empire.core.reader - INFO - Reading EnergyCapitalCost sheet from Storage.xlsx
+2026-07-13 14:52:22,996 - empire.core.reader - INFO - Reading EnergyFixedOMCost sheet from Storage.xlsx
+2026-07-13 14:52:23,001 - empire.core.reader - INFO - Reading EnergyInitialCapacity sheet from Storage.xlsx
+2026-07-13 14:52:23,021 - empire.core.reader - INFO - Reading EnergyMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-13 14:52:23,031 - empire.core.reader - INFO - Reading EnergyMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-13 14:52:23,037 - empire.core.reader - INFO - Reading PowerMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-13 14:52:23,051 - empire.core.reader - INFO - Reading Lifetime sheet from Storage.xlsx
+2026-07-13 14:52:23,076 - empire.core.empire - INFO - Solver: Gurobi
+2026-07-13 14:52:23,077 - empire.core.empire - INFO - Absolute emission cap in each scenario...
+2026-07-13 14:52:23,077 - empire.core.empire - INFO - Declaring sets...
+2026-07-13 14:52:23,080 - empire.core.empire - INFO - Reading sets...
+2026-07-13 14:52:23,109 - empire.core.empire - INFO - Constructing sub sets...
+2026-07-13 14:52:23,110 - empire.core.empire - INFO - Declaring parameters...
+2026-07-13 14:52:23,115 - empire.core.empire - INFO - Reading parameters...
+2026-07-13 14:52:23,116 - empire.core.empire - INFO - Reading parameters for Generator...
+2026-07-13 14:52:23,180 - empire.core.empire - INFO - Reading parameters for Transmission...
+2026-07-13 14:52:23,279 - empire.core.empire - INFO - Reading parameters for Storage...
+2026-07-13 14:52:23,332 - empire.core.empire - INFO - Reading parameters for Node...
+2026-07-13 14:52:23,341 - empire.core.empire - INFO - Reading parameters for Stochastic...
+2026-07-13 14:52:38,501 - empire.core.empire - INFO - Reading parameters for General...
+2026-07-13 14:52:38,505 - empire.core.empire - INFO - Constructing parameter values...
+2026-07-13 14:52:38,506 - empire.core.empire - INFO - Sets and parameters declared and read...
+2026-07-13 14:52:38,507 - empire.core.empire - INFO - Declaring variables...
+2026-07-13 14:52:38,508 - empire.core.empire - INFO - Ramping constraints disabled (use_ramping=False)...
+2026-07-13 14:52:38,510 - empire.core.empire - INFO - Transmission availability (usable share of installed line capacity): 1.0
+2026-07-13 14:52:38,519 - empire.core.empire - INFO - LOPF constraints not activated.
+2026-07-13 14:52:38,519 - empire.core.empire - INFO - Objective and constraints read...
+2026-07-13 14:52:38,520 - empire.core.empire - INFO - Building instance...
+2026-07-13 14:54:56,737 - empire.core.empire - INFO - Building instance took [sec]: 138
+2026-07-13 14:54:56,743 - empire.core.empire - INFO - ----------------------Problem Statistics---------------------
+2026-07-13 14:54:56,755 - empire.core.empire - INFO - Nodes: 51
+2026-07-13 14:54:56,757 - empire.core.empire - INFO - Lines: 134
+2026-07-13 14:54:56,757 - empire.core.empire - INFO - 
+2026-07-13 14:54:56,758 - empire.core.empire - INFO - GeneratorTypes: 20
+2026-07-13 14:54:56,758 - empire.core.empire - INFO - TotalGenerators: 396
+2026-07-13 14:54:56,759 - empire.core.empire - INFO - StorageTypes: 2
+2026-07-13 14:54:56,759 - empire.core.empire - INFO - TotalStorages: 102
+2026-07-13 14:54:56,759 - empire.core.empire - INFO - 
+2026-07-13 14:54:56,760 - empire.core.empire - INFO - InvestmentUntil: 2030
+2026-07-13 14:54:56,760 - empire.core.empire - INFO - Scenarios: 3
+2026-07-13 14:54:56,761 - empire.core.empire - INFO - TotalOperationalHoursPerScenario: 720
+2026-07-13 14:54:56,761 - empire.core.empire - INFO - TotalOperationalHoursPerInvYear: 2160
+2026-07-13 14:54:56,762 - empire.core.empire - INFO - Seasons: 6
+2026-07-13 14:54:56,762 - empire.core.empire - INFO - RegularSeasons: 4
+2026-07-13 14:54:56,763 - empire.core.empire - INFO - LengthRegSeason: 168
+2026-07-13 14:54:56,763 - empire.core.empire - INFO - PeakSeasons: 2
+2026-07-13 14:54:56,763 - empire.core.empire - INFO - LengthPeakSeason: 24
+2026-07-13 14:54:56,764 - empire.core.empire - INFO - 
+2026-07-13 14:54:56,764 - empire.core.empire - INFO - Discount rate: 0.05
+2026-07-13 14:54:56,765 - empire.core.empire - INFO - Operational discount scale: 4.54595050416236
+2026-07-13 14:54:56,765 - empire.core.empire - INFO - --------------------------------------------------------------
+2026-07-13 14:54:56,770 - empire.core.empire - INFO - Solving...
+2026-07-13 14:54:56,775 - empire.core.empire - INFO - Gurobi options: {'Method': 2, 'Crossover': 0, 'Presolve': -1}
+2026-07-13 15:21:00,521 - empire.core.empire - INFO - Writing results to .csv...
+2026-07-13 15:30:44,064 - empire.core.model_runner - INFO - Writing config to: /mnt/beegfs/users/ehsanno/openempire/Results/basic_run/dataset_IT_ES_REPowerEU++/Input/Xlsx/config.txt
+2026-07-14 20:48:25,907 - empire - INFO - Running EMPIRE Model
+2026-07-14 20:48:26,340 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 20:48:26,340 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-14 20:48:26,341 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 20:48:26,341 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-14 20:48:26,342 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-14 20:48:26,342 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-14 20:48:26,342 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 20:48:26,343 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce3_noSGR_202607142048
+2026-07-14 20:48:26,343 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 20:48:26,344 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-14 20:48:33,849 - empire.core.scenario_random - INFO - Done generating scenarios.
+2026-07-14 20:48:34,786 - empire.core.scenario_random - INFO - Saving 'sampling_key.csv'.
+2026-07-14 20:48:34,799 - empire.core.scenario_random - INFO - Saving 'Stochastic_StochasticAvailability.tab'.
+2026-07-14 20:48:35,971 - empire.core.scenario_random - INFO - Saving 'Stochastic_ElectricLoadRaw.tab'.
+2026-07-14 20:48:36,437 - empire.core.scenario_random - INFO - Saving 'Stochastic_HydroGenMaxSeasonalProduction.tab'.
+2026-07-14 20:48:36,655 - empire.core.reader - INFO - Generating .tab-files...
+2026-07-14 20:48:36,655 - empire.core.reader - INFO - Reading Sets.xlsx
+2026-07-14 20:48:36,854 - empire.core.reader - INFO - Reading Nodes sheet from Sets.xlsx
+2026-07-14 20:48:36,857 - empire.core.reader - INFO - Reading OffshoreNodes sheet from Sets.xlsx
+2026-07-14 20:48:36,859 - empire.core.reader - INFO - Reading Horizon sheet from Sets.xlsx
+2026-07-14 20:48:36,861 - empire.core.reader - INFO - Reading LineType sheet from Sets.xlsx
+2026-07-14 20:48:36,864 - empire.core.reader - INFO - Reading Technology sheet from Sets.xlsx
+2026-07-14 20:48:36,866 - empire.core.reader - INFO - Reading Storage sheet from Sets.xlsx
+2026-07-14 20:48:36,871 - empire.core.reader - INFO - Reading Generators sheet from Sets.xlsx
+2026-07-14 20:48:36,879 - empire.core.reader - INFO - Reading StorageOfNodes sheet from Sets.xlsx
+2026-07-14 20:48:36,883 - empire.core.reader - INFO - Reading GeneratorsOfNode sheet from Sets.xlsx
+2026-07-14 20:48:36,886 - empire.core.reader - INFO - Reading GeneratorsOfTechnology sheet from Sets.xlsx
+2026-07-14 20:48:36,890 - empire.core.reader - INFO - Reading DirectionalLines sheet from Sets.xlsx
+2026-07-14 20:48:36,893 - empire.core.reader - INFO - Reading LineTypeOfDirectionalLines sheet from Sets.xlsx
+2026-07-14 20:48:36,897 - empire.core.reader - INFO - Reading Countries sheet from Sets.xlsx
+2026-07-14 20:48:36,899 - empire.core.reader - INFO - Reading NodesOfCountry sheet from Sets.xlsx
+2026-07-14 20:48:36,902 - empire.core.reader - INFO - Reading Generator.xlsx
+2026-07-14 20:48:36,995 - empire.core.reader - INFO - Reading FixedOMCosts sheet from Generator.xlsx
+2026-07-14 20:48:37,001 - empire.core.reader - INFO - Reading CapitalCosts sheet from Generator.xlsx
+2026-07-14 20:48:37,005 - empire.core.reader - INFO - Reading VariableOMCosts sheet from Generator.xlsx
+2026-07-14 20:48:37,008 - empire.core.reader - INFO - Reading FuelCosts sheet from Generator.xlsx
+2026-07-14 20:48:37,012 - empire.core.reader - INFO - Reading CCSCostTSVariable sheet from Generator.xlsx
+2026-07-14 20:48:37,015 - empire.core.reader - INFO - Reading Efficiency sheet from Generator.xlsx
+2026-07-14 20:48:37,019 - empire.core.reader - INFO - Reading RefInitialCap sheet from Generator.xlsx
+2026-07-14 20:48:37,023 - empire.core.reader - INFO - Reading ScaleFactorInitialCap sheet from Generator.xlsx
+2026-07-14 20:48:37,026 - empire.core.reader - INFO - Reading InitialCapacity sheet from Generator.xlsx
+2026-07-14 20:48:37,030 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Generator.xlsx
+2026-07-14 20:48:37,033 - empire.core.reader - INFO - Reading MaxInstalledCapacity sheet from Generator.xlsx
+2026-07-14 20:48:37,038 - empire.core.reader - INFO - Reading RampRate sheet from Generator.xlsx
+2026-07-14 20:48:37,042 - empire.core.reader - INFO - Reading GeneratorTypeAvailability sheet from Generator.xlsx
+2026-07-14 20:48:37,045 - empire.core.reader - INFO - Reading CO2Content sheet from Generator.xlsx
+2026-07-14 20:48:37,048 - empire.core.reader - INFO - Reading Lifetime sheet from Generator.xlsx
+2026-07-14 20:48:37,051 - empire.core.reader - INFO - Reading MinBuiltCapacity sheet from Generator.xlsx
+2026-07-14 20:48:37,054 - empire.core.reader - INFO - Reading MaxInstalledCapacityCountry sheet from Generator.xlsx
+2026-07-14 20:48:37,057 - empire.core.reader - INFO - Reading MaxBuiltCapacityCountry sheet from Generator.xlsx
+2026-07-14 20:48:37,061 - empire.core.reader - INFO - Reading MinBuiltCapacityCountry sheet from Generator.xlsx
+2026-07-14 20:48:37,063 - empire.core.reader - INFO - Reading Transmission.xlsx
+2026-07-14 20:48:37,207 - empire.core.reader - INFO - Reading lineEfficiency sheet from Transmission.xlsx
+2026-07-14 20:48:37,211 - empire.core.reader - INFO - Reading MaxInstallCapacityRaw sheet from Transmission.xlsx
+2026-07-14 20:48:37,217 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Transmission.xlsx
+2026-07-14 20:48:37,222 - empire.core.reader - INFO - Reading Length sheet from Transmission.xlsx
+2026-07-14 20:48:37,235 - empire.core.reader - INFO - Reading TypeCapitalCost sheet from Transmission.xlsx
+2026-07-14 20:48:37,238 - empire.core.reader - INFO - Reading TypeFixedOMCost sheet from Transmission.xlsx
+2026-07-14 20:48:37,242 - empire.core.reader - INFO - Reading InitialCapacity sheet from Transmission.xlsx
+2026-07-14 20:48:37,247 - empire.core.reader - INFO - Reading Lifetime sheet from Transmission.xlsx
+2026-07-14 20:48:37,251 - empire.core.reader - INFO - Reading CandidateTransmission sheet from Transmission.xlsx
+2026-07-14 20:48:37,254 - empire.core.reader - INFO - Reading LineBlockCapacity sheet from Transmission.xlsx
+2026-07-14 20:48:37,257 - empire.core.reader - INFO - Reading LineBlockReactance sheet from Transmission.xlsx
+2026-07-14 20:48:37,261 - empire.core.reader - INFO - Reading Node.xlsx
+2026-07-14 20:48:37,283 - empire.core.reader - INFO - Reading ElectricAnnualDemand sheet from Node.xlsx
+2026-07-14 20:48:37,287 - empire.core.reader - INFO - Reading NodeLostLoadCost sheet from Node.xlsx
+2026-07-14 20:48:37,291 - empire.core.reader - INFO - Reading HydroGenMaxAnnualProduction sheet from Node.xlsx
+2026-07-14 20:48:37,294 - empire.core.reader - INFO - Reading General.xlsx
+2026-07-14 20:48:37,307 - empire.core.reader - INFO - Reading seasonScale sheet from General.xlsx
+2026-07-14 20:48:37,313 - empire.core.reader - INFO - Reading CO2Cap sheet from General.xlsx
+2026-07-14 20:48:37,319 - empire.core.reader - INFO - Reading CO2Price sheet from General.xlsx
+2026-07-14 20:48:37,324 - empire.core.reader - INFO - Wrote General_LineBlockCapacityGlobal.tab (transmissionLineBlockCapGlobal = 1500.0).
+2026-07-14 20:48:37,325 - empire.core.reader - INFO - Wrote General_LineBlockReactanceGlobal.tab (LineBlockReactanceGlobal = 24.6).
+2026-07-14 20:48:37,327 - empire.core.reader - INFO - Wrote General_NominalVoltage.tab (NominalVoltage = 400.0).
+2026-07-14 20:48:37,328 - empire.core.reader - INFO - Reading Storage.xlsx
+2026-07-14 20:48:37,459 - empire.core.reader - INFO - Reading StorageBleedEfficiency sheet from Storage.xlsx
+2026-07-14 20:48:37,462 - empire.core.reader - INFO - Reading StorageChargeEff sheet from Storage.xlsx
+2026-07-14 20:48:37,465 - empire.core.reader - INFO - Reading StorageDischargeEff sheet from Storage.xlsx
+2026-07-14 20:48:37,468 - empire.core.reader - INFO - Reading StoragePowToEnergy sheet from Storage.xlsx
+2026-07-14 20:48:37,471 - empire.core.reader - INFO - Reading StorageInitialEnergyLevel sheet from Storage.xlsx
+2026-07-14 20:48:37,474 - empire.core.reader - INFO - Reading InitialPowerCapacity sheet from Storage.xlsx
+2026-07-14 20:48:37,479 - empire.core.reader - INFO - Reading PowerCapitalCost sheet from Storage.xlsx
+2026-07-14 20:48:37,482 - empire.core.reader - INFO - Reading PowerFixedOMCost sheet from Storage.xlsx
+2026-07-14 20:48:37,486 - empire.core.reader - INFO - Reading PowerMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-14 20:48:37,499 - empire.core.reader - INFO - Reading EnergyCapitalCost sheet from Storage.xlsx
+2026-07-14 20:48:37,502 - empire.core.reader - INFO - Reading EnergyFixedOMCost sheet from Storage.xlsx
+2026-07-14 20:48:37,505 - empire.core.reader - INFO - Reading EnergyInitialCapacity sheet from Storage.xlsx
+2026-07-14 20:48:37,511 - empire.core.reader - INFO - Reading EnergyMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-14 20:48:37,516 - empire.core.reader - INFO - Reading EnergyMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-14 20:48:37,520 - empire.core.reader - INFO - Reading PowerMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-14 20:48:37,523 - empire.core.reader - INFO - Reading Lifetime sheet from Storage.xlsx
+2026-07-14 20:48:37,527 - empire.core.empire - INFO - Solver: Gurobi
+2026-07-14 20:48:37,528 - empire.core.empire - INFO - Absolute emission cap in each scenario...
+2026-07-14 20:48:37,528 - empire.core.empire - INFO - Declaring sets...
+2026-07-14 20:48:37,530 - empire.core.empire - INFO - Reading sets...
+2026-07-14 20:48:37,553 - empire.core.empire - INFO - Country level enabled: national limits will be enforced over NodesOfCountry.
+2026-07-14 20:48:37,554 - empire.core.empire - INFO - Constructing sub sets...
+2026-07-14 20:48:37,554 - empire.core.empire - INFO - Declaring parameters...
+2026-07-14 20:48:37,558 - empire.core.empire - INFO - Reading parameters...
+2026-07-14 20:48:37,559 - empire.core.empire - INFO - Reading parameters for Generator...
+2026-07-14 20:48:37,591 - empire.core.empire - INFO - Reading parameters for Transmission...
+2026-07-14 20:48:37,615 - empire.core.empire - INFO - Reading parameters for Storage...
+2026-07-14 20:48:37,645 - empire.core.empire - INFO - Reading parameters for Node...
+2026-07-14 20:48:37,650 - empire.core.empire - INFO - Reading parameters for Stochastic...
+2026-07-14 20:48:47,867 - empire.core.empire - INFO - Reading parameters for General...
+2026-07-14 20:48:47,870 - empire.core.empire - INFO - Constructing parameter values...
+2026-07-14 20:48:47,871 - empire.core.empire - INFO - Sets and parameters declared and read...
+2026-07-14 20:48:47,871 - empire.core.empire - INFO - Declaring variables...
+2026-07-14 20:48:47,872 - empire.core.empire - INFO - Ramping constraints disabled (use_ramping=False)...
+2026-07-14 20:48:47,873 - empire.core.empire - INFO - Transmission availability (usable share of installed line capacity): 1.0
+2026-07-14 20:48:47,879 - empire.core.empire - INFO - LOPF constraints not activated.
+2026-07-14 20:48:47,879 - empire.core.empire - INFO - Objective and constraints read...
+2026-07-14 20:48:47,880 - empire.core.empire - INFO - Building instance...
+2026-07-14 20:50:42,561 - empire.core.empire - INFO - Building instance took [sec]: 114
+2026-07-14 20:50:42,562 - empire.core.empire - INFO - ----------------------Problem Statistics---------------------
+2026-07-14 20:50:42,562 - empire.core.empire - INFO - Nodes: 51
+2026-07-14 20:50:42,563 - empire.core.empire - INFO - Lines: 134
+2026-07-14 20:50:42,563 - empire.core.empire - INFO - 
+2026-07-14 20:50:42,563 - empire.core.empire - INFO - GeneratorTypes: 20
+2026-07-14 20:50:42,564 - empire.core.empire - INFO - TotalGenerators: 537
+2026-07-14 20:50:42,564 - empire.core.empire - INFO - StorageTypes: 2
+2026-07-14 20:50:42,565 - empire.core.empire - INFO - TotalStorages: 102
+2026-07-14 20:50:42,565 - empire.core.empire - INFO - 
+2026-07-14 20:50:42,565 - empire.core.empire - INFO - InvestmentUntil: 2030
+2026-07-14 20:50:42,566 - empire.core.empire - INFO - Scenarios: 3
+2026-07-14 20:50:42,566 - empire.core.empire - INFO - TotalOperationalHoursPerScenario: 720
+2026-07-14 20:50:42,567 - empire.core.empire - INFO - TotalOperationalHoursPerInvYear: 2160
+2026-07-14 20:50:42,567 - empire.core.empire - INFO - Seasons: 6
+2026-07-14 20:50:42,567 - empire.core.empire - INFO - RegularSeasons: 4
+2026-07-14 20:50:42,568 - empire.core.empire - INFO - LengthRegSeason: 168
+2026-07-14 20:50:42,568 - empire.core.empire - INFO - PeakSeasons: 2
+2026-07-14 20:50:42,569 - empire.core.empire - INFO - LengthPeakSeason: 24
+2026-07-14 20:50:42,569 - empire.core.empire - INFO - 
+2026-07-14 20:50:42,569 - empire.core.empire - INFO - Discount rate: 0.05
+2026-07-14 20:50:42,570 - empire.core.empire - INFO - Operational discount scale: 4.54595050416236
+2026-07-14 20:50:42,570 - empire.core.empire - INFO - --------------------------------------------------------------
+2026-07-14 20:50:42,574 - empire.core.empire - INFO - Solving...
+2026-07-14 20:50:42,577 - empire.core.empire - INFO - Gurobi options: {'Method': 2, 'Crossover': 0, 'Presolve': -1}
+2026-07-14 21:13:22,064 - empire.core.empire - INFO - Writing results to .csv...
+2026-07-14 21:21:38,141 - empire.core.model_runner - INFO - Writing config to: /mnt/beegfs/users/ehsanno/openempire/Results/basic_run/dataset_IT_ES_REPowerEU++/Input/Xlsx/config.txt
+2026-07-14 23:42:46,521 - empire - INFO - Running EMPIRE Model
+2026-07-14 23:42:47,070 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 23:42:47,071 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-14 23:42:47,071 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 23:42:47,072 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-14 23:42:47,073 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-14 23:42:47,073 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-14 23:42:47,074 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 23:42:47,074 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce10_noSGR_202607142342
+2026-07-14 23:42:47,074 - empire.core.model_runner - INFO - ++++++++
+2026-07-14 23:42:47,075 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-15 00:01:00,825 - empire - INFO - Running EMPIRE Model
+2026-07-15 00:01:01,250 - empire.core.model_runner - INFO - ++++++++
+2026-07-15 00:01:01,250 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-15 00:01:01,250 - empire.core.model_runner - INFO - ++++++++
+2026-07-15 00:01:01,251 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-15 00:01:01,251 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-15 00:01:01,251 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-15 00:01:01,252 - empire.core.model_runner - INFO - ++++++++
+2026-07-15 00:01:01,252 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce10_noSGR_202607150001
+2026-07-15 00:01:01,252 - empire.core.model_runner - INFO - ++++++++
+2026-07-15 00:01:01,253 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-15 00:01:28,198 - empire.core.scenario_random - INFO - Done generating scenarios.
+2026-07-15 00:01:31,364 - empire.core.scenario_random - INFO - Saving 'sampling_key.csv'.
+2026-07-15 00:01:31,368 - empire.core.scenario_random - INFO - Saving 'Stochastic_StochasticAvailability.tab'.
+2026-07-15 00:01:36,062 - empire.core.scenario_random - INFO - Saving 'Stochastic_ElectricLoadRaw.tab'.
+2026-07-15 00:01:37,976 - empire.core.scenario_random - INFO - Saving 'Stochastic_HydroGenMaxSeasonalProduction.tab'.
+2026-07-15 00:01:38,827 - empire.core.reader - INFO - Generating .tab-files...
+2026-07-15 00:01:38,827 - empire.core.reader - INFO - Reading Sets.xlsx
+2026-07-15 00:01:38,911 - empire.core.reader - INFO - Reading Nodes sheet from Sets.xlsx
+2026-07-15 00:01:38,914 - empire.core.reader - INFO - Reading OffshoreNodes sheet from Sets.xlsx
+2026-07-15 00:01:38,916 - empire.core.reader - INFO - Reading Horizon sheet from Sets.xlsx
+2026-07-15 00:01:38,918 - empire.core.reader - INFO - Reading LineType sheet from Sets.xlsx
+2026-07-15 00:01:38,920 - empire.core.reader - INFO - Reading Technology sheet from Sets.xlsx
+2026-07-15 00:01:38,922 - empire.core.reader - INFO - Reading Storage sheet from Sets.xlsx
+2026-07-15 00:01:38,926 - empire.core.reader - INFO - Reading Generators sheet from Sets.xlsx
+2026-07-15 00:01:38,934 - empire.core.reader - INFO - Reading StorageOfNodes sheet from Sets.xlsx
+2026-07-15 00:01:38,937 - empire.core.reader - INFO - Reading GeneratorsOfNode sheet from Sets.xlsx
+2026-07-15 00:01:38,940 - empire.core.reader - INFO - Reading GeneratorsOfTechnology sheet from Sets.xlsx
+2026-07-15 00:01:38,943 - empire.core.reader - INFO - Reading DirectionalLines sheet from Sets.xlsx
+2026-07-15 00:01:38,946 - empire.core.reader - INFO - Reading LineTypeOfDirectionalLines sheet from Sets.xlsx
+2026-07-15 00:01:38,949 - empire.core.reader - INFO - Reading Countries sheet from Sets.xlsx
+2026-07-15 00:01:38,951 - empire.core.reader - INFO - Reading NodesOfCountry sheet from Sets.xlsx
+2026-07-15 00:01:38,953 - empire.core.reader - INFO - Reading Generator.xlsx
+2026-07-15 00:01:39,038 - empire.core.reader - INFO - Reading FixedOMCosts sheet from Generator.xlsx
+2026-07-15 00:01:39,043 - empire.core.reader - INFO - Reading CapitalCosts sheet from Generator.xlsx
+2026-07-15 00:01:39,046 - empire.core.reader - INFO - Reading VariableOMCosts sheet from Generator.xlsx
+2026-07-15 00:01:39,049 - empire.core.reader - INFO - Reading FuelCosts sheet from Generator.xlsx
+2026-07-15 00:01:39,052 - empire.core.reader - INFO - Reading CCSCostTSVariable sheet from Generator.xlsx
+2026-07-15 00:01:39,055 - empire.core.reader - INFO - Reading Efficiency sheet from Generator.xlsx
+2026-07-15 00:01:39,057 - empire.core.reader - INFO - Reading RefInitialCap sheet from Generator.xlsx
+2026-07-15 00:01:39,061 - empire.core.reader - INFO - Reading ScaleFactorInitialCap sheet from Generator.xlsx
+2026-07-15 00:01:39,064 - empire.core.reader - INFO - Reading InitialCapacity sheet from Generator.xlsx
+2026-07-15 00:01:39,066 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Generator.xlsx
+2026-07-15 00:01:39,069 - empire.core.reader - INFO - Reading MaxInstalledCapacity sheet from Generator.xlsx
+2026-07-15 00:01:39,073 - empire.core.reader - INFO - Reading RampRate sheet from Generator.xlsx
+2026-07-15 00:01:39,076 - empire.core.reader - INFO - Reading GeneratorTypeAvailability sheet from Generator.xlsx
+2026-07-15 00:01:39,078 - empire.core.reader - INFO - Reading CO2Content sheet from Generator.xlsx
+2026-07-15 00:01:39,081 - empire.core.reader - INFO - Reading Lifetime sheet from Generator.xlsx
+2026-07-15 00:01:39,084 - empire.core.reader - INFO - Reading MinBuiltCapacity sheet from Generator.xlsx
+2026-07-15 00:01:39,086 - empire.core.reader - INFO - Reading MaxInstalledCapacityCountry sheet from Generator.xlsx
+2026-07-15 00:01:39,089 - empire.core.reader - INFO - Reading MaxBuiltCapacityCountry sheet from Generator.xlsx
+2026-07-15 00:01:39,091 - empire.core.reader - INFO - Reading MinBuiltCapacityCountry sheet from Generator.xlsx
+2026-07-15 00:01:39,093 - empire.core.reader - INFO - Reading Transmission.xlsx
+2026-07-15 00:01:39,304 - empire.core.reader - INFO - Reading lineEfficiency sheet from Transmission.xlsx
+2026-07-15 00:01:39,307 - empire.core.reader - INFO - Reading MaxInstallCapacityRaw sheet from Transmission.xlsx
+2026-07-15 00:01:39,312 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Transmission.xlsx
+2026-07-15 00:01:39,317 - empire.core.reader - INFO - Reading Length sheet from Transmission.xlsx
+2026-07-15 00:01:39,319 - empire.core.reader - INFO - Reading TypeCapitalCost sheet from Transmission.xlsx
+2026-07-15 00:01:39,322 - empire.core.reader - INFO - Reading TypeFixedOMCost sheet from Transmission.xlsx
+2026-07-15 00:01:39,324 - empire.core.reader - INFO - Reading InitialCapacity sheet from Transmission.xlsx
+2026-07-15 00:01:39,329 - empire.core.reader - INFO - Reading Lifetime sheet from Transmission.xlsx
+2026-07-15 00:01:39,332 - empire.core.reader - INFO - Reading CandidateTransmission sheet from Transmission.xlsx
+2026-07-15 00:01:39,334 - empire.core.reader - INFO - Reading LineBlockCapacity sheet from Transmission.xlsx
+2026-07-15 00:01:39,337 - empire.core.reader - INFO - Reading LineBlockReactance sheet from Transmission.xlsx
+2026-07-15 00:01:39,340 - empire.core.reader - INFO - Reading Node.xlsx
+2026-07-15 00:01:39,358 - empire.core.reader - INFO - Reading ElectricAnnualDemand sheet from Node.xlsx
+2026-07-15 00:01:39,362 - empire.core.reader - INFO - Reading NodeLostLoadCost sheet from Node.xlsx
+2026-07-15 00:01:39,364 - empire.core.reader - INFO - Reading HydroGenMaxAnnualProduction sheet from Node.xlsx
+2026-07-15 00:01:39,367 - empire.core.reader - INFO - Reading General.xlsx
+2026-07-15 00:01:39,377 - empire.core.reader - INFO - Reading seasonScale sheet from General.xlsx
+2026-07-15 00:01:39,379 - empire.core.reader - INFO - Reading CO2Cap sheet from General.xlsx
+2026-07-15 00:01:39,382 - empire.core.reader - INFO - Reading CO2Price sheet from General.xlsx
+2026-07-15 00:01:39,385 - empire.core.reader - INFO - Wrote General_LineBlockCapacityGlobal.tab (transmissionLineBlockCapGlobal = 1500.0).
+2026-07-15 00:01:39,387 - empire.core.reader - INFO - Wrote General_LineBlockReactanceGlobal.tab (LineBlockReactanceGlobal = 24.6).
+2026-07-15 00:01:39,388 - empire.core.reader - INFO - Wrote General_NominalVoltage.tab (NominalVoltage = 400.0).
+2026-07-15 00:01:39,389 - empire.core.reader - INFO - Reading Storage.xlsx
+2026-07-15 00:01:39,507 - empire.core.reader - INFO - Reading StorageBleedEfficiency sheet from Storage.xlsx
+2026-07-15 00:01:39,510 - empire.core.reader - INFO - Reading StorageChargeEff sheet from Storage.xlsx
+2026-07-15 00:01:39,512 - empire.core.reader - INFO - Reading StorageDischargeEff sheet from Storage.xlsx
+2026-07-15 00:01:39,515 - empire.core.reader - INFO - Reading StoragePowToEnergy sheet from Storage.xlsx
+2026-07-15 00:01:39,517 - empire.core.reader - INFO - Reading StorageInitialEnergyLevel sheet from Storage.xlsx
+2026-07-15 00:01:39,520 - empire.core.reader - INFO - Reading InitialPowerCapacity sheet from Storage.xlsx
+2026-07-15 00:01:39,524 - empire.core.reader - INFO - Reading PowerCapitalCost sheet from Storage.xlsx
+2026-07-15 00:01:39,526 - empire.core.reader - INFO - Reading PowerFixedOMCost sheet from Storage.xlsx
+2026-07-15 00:01:39,529 - empire.core.reader - INFO - Reading PowerMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-15 00:01:39,533 - empire.core.reader - INFO - Reading EnergyCapitalCost sheet from Storage.xlsx
+2026-07-15 00:01:39,536 - empire.core.reader - INFO - Reading EnergyFixedOMCost sheet from Storage.xlsx
+2026-07-15 00:01:39,538 - empire.core.reader - INFO - Reading EnergyInitialCapacity sheet from Storage.xlsx
+2026-07-15 00:01:39,543 - empire.core.reader - INFO - Reading EnergyMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-15 00:01:39,548 - empire.core.reader - INFO - Reading EnergyMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-15 00:01:39,550 - empire.core.reader - INFO - Reading PowerMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-15 00:01:39,553 - empire.core.reader - INFO - Reading Lifetime sheet from Storage.xlsx
+2026-07-15 00:01:39,556 - empire.core.empire - INFO - Solver: Gurobi
+2026-07-15 00:01:39,556 - empire.core.empire - INFO - Absolute emission cap in each scenario...
+2026-07-15 00:01:39,557 - empire.core.empire - INFO - Declaring sets...
+2026-07-15 00:01:39,558 - empire.core.empire - INFO - Reading sets...
+2026-07-15 00:01:39,580 - empire.core.empire - INFO - Country level enabled: national limits will be enforced over NodesOfCountry.
+2026-07-15 00:01:39,580 - empire.core.empire - INFO - Constructing sub sets...
+2026-07-15 00:01:39,581 - empire.core.empire - INFO - Declaring parameters...
+2026-07-15 00:01:39,584 - empire.core.empire - INFO - Reading parameters...
+2026-07-15 00:01:39,584 - empire.core.empire - INFO - Reading parameters for Generator...
+2026-07-15 00:01:39,614 - empire.core.empire - INFO - Reading parameters for Transmission...
+2026-07-15 00:01:39,636 - empire.core.empire - INFO - Reading parameters for Storage...
+2026-07-15 00:01:39,665 - empire.core.empire - INFO - Reading parameters for Node...
+2026-07-15 00:01:39,670 - empire.core.empire - INFO - Reading parameters for Stochastic...
+2026-07-15 00:02:16,025 - empire.core.empire - INFO - Reading parameters for General...
+2026-07-15 00:02:16,029 - empire.core.empire - INFO - Constructing parameter values...
+2026-07-15 00:02:16,030 - empire.core.empire - INFO - Sets and parameters declared and read...
+2026-07-15 00:02:16,030 - empire.core.empire - INFO - Declaring variables...
+2026-07-15 00:02:16,047 - empire.core.empire - INFO - Ramping constraints disabled (use_ramping=False)...
+2026-07-15 00:02:16,048 - empire.core.empire - INFO - Transmission availability (usable share of installed line capacity): 1.0
+2026-07-15 00:02:16,049 - empire.core.empire - INFO - LOPF constraints not activated.
+2026-07-15 00:02:16,049 - empire.core.empire - INFO - Objective and constraints read...
+2026-07-15 00:02:16,049 - empire.core.empire - INFO - Building instance...
+2026-07-15 00:09:39,478 - empire.core.empire - INFO - Building instance took [sec]: 443
+2026-07-15 00:09:39,479 - empire.core.empire - INFO - ----------------------Problem Statistics---------------------
+2026-07-15 00:09:39,480 - empire.core.empire - INFO - Nodes: 51
+2026-07-15 00:09:39,480 - empire.core.empire - INFO - Lines: 134
+2026-07-15 00:09:39,481 - empire.core.empire - INFO - 
+2026-07-15 00:09:39,481 - empire.core.empire - INFO - GeneratorTypes: 20
+2026-07-15 00:09:39,481 - empire.core.empire - INFO - TotalGenerators: 537
+2026-07-15 00:09:39,482 - empire.core.empire - INFO - StorageTypes: 2
+2026-07-15 00:09:39,482 - empire.core.empire - INFO - TotalStorages: 102
+2026-07-15 00:09:39,482 - empire.core.empire - INFO - 
+2026-07-15 00:09:39,483 - empire.core.empire - INFO - InvestmentUntil: 2030
+2026-07-15 00:09:39,483 - empire.core.empire - INFO - Scenarios: 10
+2026-07-15 00:09:39,483 - empire.core.empire - INFO - TotalOperationalHoursPerScenario: 720
+2026-07-15 00:09:39,484 - empire.core.empire - INFO - TotalOperationalHoursPerInvYear: 7200
+2026-07-15 00:09:39,484 - empire.core.empire - INFO - Seasons: 6
+2026-07-15 00:09:39,485 - empire.core.empire - INFO - RegularSeasons: 4
+2026-07-15 00:09:39,485 - empire.core.empire - INFO - LengthRegSeason: 168
+2026-07-15 00:09:39,486 - empire.core.empire - INFO - PeakSeasons: 2
+2026-07-15 00:09:39,486 - empire.core.empire - INFO - LengthPeakSeason: 24
+2026-07-15 00:09:39,487 - empire.core.empire - INFO - 
+2026-07-15 00:09:39,487 - empire.core.empire - INFO - Discount rate: 0.05
+2026-07-15 00:09:39,488 - empire.core.empire - INFO - Operational discount scale: 4.54595050416236
+2026-07-15 00:09:39,488 - empire.core.empire - INFO - --------------------------------------------------------------
+2026-07-15 00:09:39,493 - empire.core.empire - INFO - Solving...
+2026-07-15 00:09:39,497 - empire.core.empire - INFO - Gurobi options: {'Method': 2, 'Crossover': 0, 'Presolve': -1}
+2026-07-15 02:59:02,428 - empire.core.empire - INFO - Writing results to .csv...
+2026-07-15 03:42:58,781 - empire.core.model_runner - INFO - Writing config to: /mnt/beegfs/users/ehsanno/openempire/Results/basic_run/dataset_IT_ES_REPowerEU++/Input/Xlsx/config.txt
+2026-07-20 10:30:49,591 - empire - INFO - Running EMPIRE Model
+2026-07-20 10:30:50,104 - empire.core.model_runner - INFO - ++++++++
+2026-07-20 10:30:50,105 - empire.core.model_runner - INFO - +EMPIRE+
+2026-07-20 10:30:50,105 - empire.core.model_runner - INFO - ++++++++
+2026-07-20 10:30:50,105 - empire.core.model_runner - INFO - Load Change Module: False
+2026-07-20 10:30:50,106 - empire.core.model_runner - INFO - Solver: Gurobi
+2026-07-20 10:30:50,106 - empire.core.model_runner - INFO - Scenario Generation: True
+2026-07-20 10:30:50,107 - empire.core.model_runner - INFO - ++++++++
+2026-07-20 10:30:50,107 - empire.core.model_runner - INFO - ID: IT_ES_REPowerEU++_reg168_peak24_sce10_noSGR_202607201030
+2026-07-20 10:30:50,107 - empire.core.model_runner - INFO - ++++++++
+2026-07-20 10:30:50,108 - empire.core.scenario_random - INFO - Generating scenarios according to key...
+2026-07-20 10:31:16,364 - empire.core.scenario_random - INFO - Done generating scenarios.
+2026-07-20 10:31:19,412 - empire.core.scenario_random - INFO - Saving 'sampling_key.csv'.
+2026-07-20 10:31:19,436 - empire.core.scenario_random - INFO - Saving 'Stochastic_StochasticAvailability.tab'.
+2026-07-20 10:31:23,359 - empire.core.scenario_random - INFO - Saving 'Stochastic_ElectricLoadRaw.tab'.
+2026-07-20 10:31:24,778 - empire.core.scenario_random - INFO - Saving 'Stochastic_HydroGenMaxSeasonalProduction.tab'.
+2026-07-20 10:31:25,453 - empire.core.reader - INFO - Generating .tab-files...
+2026-07-20 10:31:25,454 - empire.core.reader - INFO - Reading Sets.xlsx
+2026-07-20 10:31:25,537 - empire.core.reader - INFO - Reading Nodes sheet from Sets.xlsx
+2026-07-20 10:31:25,540 - empire.core.reader - INFO - Reading OffshoreNodes sheet from Sets.xlsx
+2026-07-20 10:31:25,542 - empire.core.reader - INFO - Reading Horizon sheet from Sets.xlsx
+2026-07-20 10:31:25,544 - empire.core.reader - INFO - Reading LineType sheet from Sets.xlsx
+2026-07-20 10:31:25,546 - empire.core.reader - INFO - Reading Technology sheet from Sets.xlsx
+2026-07-20 10:31:25,548 - empire.core.reader - INFO - Reading Storage sheet from Sets.xlsx
+2026-07-20 10:31:25,552 - empire.core.reader - INFO - Reading Generators sheet from Sets.xlsx
+2026-07-20 10:31:25,560 - empire.core.reader - INFO - Reading StorageOfNodes sheet from Sets.xlsx
+2026-07-20 10:31:25,563 - empire.core.reader - INFO - Reading GeneratorsOfNode sheet from Sets.xlsx
+2026-07-20 10:31:25,566 - empire.core.reader - INFO - Reading GeneratorsOfTechnology sheet from Sets.xlsx
+2026-07-20 10:31:25,569 - empire.core.reader - INFO - Reading DirectionalLines sheet from Sets.xlsx
+2026-07-20 10:31:25,571 - empire.core.reader - INFO - Reading LineTypeOfDirectionalLines sheet from Sets.xlsx
+2026-07-20 10:31:25,574 - empire.core.reader - INFO - Reading Countries sheet from Sets.xlsx
+2026-07-20 10:31:25,576 - empire.core.reader - INFO - Reading NodesOfCountry sheet from Sets.xlsx
+2026-07-20 10:31:25,593 - empire.core.reader - INFO - Reading Generator.xlsx
+2026-07-20 10:31:25,676 - empire.core.reader - INFO - Reading FixedOMCosts sheet from Generator.xlsx
+2026-07-20 10:31:25,680 - empire.core.reader - INFO - Reading CapitalCosts sheet from Generator.xlsx
+2026-07-20 10:31:25,683 - empire.core.reader - INFO - Reading VariableOMCosts sheet from Generator.xlsx
+2026-07-20 10:31:25,686 - empire.core.reader - INFO - Reading FuelCosts sheet from Generator.xlsx
+2026-07-20 10:31:25,689 - empire.core.reader - INFO - Reading CCSCostTSVariable sheet from Generator.xlsx
+2026-07-20 10:31:25,691 - empire.core.reader - INFO - Reading Efficiency sheet from Generator.xlsx
+2026-07-20 10:31:25,694 - empire.core.reader - INFO - Reading RefInitialCap sheet from Generator.xlsx
+2026-07-20 10:31:25,698 - empire.core.reader - INFO - Reading ScaleFactorInitialCap sheet from Generator.xlsx
+2026-07-20 10:31:25,701 - empire.core.reader - INFO - Reading InitialCapacity sheet from Generator.xlsx
+2026-07-20 10:31:25,703 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Generator.xlsx
+2026-07-20 10:31:25,706 - empire.core.reader - INFO - Reading MaxInstalledCapacity sheet from Generator.xlsx
+2026-07-20 10:31:25,710 - empire.core.reader - INFO - Reading RampRate sheet from Generator.xlsx
+2026-07-20 10:31:25,713 - empire.core.reader - INFO - Reading GeneratorTypeAvailability sheet from Generator.xlsx
+2026-07-20 10:31:25,715 - empire.core.reader - INFO - Reading CO2Content sheet from Generator.xlsx
+2026-07-20 10:31:25,718 - empire.core.reader - INFO - Reading Lifetime sheet from Generator.xlsx
+2026-07-20 10:31:25,720 - empire.core.reader - INFO - Reading MinBuiltCapacity sheet from Generator.xlsx
+2026-07-20 10:31:25,723 - empire.core.reader - INFO - Reading MaxInstalledCapacityCountry sheet from Generator.xlsx
+2026-07-20 10:31:25,726 - empire.core.reader - INFO - Reading MaxBuiltCapacityCountry sheet from Generator.xlsx
+2026-07-20 10:31:25,728 - empire.core.reader - INFO - Reading MinBuiltCapacityCountry sheet from Generator.xlsx
+2026-07-20 10:31:25,730 - empire.core.reader - INFO - Reading Transmission.xlsx
+2026-07-20 10:31:25,982 - empire.core.reader - INFO - Reading lineEfficiency sheet from Transmission.xlsx
+2026-07-20 10:31:25,988 - empire.core.reader - INFO - Reading MaxInstallCapacityRaw sheet from Transmission.xlsx
+2026-07-20 10:31:25,997 - empire.core.reader - INFO - Reading MaxBuiltCapacity sheet from Transmission.xlsx
+2026-07-20 10:31:26,004 - empire.core.reader - INFO - Reading Length sheet from Transmission.xlsx
+2026-07-20 10:31:26,008 - empire.core.reader - INFO - Reading TypeCapitalCost sheet from Transmission.xlsx
+2026-07-20 10:31:26,011 - empire.core.reader - INFO - Reading TypeFixedOMCost sheet from Transmission.xlsx
+2026-07-20 10:31:26,015 - empire.core.reader - INFO - Reading InitialCapacity sheet from Transmission.xlsx
+2026-07-20 10:31:26,022 - empire.core.reader - INFO - Reading Lifetime sheet from Transmission.xlsx
+2026-07-20 10:31:26,027 - empire.core.reader - INFO - Reading CandidateTransmission sheet from Transmission.xlsx
+2026-07-20 10:31:26,032 - empire.core.reader - INFO - Reading LineBlockCapacity sheet from Transmission.xlsx
+2026-07-20 10:31:26,037 - empire.core.reader - INFO - Reading LineBlockReactance sheet from Transmission.xlsx
+2026-07-20 10:31:26,042 - empire.core.reader - INFO - Reading Node.xlsx
+2026-07-20 10:31:26,077 - empire.core.reader - INFO - Reading ElectricAnnualDemand sheet from Node.xlsx
+2026-07-20 10:31:26,082 - empire.core.reader - INFO - Reading NodeLostLoadCost sheet from Node.xlsx
+2026-07-20 10:31:26,100 - empire.core.reader - INFO - Reading HydroGenMaxAnnualProduction sheet from Node.xlsx
+2026-07-20 10:31:26,104 - empire.core.reader - INFO - Reading General.xlsx
+2026-07-20 10:31:26,117 - empire.core.reader - INFO - Reading seasonScale sheet from General.xlsx
+2026-07-20 10:31:26,120 - empire.core.reader - INFO - Reading CO2Cap sheet from General.xlsx
+2026-07-20 10:31:26,124 - empire.core.reader - INFO - Reading CO2Price sheet from General.xlsx
+2026-07-20 10:31:26,129 - empire.core.reader - INFO - Wrote General_LineBlockCapacityGlobal.tab (transmissionLineBlockCapGlobal = 1500.0).
+2026-07-20 10:31:26,130 - empire.core.reader - INFO - Wrote General_LineBlockReactanceGlobal.tab (LineBlockReactanceGlobal = 24.6).
+2026-07-20 10:31:26,132 - empire.core.reader - INFO - Wrote General_NominalVoltage.tab (NominalVoltage = 400.0).
+2026-07-20 10:31:26,132 - empire.core.reader - INFO - Reading Storage.xlsx
+2026-07-20 10:31:26,286 - empire.core.reader - INFO - Reading StorageBleedEfficiency sheet from Storage.xlsx
+2026-07-20 10:31:26,289 - empire.core.reader - INFO - Reading StorageChargeEff sheet from Storage.xlsx
+2026-07-20 10:31:26,292 - empire.core.reader - INFO - Reading StorageDischargeEff sheet from Storage.xlsx
+2026-07-20 10:31:26,295 - empire.core.reader - INFO - Reading StoragePowToEnergy sheet from Storage.xlsx
+2026-07-20 10:31:26,298 - empire.core.reader - INFO - Reading StorageInitialEnergyLevel sheet from Storage.xlsx
+2026-07-20 10:31:26,301 - empire.core.reader - INFO - Reading InitialPowerCapacity sheet from Storage.xlsx
+2026-07-20 10:31:26,306 - empire.core.reader - INFO - Reading PowerCapitalCost sheet from Storage.xlsx
+2026-07-20 10:31:26,310 - empire.core.reader - INFO - Reading PowerFixedOMCost sheet from Storage.xlsx
+2026-07-20 10:31:26,313 - empire.core.reader - INFO - Reading PowerMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-20 10:31:26,319 - empire.core.reader - INFO - Reading EnergyCapitalCost sheet from Storage.xlsx
+2026-07-20 10:31:26,323 - empire.core.reader - INFO - Reading EnergyFixedOMCost sheet from Storage.xlsx
+2026-07-20 10:31:26,326 - empire.core.reader - INFO - Reading EnergyInitialCapacity sheet from Storage.xlsx
+2026-07-20 10:31:26,331 - empire.core.reader - INFO - Reading EnergyMaxBuiltCapacity sheet from Storage.xlsx
+2026-07-20 10:31:26,336 - empire.core.reader - INFO - Reading EnergyMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-20 10:31:26,339 - empire.core.reader - INFO - Reading PowerMaxInstalledCapacity sheet from Storage.xlsx
+2026-07-20 10:31:26,342 - empire.core.reader - INFO - Reading Lifetime sheet from Storage.xlsx
+2026-07-20 10:31:26,345 - empire.core.empire - INFO - Solver: Gurobi
+2026-07-20 10:31:26,346 - empire.core.empire - INFO - Absolute emission cap in each scenario...
+2026-07-20 10:31:26,346 - empire.core.empire - INFO - Declaring sets...
+2026-07-20 10:31:26,347 - empire.core.empire - INFO - Reading sets...
+2026-07-20 10:31:26,369 - empire.core.empire - INFO - Country level enabled: national limits will be enforced over NodesOfCountry.
+2026-07-20 10:31:26,369 - empire.core.empire - INFO - Constructing sub sets...
+2026-07-20 10:31:26,370 - empire.core.empire - INFO - Declaring parameters...
+2026-07-20 10:31:26,373 - empire.core.empire - INFO - Reading parameters...
+2026-07-20 10:31:26,373 - empire.core.empire - INFO - Reading parameters for Generator...
+2026-07-20 10:31:26,403 - empire.core.empire - INFO - Reading parameters for Transmission...
+2026-07-20 10:31:26,426 - empire.core.empire - INFO - Reading parameters for Storage...
+2026-07-20 10:31:26,455 - empire.core.empire - INFO - Reading parameters for Node...
+2026-07-20 10:31:26,459 - empire.core.empire - INFO - Reading parameters for Stochastic...
+2026-07-20 10:32:01,784 - empire.core.empire - INFO - Reading parameters for General...
+2026-07-20 10:32:01,789 - empire.core.empire - INFO - Constructing parameter values...
+2026-07-20 10:32:01,790 - empire.core.empire - INFO - Sets and parameters declared and read...
+2026-07-20 10:32:01,790 - empire.core.empire - INFO - Declaring variables...
+2026-07-20 10:32:01,808 - empire.core.empire - INFO - Ramping constraints disabled (use_ramping=False)...
+2026-07-20 10:32:01,809 - empire.core.empire - INFO - Transmission availability (usable share of installed line capacity): 0.8
+2026-07-20 10:32:01,810 - empire.core.empire - INFO - LOPF constraints not activated.
+2026-07-20 10:32:01,810 - empire.core.empire - INFO - Objective and constraints read...
+2026-07-20 10:32:01,811 - empire.core.empire - INFO - Building instance...
+2026-07-20 10:39:09,199 - empire.core.empire - INFO - Building instance took [sec]: 427
+2026-07-20 10:39:09,200 - empire.core.empire - INFO - ----------------------Problem Statistics---------------------
+2026-07-20 10:39:09,200 - empire.core.empire - INFO - Nodes: 51
+2026-07-20 10:39:09,200 - empire.core.empire - INFO - Lines: 134
+2026-07-20 10:39:09,201 - empire.core.empire - INFO - 
+2026-07-20 10:39:09,201 - empire.core.empire - INFO - GeneratorTypes: 20
+2026-07-20 10:39:09,201 - empire.core.empire - INFO - TotalGenerators: 537
+2026-07-20 10:39:09,201 - empire.core.empire - INFO - StorageTypes: 2
+2026-07-20 10:39:09,202 - empire.core.empire - INFO - TotalStorages: 102
+2026-07-20 10:39:09,202 - empire.core.empire - INFO - 
+2026-07-20 10:39:09,202 - empire.core.empire - INFO - InvestmentUntil: 2030
+2026-07-20 10:39:09,203 - empire.core.empire - INFO - Scenarios: 10
+2026-07-20 10:39:09,203 - empire.core.empire - INFO - TotalOperationalHoursPerScenario: 720
+2026-07-20 10:39:09,203 - empire.core.empire - INFO - TotalOperationalHoursPerInvYear: 7200
+2026-07-20 10:39:09,203 - empire.core.empire - INFO - Seasons: 6
+2026-07-20 10:39:09,204 - empire.core.empire - INFO - RegularSeasons: 4
+2026-07-20 10:39:09,204 - empire.core.empire - INFO - LengthRegSeason: 168
+2026-07-20 10:39:09,204 - empire.core.empire - INFO - PeakSeasons: 2
+2026-07-20 10:39:09,205 - empire.core.empire - INFO - LengthPeakSeason: 24
+2026-07-20 10:39:09,205 - empire.core.empire - INFO - 
+2026-07-20 10:39:09,205 - empire.core.empire - INFO - Discount rate: 0.05
+2026-07-20 10:39:09,205 - empire.core.empire - INFO - Operational discount scale: 4.54595050416236
+2026-07-20 10:39:09,206 - empire.core.empire - INFO - --------------------------------------------------------------
+2026-07-20 10:39:09,209 - empire.core.empire - INFO - Solving...
+2026-07-20 10:39:09,212 - empire.core.empire - INFO - Gurobi options: {'Method': 2, 'Crossover': 0, 'Presolve': -1}
+2026-07-20 12:32:43,189 - empire.core.empire - INFO - Writing results to .csv...
+2026-07-20 13:01:42,251 - empire.core.model_runner - INFO - Writing config to: /mnt/beegfs/users/ehsanno/openempire/Results/basic_run/dataset_IT_ES_REPowerEU++/Input/Xlsx/config.txt

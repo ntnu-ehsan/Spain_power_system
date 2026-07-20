@@ -1,0 +1,1380 @@
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:07:31 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:07:31 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0x6076f8c3
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24974 rows and 98626 columns
+Presolve time: 0.03s
+Presolved: 235 rows, 424 columns, 1752 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.4139370e+06   1.607865e+02   0.000000e+00      0s
+     255    1.4695883e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 255 iterations and 0.05 seconds (0.06 work units)
+Optimal objective  1.469588321e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.6306059e+03   3.187427e+03   0.000000e+00      0s
+    2901    8.9453264e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2901 iterations and 0.17 seconds (0.34 work units)
+Optimal objective  8.945326450e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:31:18 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:31:19 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0x6076f8c3
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24974 rows and 98626 columns
+Presolve time: 0.03s
+Presolved: 235 rows, 424 columns, 1752 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.4139370e+06   1.607865e+02   0.000000e+00      0s
+     255    1.4695883e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 255 iterations and 0.05 seconds (0.06 work units)
+Optimal objective  1.469588321e+06
+
+User-callback calls 36, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.6306059e+03   3.187427e+03   0.000000e+00      0s
+    2901    8.9453264e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2901 iterations and 0.18 seconds (0.34 work units)
+Optimal objective  8.945326450e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:48:06 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:48:07 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0x6076f8c3
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24974 rows and 98626 columns
+Presolve time: 0.04s
+Presolved: 235 rows, 424 columns, 1752 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.4139370e+06   1.607865e+02   0.000000e+00      0s
+     255    1.4695883e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 255 iterations and 0.06 seconds (0.06 work units)
+Optimal objective  1.469588321e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.6306059e+03   3.187427e+03   0.000000e+00      0s
+    2901    8.9453264e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2901 iterations and 0.18 seconds (0.34 work units)
+Optimal objective  8.945326450e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:59:41 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 16:59:42 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0x6076f8c3
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24974 rows and 98626 columns
+Presolve time: 0.03s
+Presolved: 235 rows, 424 columns, 1752 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.4139370e+06   1.607865e+02   0.000000e+00      0s
+     255    1.4695883e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 255 iterations and 0.05 seconds (0.06 work units)
+Optimal objective  1.469588321e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-04, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.6306059e+03   3.187427e+03   0.000000e+00      0s
+    2901    8.9453264e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2901 iterations and 0.18 seconds (0.34 work units)
+Optimal objective  8.945326450e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 20:23:58 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 20:23:59 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0x43078342
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [1e-06, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24983 rows and 98644 columns
+Presolve time: 0.04s
+Presolved: 226 rows, 406 columns, 1626 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.8964449e+06   3.577669e-01   0.000000e+00      0s
+     186    1.8970645e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 186 iterations and 0.07 seconds (0.06 work units)
+Optimal objective  1.897064515e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [1e-06, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -3.1439485e+03   5.540847e+03   0.000000e+00      0s
+    3077    8.9884111e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 3077 iterations and 0.17 seconds (0.34 work units)
+Optimal objective  8.988411135e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 20:32:50 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 20:32:51 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0x43078342
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [1e-06, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24983 rows and 98644 columns
+Presolve time: 0.05s
+Presolved: 226 rows, 406 columns, 1626 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    1.8964449e+06   3.577669e-01   0.000000e+00      0s
+     186    1.8970645e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 186 iterations and 0.08 seconds (0.06 work units)
+Optimal objective  1.897064515e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [1e-06, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -3.1439485e+03   5.540847e+03   0.000000e+00      0s
+    3077    8.9884111e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 3077 iterations and 0.28 seconds (0.34 work units)
+Optimal objective  8.988411135e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 21:12:02 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 21:12:03 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.06 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.12 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 21:56:44 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Tue Jul  7 21:56:45 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.07 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.17 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul  9 14:02:12 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul  9 14:02:13 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.07 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.15 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:18:02 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:18:04 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.08s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.12 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 39, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.25 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:18:29 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:18:31 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.10s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.14 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.34 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:26:55 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:26:55 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.06 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.15 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:36:11 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:36:13 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.09s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.15 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 39, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.27 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:47:56 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 11:47:57 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.07 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 38, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.12 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 12:12:14 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 12:12:15 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.06s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.11 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 39, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.20 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 12:27:53 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 12:27:54 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.03s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.05 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.11 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 16:55:20 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 16:55:21 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.03s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.05 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.16 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 17:07:17 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 17:07:18 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.06 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.16 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 17:10:02 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 17:10:03 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.06 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.12 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 17:12:54 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+
+Gurobi 13.0.2 (win64) logging started Fri Jul 10 17:12:55 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\NECPEssentials\ipopt_logs\2024-07-08_id3.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25209 rows, 99050 columns and 106513 nonzeros (Min)
+Model fingerprint: 0xe1908aa0
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 5e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 24984 rows and 98645 columns
+Presolve time: 0.04s
+Presolved: 225 rows, 405 columns, 1605 nonzeros
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0    2.8823895e+06   1.786607e-01   0.000000e+00      0s
+     209    2.8830065e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 209 iterations and 0.06 seconds (0.06 work units)
+Optimal objective  2.883006517e+06
+
+User-callback calls 37, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 25210 rows, 99050 columns and 154370 nonzeros (Min)
+Model has 49272 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-12, 1e+04]
+  RHS range        [7e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.5746954e+03   3.460384e+03   0.000000e+00      0s
+    2352    8.6048837e+01   0.000000e+00   0.000000e+00      0s
+
+Solved in 2352 iterations and 0.12 seconds (0.23 work units)
+Optimal objective  8.604883697e+01
+
+User-callback calls 28, time in user-callback 0.00 sec

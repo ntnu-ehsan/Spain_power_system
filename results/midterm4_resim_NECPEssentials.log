@@ -1,0 +1,20 @@
+Set parameter Username
+Set parameter LicenseID to value 2754836
+Academic license - for non-commercial use only - expires 2026-12-14
+┌ Warning: Found a cut with a mix of small and large coefficients.
+│     The order of magnitude difference is 10.056834762509679.
+│     The smallest cofficient is 0.0.
+│     The largest coefficient is 1.139816035388961e10.
+│ 
+│ You can ignore this warning, but it may be an indication of numerical issues.
+│ 
+│ Consider rescaling your model by using different units, e.g, kilometers instead
+│ of meters. You should also consider reducing the accuracy of your input data (if
+│ you haven't already). For example, it probably doesn't make sense to measure the
+│ inflow into a reservoir to 10 decimal places.
+└ @ SDDP C:\Users\ehsanno\.julia\packages\SDDP\R1Ovj\src\plugins\bellman_functions.jl:69
+Scenario NECPEssentials: EMPIRE period 2, CO2 40.0 EUR/t — overriding 2024 system
+Mid-term SDDP (4 nodes, hybrid, scenario NECPEssentials): 78 weekly stages × 84 blocks of 2 h,
+  37 scenarios = EDF climate years 1982–2018 (ES/PT), each paired
+  with EMPIRE year 2015+(i-1)%5 (FR/EU); solver=gurobi
+Wrote 131040 diagnostic rows (20 replications) → C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\midterm4_diag_NECPEssentials.csv

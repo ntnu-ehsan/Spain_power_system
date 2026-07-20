@@ -1,0 +1,29 @@
+Solver command line: ['C:\\Program Files\\gurobi1002\\win64\\bin\\gurobi.bat']
+
+Set parameter Username
+Set parameter LicenseID to value 2754836
+Academic license - for non-commercial use only - expires 2026-12-14
+Read LP format model from file C:\Users\ehsanno\DataspellProjects\OpenEMPIRE_NS\tmp0o8jrivb.pyomo.lp
+Reading time = 4.45 seconds
+x1: 1567762 rows, 1418449 columns, 5265495 nonzeros
+Set parameter QCPDual to value 1
+Set parameter Method to value 2
+Set parameter Crossover to value 0
+Gurobi Optimizer version 10.0.2 build v10.0.2rc0 (win64)
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Optimize a model with 1567762 rows, 1418449 columns and 5265495 nonzeros
+Model fingerprint: 0xae74406c
+Coefficient statistics:
+  Matrix range     [1e-03, 1e+01]
+  Objective range  [1e-02, 5e+06]
+  Bounds range     [1e+00, 1e+00]
+  RHS range        [4e-05, 6e+08]
+Presolve removed 1946 rows and 15 columns
+Presolve time: 0.28s
+
+Barrier solved model in 0 iterations and 0.28 seconds (0.16 work units)
+Model is infeasible
+

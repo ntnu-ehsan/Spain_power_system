@@ -234,6 +234,17 @@ const EMPIRE_UNIT_TECH = Dict(
     ("Hydro",   "reservoir")      => "Hydro regulated",
     ("Oil",     "Combined_cycle") => "Oil",
     ("Oil",     "Gas_turbine")    => "Oil",
+    # techs with no 2024 units — greenfield capacity created by the nodal
+    # disaggregation (empire_nodal.jl); listed here so empire_cost_override
+    # prices them from the EMPIRE marginal costs (incl. the CO2 adder,
+    # negative for BioCCS) instead of the 60 EUR/MWh fallback.
+    ("Waste",   "Waste")          => "Waste",
+    ("Biomass", "BioCCS")         => "Bio CCS",
+    ("Gas",     "Gas_CCS")        => "Gas CCS",
+    ("Coal",    "Coal_CCS")       => "Coal CCS",
+    ("Lignite", "Lignite")        => "Lignite",
+    ("Lignite", "Lignite_CCS")    => "Lignite CCS",
+    ("Geo",     "Geo")            => "Geo",
 )
 
 """

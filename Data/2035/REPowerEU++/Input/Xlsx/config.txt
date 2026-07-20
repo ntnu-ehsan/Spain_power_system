@@ -1,0 +1,67 @@
+{
+    "use_temporary_directory": true,
+    "temporary_directory": "/mnt/beegfs/users/ehsanno/openempire",
+    "forecast_horizon_year": 2030,
+    "number_of_scenarios": 10,
+    "length_of_regular_season": 168,
+    "discount_rate": 0.05,
+    "wacc": 0.05,
+    "optimization_solver": "Gurobi",
+    "use_scenario_generation": true,
+    "use_fixed_sample": true,
+    "load_change_module": false,
+    "filter_make": false,
+    "filter_use": false,
+    "copulas_to_use": [
+        "electricload"
+    ],
+    "copula_clusters_make": false,
+    "copula_clusters_use": false,
+    "n_cluster": 8,
+    "moment_matching": false,
+    "n_tree_compare": 20,
+    "use_emission_cap": true,
+    "compute_operational_duals": false,
+    "print_in_iamc_format": false,
+    "write_in_lp_format": false,
+    "serialize_instance": false,
+    "north_sea": true,
+    "aggregate_offshore_nodes_in_IAMC": false,
+    "voronoi_sgr_make": false,
+    "voronoi_sgr_use": false,
+    "voronoi_mu_percentile": 80,
+    "regular_seasons": [
+        "winter",
+        "spring",
+        "summer",
+        "fall"
+    ],
+    "n_peak_seasons": 2,
+    "len_peak_season": 24,
+    "leap_years_investment": 5,
+    "time_format": "%d/%m/%Y %H:%M",
+    "use_ramping": false,
+    "transmission_availability": 0.8,
+    "lopf_flag": false,
+    "lopf_method": "angle",
+    "lopf_kwargs": {
+        "reactance_per_km": 0.0004,
+        "reactance_from_susceptance": false,
+        "dc_line_types": [
+            "HVDC_Cable"
+        ]
+    },
+    "solver_method": 2,
+    "solver_crossover": 0,
+    "solver_presolve": -1,
+    "solver_threads": null,
+    "solver_scaleflag": null,
+    "solver_numericfocus": null,
+    "solver_barhomogeneous": null,
+    "n_reg_season": 4,
+    "periods": [
+        1,
+        2
+    ],
+    "n_periods": 2
+}

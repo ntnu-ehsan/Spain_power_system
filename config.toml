@@ -22,9 +22,22 @@
 # Every output (Bellman cuts, volume trajectory, cut JSON, diagnostics) gets
 # the suffix "_<label>", and the market chain writes to results/<label>/ and
 # reads its Bellman inputs from the suffixed [midterm4] outputs automatically.
-label      = "GoRES"             # e.g. "NECP2035"
-empire_dir = "Data/2035/GoRES"   # EMPIRE run (Input/Tab + Output)
+label      = "2024"             # e.g. "NECP2035"
+empire_dir = "Data/2035/GoRES"   # EMPIRE run (Input/Tab + Output) - Ignore if label = "2024"
 period     = 2                            # EMPIRE period index: 2 = 2030-2035
+
+# How the EMPIRE expansion is disaggregated onto the bus-level grid
+# (empire_nodal.jl; diagnostics: julia --project=. empire_nodal.jl):
+#   "nodal" — NUTS3 resolution.  Per (NUTS3, tech) the unit fleet is scaled to
+#             EMPIRE's regional installed capacity (greenfield units are created
+#             on the region's highest-load buses where a tech is new to the
+#             region; hydro/nuclear are site-bound and never built greenfield).
+#             EMPIRE's intra-ES corridor capacities scale the crossing lines'
+#             ratings/impedances as parallel circuits, and brand-new corridors
+#             get a synthetic 400 kV line.  BESS is sited per NUTS3 node.
+#   "zonal" — original behaviour: one national growth ratio per tech, corridor
+#             investments ignored, BESS on the top-20 load buses.
+disaggregation = "nodal"
 
 [network]
 # Operator-tunable network security limits applied when assembling the grid.
@@ -39,7 +52,7 @@ period     = 2                            # EMPIRE period index: 2 = 2030-2035
 #                         N-1 / reliability margin.  Applies to AC lines,
 #                         transformers and HVDC links.  0.70 ⇒ 70 % of nameplate.
 voltage_band       = 0.1
-line_rating_factor = 3.5
+line_rating_factor = 0.8
 
 # Generator voltage regulation (AVR).  Synchronous-machine buses (and the slack)
 # are voltage-regulated, so hold them to a tighter band than the load buses — the
@@ -176,7 +189,8 @@ enabled = true
 # Make the CID schedule network-feasible with a full AC OPF anchored to the
 # CID dispatch.  Nuclear, run-of-river hydro, biomass and coal are frozen at
 # their CID set-point; every other unit (Gas, Oil, reservoir & pumped hydro,
-# plus curtailable Wind and Solar) is free to be re-dispatched.
+# Li-Ion BESS within ±rated power, plus curtailable Wind and Solar) is free
+# to be re-dispatched around its anchored market schedule.
 #   enabled = false → run the day-ahead stage only.
 enabled = true
 
@@ -209,6 +223,25 @@ water_value = "constant"
 #                     at the water value.
 objective     = "quadratic"
 anchor_weight = 0.8
+
+# Run the network load flow (this redispatch stage) on its own, reusing the
+# market schedule from a PREVIOUS run instead of clearing stages 1–5 again.
+#   ""    — run the full chain (day-ahead → … → balancing → redispatch).
+#   "BAL" — skip the market stages and anchor the load flow to the saved
+#           results/<label>/bal_dispatch.csv; likewise "CID"/"ID3"/"ID2"/"DA".
+# The Bellman water value is recomputed each run (cheap, clearing-independent).
+# The saved *_dispatch.csv it reads are left untouched; only the redispatch
+# outputs (summary/gen_dispatch/branch_flows/fuel_mix/bus_voltages) are rewritten.
+from_saved = ""
+
+# Restrict the load flow to a single delivery hour (or a single day).
+#   ""             — every hour of every target day.
+#   "2024-07-08 14" — only 14:00 on 2024-07-08 (needs water_value = "constant").
+#   "2024-07-08"    — all 24 hours of that day only.
+# Pins TARGET_DAYS too, so the market stages / Bellman pre-compute skip the
+# other day. NOTE: a single-hour run rewrites the redispatch output CSVs with
+# just that hour — copy them off first if you need the full-day results.
+only = ""
 
 [midterm]
 # ── Mid-term hydro scheduling (in-house Bellman cuts via SDDP) ───────────────

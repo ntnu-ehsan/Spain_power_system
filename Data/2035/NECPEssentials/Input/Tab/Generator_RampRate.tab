@@ -1,0 +1,14 @@
+Source:_IEA,_NEA	Unnamed:_1
+Lignite	0.7
+LigniteCCS	0.7
+Coal	0.7
+CoalCCS	0.7
+GasOCGT	1.0
+GasCCGT	0.85
+GasCCS	0.85
+Oil	0.85
+Nuclear	0.3
+Geo	1.0
+Bio	0.7
+BioCCS	0.85
+Waste	0.85

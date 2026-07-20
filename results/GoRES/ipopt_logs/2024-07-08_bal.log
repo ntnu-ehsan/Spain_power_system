@@ -1,0 +1,1067 @@
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 00:44:08 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 00:44:08 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x7f0a47ce
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147365 columns
+Presolve time: 0.05s
+Presolved: 498 rows, 1005 columns, 7285 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   7.01747088e+11 -4.08789085e+09  7.20e+05 1.91e+04  2.04e+10     0s
+   1   3.18958590e+10 -4.10136162e+09  3.26e+04 2.43e+03  9.26e+08     0s
+   2   2.13228084e+07 -4.12409494e+09  1.24e+01 1.67e+02  2.42e+06     0s
+
+Barrier performed 2 iterations in 0.05 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     470    3.3977896e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 470 iterations and 0.08 seconds (0.09 work units)
+Optimal objective  3.397789594e+06
+
+User-callback calls 60, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.5190324e+04   2.456563e+07   0.000000e+00      0s
+    5280    4.3157206e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 5280 iterations and 0.35 seconds (0.79 work units)
+Optimal objective  4.315720579e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 11:08:57 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 11:08:58 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x7f0a47ce
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147365 columns
+Presolve time: 0.05s
+Presolved: 498 rows, 1005 columns, 7285 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   7.01747088e+11 -4.08789085e+09  7.20e+05 1.91e+04  2.04e+10     0s
+   1   3.18958590e+10 -4.10136162e+09  3.26e+04 2.43e+03  9.26e+08     0s
+   2   2.13228084e+07 -4.12409494e+09  1.24e+01 1.67e+02  2.42e+06     0s
+
+Barrier performed 2 iterations in 0.05 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     470    3.3977896e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 470 iterations and 0.08 seconds (0.09 work units)
+Optimal objective  3.397789594e+06
+
+User-callback calls 60, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.5190324e+04   2.456563e+07   0.000000e+00      0s
+    5280    4.3157206e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 5280 iterations and 0.37 seconds (0.79 work units)
+Optimal objective  4.315720579e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 11:53:08 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 11:53:08 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x7f0a47ce
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147365 columns
+Presolve time: 0.05s
+Presolved: 498 rows, 1005 columns, 7285 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   7.01747088e+11 -4.08789085e+09  7.20e+05 1.91e+04  2.04e+10     0s
+   1   3.18958590e+10 -4.10136162e+09  3.26e+04 2.43e+03  9.26e+08     0s
+
+Barrier performed 1 iterations in 0.06 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     470    3.3977896e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 470 iterations and 0.09 seconds (0.09 work units)
+Optimal objective  3.397789594e+06
+
+User-callback calls 60, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.5190324e+04   2.456563e+07   0.000000e+00      0s
+    5280    4.3157206e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 5280 iterations and 0.37 seconds (0.79 work units)
+Optimal objective  4.315720579e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:00:25 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:00:25 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x7f0a47ce
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147365 columns
+Presolve time: 0.05s
+Presolved: 498 rows, 1005 columns, 7285 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   7.01747088e+11 -4.08789085e+09  7.20e+05 1.91e+04  2.04e+10     0s
+   1   3.18958590e+10 -4.10136162e+09  3.26e+04 2.43e+03  9.26e+08     0s
+
+Barrier performed 1 iterations in 0.06 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     470    3.3977896e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 470 iterations and 0.09 seconds (0.09 work units)
+Optimal objective  3.397789594e+06
+
+User-callback calls 60, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.5190324e+04   2.456563e+07   0.000000e+00      0s
+    5280    4.3157206e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 5280 iterations and 0.39 seconds (0.79 work units)
+Optimal objective  4.315720579e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:15:43 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 12:15:44 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x8077b4de
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147363 columns
+Presolve time: 0.05s
+Presolved: 498 rows, 1007 columns, 7287 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   1.07265087e+10 -7.17806177e+07  7.20e+05 6.15e+02  4.64e+08     0s
+   1   6.58488124e+07 -8.36866542e+07  2.50e+03 1.51e+02  1.68e+06     0s
+
+Barrier performed 1 iterations in 0.05 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     439    3.3982897e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 439 iterations and 0.08 seconds (0.09 work units)
+Optimal objective  3.398289707e+06
+
+User-callback calls 59, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -4.0244383e+03   1.185212e+04   0.000000e+00      0s
+    5366    4.3638079e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 5366 iterations and 0.16 seconds (0.21 work units)
+Optimal objective  4.363807934e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:21:41 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:21:41 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x1f9a1ded
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147351 columns
+Presolve time: 0.08s
+Presolved: 498 rows, 1019 columns, 7299 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   1.29102290e+10 -1.00050145e+08  7.20e+05 6.29e+02  5.77e+08     0s
+   1   1.58284532e+08 -1.10091594e+08  5.77e+03 2.46e+02  4.71e+06     0s
+   2   1.10785374e+07 -1.14012153e+08  1.47e-09 2.33e-10  6.13e+04     0s
+   3   6.86974124e+06 -4.43535319e+07  8.11e-09 1.06e-10  2.51e+04     0s
+   4   4.46363266e+06 -6.44669914e+06  6.22e-10 1.32e-11  5.35e+03     0s
+
+Barrier performed 4 iterations in 0.09 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     585    2.6705083e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 585 iterations and 0.13 seconds (0.09 work units)
+Optimal objective  2.670508317e+06
+
+User-callback calls 63, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.8001388e+04   2.504634e+07   0.000000e+00      0s
+    4843    4.6308047e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 4843 iterations and 0.46 seconds (0.60 work units)
+Optimal objective  4.630804718e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:27:49 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 14:27:49 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49881 rows, 148370 columns and 205152 nonzeros (Min)
+Model fingerprint: 0x1f9a1ded
+Model has 47857 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 49383 rows and 147351 columns
+Presolve time: 0.04s
+Presolved: 498 rows, 1019 columns, 7299 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.00s
+
+Barrier statistics:
+ AA' NZ     : 9.700e+03
+ Factor NZ  : 1.279e+04 (roughly 1 MB of memory)
+ Factor Ops : 3.542e+05 (less than 1 second per iteration)
+ Threads    : 1
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   1.29102290e+10 -1.00050145e+08  7.20e+05 6.29e+02  5.77e+08     0s
+   1   1.58284532e+08 -1.10091594e+08  5.77e+03 2.46e+02  4.71e+06     0s
+   2   1.10785374e+07 -1.14012153e+08  1.47e-09 2.33e-10  6.13e+04     0s
+   3   6.86974124e+06 -4.43535319e+07  8.11e-09 1.06e-10  2.51e+04     0s
+   4   4.46363266e+06 -6.44669914e+06  6.22e-10 1.32e-11  5.35e+03     0s
+   5   3.09724182e+06 -8.59066765e+05  3.00e-10 5.68e-12  1.94e+03     0s
+
+Barrier performed 5 iterations in 0.05 seconds (0.08 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+     585    2.6705083e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 585 iterations and 0.08 seconds (0.09 work units)
+Optimal objective  2.670508317e+06
+
+User-callback calls 63, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 49882 rows, 148370 columns and 253009 nonzeros (Min)
+Model has 98592 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [2e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.8001388e+04   2.504634e+07   0.000000e+00      0s
+    4843    4.6308047e+02   0.000000e+00   0.000000e+00      0s
+
+Solved in 4843 iterations and 0.30 seconds (0.60 work units)
+Optimal objective  4.630804718e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:24:15 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Wed Jul 15 17:24:15 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 57539 rows, 167570 columns and 254136 nonzeros (Min)
+Model fingerprint: 0xd020b8ad
+Model has 51889 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 55254 rows and 163059 columns
+Presolve time: 0.14s
+Presolved: 2285 rows, 4511 columns, 33974 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.01s
+
+Barrier statistics:
+ AA' NZ     : 4.562e+04
+ Factor NZ  : 6.000e+04 (roughly 3 MB of memory)
+ Factor Ops : 1.694e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   2.55320030e+10 -1.20668041e+08  1.51e+06 1.57e+02  1.34e+09     0s
+   1   4.01622876e+07 -1.51416553e+08  6.63e+02 1.62e+02  6.26e+05     0s
+   2   1.95547849e+07 -1.05049813e+08  2.55e+00 2.18e-11  1.60e+04     0s
+   3   4.27097391e+06 -1.65227674e+07  2.25e-01 6.00e-11  2.46e+03     0s
+
+Barrier performed 3 iterations in 0.17 seconds (0.11 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    1826    2.3421668e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 1826 iterations and 0.23 seconds (0.13 work units)
+Optimal objective  2.342166810e+06
+
+User-callback calls 64, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 57540 rows, 167570 columns and 306025 nonzeros (Min)
+Model has 110208 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [3e-12, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -8.5014055e+03   1.648936e+04   0.000000e+00      0s
+    7838    4.6085712e+02   0.000000e+00   0.000000e+00      1s
+
+Solved in 7838 iterations and 0.87 seconds (0.95 work units)
+Optimal objective  4.608571208e+02
+
+User-callback calls 28, time in user-callback 0.01 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:07:27 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:07:28 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 77923 rows, 207506 columns and 438840 nonzeros (Min)
+Model fingerprint: 0x8f0b2391
+Model has 51889 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [1e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 65654 rows and 183443 columns
+Presolve time: 0.14s
+Presolved: 12269 rows, 24063 columns, 183734 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.01s
+
+Barrier statistics:
+ AA' NZ     : 1.313e+05
+ Factor NZ  : 1.726e+05 (roughly 10 MB of memory)
+ Factor Ops : 4.880e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   8.88289882e+08 -8.26756459e+07  2.26e+06 3.19e+02  5.54e+07     0s
+   1   4.63380175e+07 -8.14162099e+07  5.19e+04 1.55e+02  1.27e+06     0s
+   2   1.11736044e+07 -6.14257418e+07  4.36e+02 2.08e+00  1.34e+04     0s
+   3   3.58920107e+06 -1.59401992e+07  2.43e+01 9.14e-02  1.25e+03     0s
+   4   2.77489504e+06 -2.44056281e+06  5.82e+00 9.94e-03  2.94e+02     0s
+   5   2.51852057e+06 -8.33462774e+04  2.50e+00 4.21e-03  1.35e+02     0s
+   6   2.38266560e+06  2.02622429e+06  6.03e-01 1.55e-04  2.00e+01     0s
+   7   2.35073282e+06  2.28188950e+06  1.31e-01 3.64e-12  3.87e+00     0s
+   8   2.34368020e+06  2.33614467e+06  1.52e-02 4.55e-12  4.19e-01     0s
+   9   2.34230313e+06  2.34062276e+06  8.81e-04 2.73e-12  7.05e-02     0s
+
+Barrier performed 9 iterations in 0.26 seconds (0.30 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    5610    2.3421734e+06   0.000000e+00   0.000000e+00      0s
+
+Use crossover to convert LP symmetric solution to basic solution...
+Crossover log...
+
+       0 DPushes remaining with DInf 0.0000000e+00                 0s
+
+     412 PPushes remaining with PInf 0.0000000e+00                 0s
+       0 PPushes remaining with PInf 0.0000000e+00                 0s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 0.0000000e+00      0s
+
+Crossover time: 0.05 seconds (0.03 work units)
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    6036    2.3421734e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 6036 iterations and 0.39 seconds (0.34 work units)
+Optimal objective  2.342173402e+06
+
+User-callback calls 94, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 77924 rows, 207506 columns and 490729 nonzeros (Min)
+Model has 130176 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [1e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.0748394e+04   3.870535e+04   0.000000e+00      0s
+   21595    4.6350429e+02   1.886166e-02   0.000000e+00      5s
+   22945    4.5802665e+02   0.000000e+00   0.000000e+00      5s
+
+Solved in 22945 iterations and 5.19 seconds (5.09 work units)
+Optimal objective  4.580266481e+02
+
+User-callback calls 29, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:14:45 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Thu Jul 16 16:14:46 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 77923 rows, 207506 columns and 438840 nonzeros (Min)
+Model fingerprint: 0x8f0b2391
+Model has 51889 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 6e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [1e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 65654 rows and 183443 columns
+Presolve time: 0.15s
+Presolved: 12269 rows, 24063 columns, 183734 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.01s
+
+Barrier statistics:
+ AA' NZ     : 1.313e+05
+ Factor NZ  : 1.726e+05 (roughly 10 MB of memory)
+ Factor Ops : 4.880e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   8.88289882e+08 -8.26756459e+07  2.26e+06 3.19e+02  5.54e+07     0s
+   1   4.63380175e+07 -8.14162099e+07  5.19e+04 1.55e+02  1.27e+06     0s
+   2   1.11736044e+07 -6.14257418e+07  4.36e+02 2.08e+00  1.34e+04     0s
+   3   3.58920107e+06 -1.59401992e+07  2.43e+01 9.14e-02  1.25e+03     0s
+   4   2.77489504e+06 -2.44056281e+06  5.82e+00 9.94e-03  2.94e+02     0s
+   5   2.51852057e+06 -8.33462774e+04  2.50e+00 4.21e-03  1.35e+02     0s
+   6   2.38266560e+06  2.02622429e+06  6.03e-01 1.55e-04  2.00e+01     0s
+   7   2.35073282e+06  2.28188950e+06  1.31e-01 3.64e-12  3.87e+00     0s
+   8   2.34368020e+06  2.33614467e+06  1.52e-02 4.55e-12  4.19e-01     0s
+   9   2.34230313e+06  2.34062276e+06  8.81e-04 2.73e-12  7.05e-02     0s
+
+Barrier performed 9 iterations in 0.27 seconds (0.30 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    5610    2.3421734e+06   0.000000e+00   0.000000e+00      0s
+
+Use crossover to convert LP symmetric solution to basic solution...
+Crossover log...
+
+       0 DPushes remaining with DInf 0.0000000e+00                 0s
+
+     412 PPushes remaining with PInf 0.0000000e+00                 0s
+       0 PPushes remaining with PInf 0.0000000e+00                 0s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 0.0000000e+00      0s
+
+Crossover time: 0.05 seconds (0.03 work units)
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+    6036    2.3421734e+06   0.000000e+00   0.000000e+00      0s
+
+Solved in 6036 iterations and 0.40 seconds (0.34 work units)
+Optimal objective  2.342173402e+06
+
+User-callback calls 96, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 77924 rows, 207506 columns and 490729 nonzeros (Min)
+Model has 130176 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [2e-06, 1e+04]
+  RHS range        [1e-13, 1e+10]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -1.0748394e+04   3.870535e+04   0.000000e+00      0s
+   22945    4.5802665e+02   0.000000e+00   0.000000e+00      5s
+
+Solved in 22945 iterations and 4.99 seconds (5.09 work units)
+Optimal objective  4.580266481e+02
+
+User-callback calls 28, time in user-callback 0.00 sec
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:53:41 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+
+Gurobi 13.0.2 (win64) logging started Mon Jul 20 15:53:42 2026
+
+Set parameter LogFile to value "C:\Users\ehsanno\DataspellProjects\Spanish_Power_System\results\GoRES\ipopt_logs\2024-07-08_bal.log"
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 86476 rows, 224138 columns and 516949 nonzeros (Min)
+Model fingerprint: 0xb7379db4
+Model has 51769 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [1e+00, 3e+03]
+  Objective range  [4e-01, 1e+06]
+  Bounds range     [7e-07, 1e+04]
+  RHS range        [6e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+Presolve removed 69947 rows and 191764 columns
+Presolve time: 0.22s
+Presolved: 16529 rows, 32374 columns, 247470 nonzeros
+
+Concurrent LP optimizer: dual simplex and barrier
+Showing barrier log only...
+
+Ordering time: 0.01s
+
+Barrier statistics:
+ AA' NZ     : 1.872e+05
+ Factor NZ  : 2.460e+05 (roughly 13 MB of memory)
+ Factor Ops : 6.959e+06 (less than 1 second per iteration)
+ Threads    : 3
+
+                  Objective                Residual
+Iter       Primal          Dual         Primal    Dual     Compl     Time
+   0   7.11930681e+08 -5.34110134e+07  2.97e+06 3.61e+02  4.02e+07     0s
+   1   4.24344705e+07 -5.25605026e+07  7.68e+04 2.16e+02  1.04e+06     0s
+   2   1.71600021e+07 -3.86668916e+07  4.47e+02 3.08e+00  7.58e+03     0s
+   3   2.79416463e+06 -9.03283821e+06  1.38e+01 1.29e-01  4.91e+02     0s
+   4   2.19931176e+06 -6.73038432e+05  4.78e+00 1.78e-02  1.29e+02     0s
+   5   1.96387944e+06  1.11177447e+06  2.48e+00 3.58e-03  4.82e+01     0s
+   6   1.79978843e+06  1.51628758e+06  4.26e-01 1.15e-03  1.20e+01     0s
+   7   1.79316161e+06  1.55955573e+06  3.63e-01 8.94e-04  1.00e+01     0s
+   8   1.77016971e+06  1.63737455e+06  6.76e-02 5.19e-04  4.32e+00     0s
+   9   1.76819709e+06  1.66918248e+06  5.78e-02 3.58e-04  3.30e+00     0s
+  10   1.76477711e+06  1.68837594e+06  4.43e-02 2.53e-04  2.53e+00     0s
+  11   1.76414483e+06  1.69537908e+06  3.88e-02 2.27e-04  2.26e+00     0s
+  12   1.76227610e+06  1.70192973e+06  3.20e-02 1.96e-04  1.96e+00     0s
+  13   1.76115876e+06  1.70544654e+06  2.95e-02 1.82e-04  1.81e+00     0s
+  14   1.75913941e+06  1.74198079e+06  1.98e-02 3.61e-05  6.29e-01     0s
+  15   1.75584700e+06  1.75193130e+06  1.87e-03 2.85e-06  1.18e-01     0s
+  16   1.75528154e+06  1.75491666e+06  6.13e-05 1.82e-12  1.01e-02     0s
+  17   1.75526221e+06  1.75519763e+06  1.56e-05 9.85e-13  1.77e-03     0s
+
+Barrier performed 17 iterations in 0.50 seconds (0.47 work units)
+Barrier solve interrupted - model solved by another algorithm
+
+
+Solved with dual simplex
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   10204    1.7552547e+06   0.000000e+00   0.000000e+00      1s
+
+Use crossover to convert LP symmetric solution to basic solution...
+Crossover log...
+
+       0 DPushes remaining with DInf 0.0000000e+00                 1s
+
+     913 PPushes remaining with PInf 0.0000000e+00                 1s
+       0 PPushes remaining with PInf 0.0000000e+00                 1s
+
+  Push phase complete: Pinf 0.0000000e+00, Dinf 7.1054274e-15      1s
+
+Crossover time: 0.08 seconds (0.04 work units)
+
+Extra simplex iterations after uncrush: 6
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+   11281    1.7552547e+06   0.000000e+00   0.000000e+00      1s
+
+Solved in 11281 iterations and 0.73 seconds (0.52 work units)
+Optimal objective  1.755254671e+06
+
+User-callback calls 119, time in user-callback 0.00 sec
+Gurobi Optimizer version 13.0.2 build v13.0.2rc1 (win64 - Windows 11+.0 (26200.2))
+
+CPU model: 11th Gen Intel(R) Core(TM) i5-1145G7 @ 2.60GHz, instruction set [SSE2|AVX|AVX2|AVX512]
+Thread count: 4 physical cores, 8 logical processors, using up to 8 threads
+
+Non-default parameters:
+LogToConsole  0
+
+Optimize a model with 86477 rows, 224138 columns and 568718 nonzeros (Min)
+Model has 138432 linear objective coefficients
+Coefficient statistics:
+  Matrix range     [4e-01, 1e+06]
+  Objective range  [1e+00, 1e+00]
+  Bounds range     [7e-07, 1e+04]
+  RHS range        [6e-12, 2e+09]
+Warning: Model contains large rhs
+         Consider reformulating model or setting NumericFocus parameter
+         to avoid numerical issues.
+
+LP warm-start: use basis
+
+Iteration    Objective       Primal Inf.    Dual Inf.      Time
+       0   -2.6370692e+04   8.237981e+05   0.000000e+00      0s
+   21322    4.3938222e+02   0.000000e+00   0.000000e+00      3s
+
+Solved in 21322 iterations and 2.73 seconds (2.14 work units)
+Optimal objective  4.393822230e+02
+
+User-callback calls 28, time in user-callback 0.00 sec

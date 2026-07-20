@@ -1,0 +1,56 @@
+zone,tech,pmax_MW,cost_eur_mwh,source
+ES,Coal,2900.0,94.01,smspp cap / 2024 cost
+ES,Gas,27052.0,78.0,smspp cap / 2024 cost
+ES,Biomass,493.0,40.0,smspp cap / 2024 cost
+ES,Nuclear,7408.0,15.38,smspp cap / 2024 cost
+ES,Oil,461.0,179.68,smspp cap / 2024 cost
+ES,Oil/Diesel,157.0,179.68,smspp cap / 2024 cost
+ES,Diesel,305.0,179.68,smspp cap / 2024 cost
+ES,Oil/Gas/Diesel,76.0,179.68,smspp cap / 2024 cost
+ES,Oil/Gas,161.0,105.0,smspp cap / 2024 cost
+ES,Cogeneration,2400.0,50.0,added (REE 2024 CHP)
+FR,Bio,1192.3,85.42,2024
+FR,Coal,1631.2,94.01,2024
+FR,Gas CCGT,9456.0,87.0,2024
+FR,Gas OCGT,2495.3,117.0,2024
+FR,Geo,1.7,5.0,2024
+FR,Nuclear,52164.5,15.38,2024
+FR,Oil,2738.2,179.68,2024
+FR,Waste,822.5,25.0,2024
+PT,Bio,578.8,85.42,2024
+PT,Gas CCGT,3191.5,78.0,2024
+PT,Gas OCGT,842.2,105.0,2024
+EU,Bio,25562.7,85.42,2024
+EU,Coal,51002.9,94.01,2024
+EU,Gas CCGT,132147.3,87.0,2024
+EU,Gas OCGT,30909.0,117.0,2024
+EU,Geo,856.8,5.0,2024
+EU,Lignite,47084.9,80.0,2024
+EU,Nuclear,31733.6,15.38,2024
+EU,Oil,9925.3,179.68,2024
+EU,Waste,4520.1,25.0,2024
+ES,Run-of-river,668.6,0.0,smspp
+ES,Wind onshore,30433.9,0.0,smspp cap / EMPIRE shape
+ES,Solar,33185.9,0.0,smspp cap / EMPIRE shape
+FR,Solar,17419.3,0.0,2024
+FR,Wind onshore,22134.1,0.0,2024
+FR,Wind offshore grounded,1483.0,0.0,2024
+FR,Hydro run-of-the-river,11598.1,0.0,2024
+FR,Wave,243.1,0.0,2024
+PT,Solar,1810.8,0.0,2024
+PT,Wind onshore,5332.8,0.0,2024
+PT,Wind offshore grounded,25.0,0.0,2024
+PT,Hydro run-of-the-river,2855.5,0.0,2024
+EU,Solar,173056.8,0.0,2024
+EU,Wind onshore,159797.0,0.0,2024
+EU,Wind offshore grounded,28746.4,0.0,2024
+EU,Hydro run-of-the-river,44016.3,0.0,2024
+EU,Wave,8.0,0.0,2024
+ES,Reservoir hydro (state),6941.0,0.0,smspp
+EU,Reservoir hydro (state),70364.3,0.0,2024
+FR,Reservoir hydro (state),8787.3,0.0,2024
+PT,Reservoir hydro (weekly budget),1629.0,0.0,2024
+ES,Pumped storage / battery,8176.0,0.0,smspp
+EU,Pumped storage / battery,44995.0,0.0,2024
+FR,Pumped storage / battery,5049.0,0.0,2024
+PT,Pumped storage / battery,2827.0,0.0,2024
