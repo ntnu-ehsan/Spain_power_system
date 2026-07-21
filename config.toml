@@ -52,7 +52,7 @@ disaggregation = "nodal"
 #                         N-1 / reliability margin.  Applies to AC lines,
 #                         transformers and HVDC links.  0.70 ⇒ 70 % of nameplate.
 voltage_band       = 0.1
-line_rating_factor = 0.8
+line_rating_factor = 1
 
 # Generator voltage regulation (AVR).  Synchronous-machine buses (and the slack)
 # are voltage-regulated, so hold them to a tighter band than the load buses — the
@@ -205,7 +205,7 @@ enabled = true
 #          in cases where the AC problem is not, at the cost of reactive/voltage
 #          security.  Being linear (LP/convex QP with the quadratic anchor), it
 #          is solved exactly with Gurobi instead of Ipopt.
-power_flow = "DC"
+power_flow = "AC"
 
 # Reservoir hydro opportunity cost during redispatch:
 #   "constant"  — binding cut slope at V_ES_start used as a fixed marginal cost
@@ -232,7 +232,7 @@ anchor_weight = 0.8
 # The Bellman water value is recomputed each run (cheap, clearing-independent).
 # The saved *_dispatch.csv it reads are left untouched; only the redispatch
 # outputs (summary/gen_dispatch/branch_flows/fuel_mix/bus_voltages) are rewritten.
-from_saved = ""
+from_saved = "BAL"
 
 # Restrict the load flow to a single delivery hour (or a single day).
 #   ""             — every hour of every target day.

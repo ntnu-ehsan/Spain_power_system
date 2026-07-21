@@ -238,16 +238,12 @@ ES620	ES521
 ES620	ES611
 ES620	ES614
 EU	France
-EU	Italy
 France	ES212
 France	ES220
 France	ES241
 France	ES512
 France	ES513
 France	EU
-France	Italy
-Italy	EU
-Italy	France
 Portugal	ES113
 Portugal	ES114
 Portugal	ES415
@@ -263,7 +259,3 @@ ES618	ES422
 ES422	ES618
 ES213	France
 France	ES213
-ES511	Italy
-Italy	ES511
-ES523	Italy
-Italy	ES523

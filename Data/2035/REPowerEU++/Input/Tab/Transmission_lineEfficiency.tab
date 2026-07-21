@@ -238,16 +238,12 @@ ES620	ES521	0.97
 ES620	ES611	0.97
 ES620	ES614	0.97
 EU	France	0.97
-EU	Italy	0.97
 France	ES212	0.97
 France	ES220	0.97
 France	ES241	0.97
 France	ES512	0.97
 France	ES513	0.97
 France	EU	0.97
-France	Italy	0.97
-Italy	EU	0.97
-Italy	France	0.97
 Portugal	ES113	0.97
 Portugal	ES114	0.97
 Portugal	ES415	0.97
@@ -263,7 +259,3 @@ ES618	ES422	0.97
 ES422	ES618	0.97
 ES213	France	0.97
 France	ES213	0.97
-ES511	Italy	0.97
-Italy	ES511	0.97
-ES523	Italy	0.97
-Italy	ES523	0.97

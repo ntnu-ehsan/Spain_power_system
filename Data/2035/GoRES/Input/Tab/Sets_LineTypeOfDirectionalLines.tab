@@ -238,16 +238,12 @@ ES620	ES521	HVAC_OverheadLine
 ES620	ES611	HVAC_OverheadLine
 ES620	ES614	HVAC_OverheadLine
 EU	France	HVDC_Cable
-EU	Italy	HVAC_OverheadLine
 France	ES212	HVAC_OverheadLine
 France	ES220	HVAC_OverheadLine
 France	ES241	HVAC_OverheadLine
 France	ES512	HVAC_OverheadLine
 France	ES513	HVAC_OverheadLine
 France	EU	HVDC_Cable
-France	Italy	HVAC_OverheadLine
-Italy	EU	HVAC_OverheadLine
-Italy	France	HVAC_OverheadLine
 Portugal	ES113	HVAC_OverheadLine
 Portugal	ES114	HVAC_OverheadLine
 Portugal	ES415	HVAC_OverheadLine
@@ -263,7 +259,3 @@ ES618	ES422	HVAC_OverheadLine
 ES422	ES618	HVAC_OverheadLine
 ES213	France	HVDC_Cable
 France	ES213	HVDC_Cable
-ES511	Italy	HVDC_Cable
-Italy	ES511	HVDC_Cable
-ES523	Italy	HVDC_Cable
-Italy	ES523	HVDC_Cable

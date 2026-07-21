@@ -93,11 +93,9 @@ ES618	HydroPumpStorage	64642.138
 ES618	Li-Ion_BESS	425531.915
 ES620	HydroPumpStorage	0.0
 ES620	Li-Ion_BESS	425531.915
-EU	HydroPumpStorage	948956.586
-EU	Li-Ion_BESS	620000000.0
+EU	HydroPumpStorage	991445.186
+EU	Li-Ion_BESS	640000000.0
 France	HydroPumpStorage	202725.6
 France	Li-Ion_BESS	20000000.0
-Italy	HydroPumpStorage	42488.6
-Italy	Li-Ion_BESS	20000000.0
 Portugal	HydroPumpStorage	117979.488
 Portugal	Li-Ion_BESS	20000000.0
