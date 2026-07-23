@@ -514,9 +514,12 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
             dc      = dclines[k]
             pf_mw   = v["pf"] * BASEMVA
             qf_mvar = reactive_or_zero(v, "qf") * BASEMVA
-            sf_mva  = hypot(pf_mw, qf_mvar)
+            # Loading of an HVDC cable is set by the active-power transfer only.
+            # The converter's reactive exchange is an AC-terminal capability and
+            # does not thermally load the DC link, so it is excluded here (unlike
+            # AC branches, where apparent power is the right measure).
             rate_mw = dc["pmaxf"] * BASEMVA
-            loading = rate_mw > 0 ? 100 * sf_mva / rate_mw : 0.0
+            loading = rate_mw > 0 ? 100 * abs(pf_mw) / rate_mw : 0.0
             push!(branch_rows_all, (
                 date        = date_str,
                 hour        = hour,
