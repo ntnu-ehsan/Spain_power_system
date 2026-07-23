@@ -24,7 +24,11 @@
 #
 # Model
 #   • 78 weekly stages (Timestep 0..77) from [bellman].bgn_date,
-#     terminal value 0; block_hours-sized intra-week blocks.
+#     block_hours-sized intra-week blocks.  The last stage carries a soft
+#     end-of-horizon reservoir target (end_fill × v0, penalised at
+#     end_penalty EUR/MWh) so the policy does not empty the reservoirs
+#     into the horizon end; without it the zero terminal value function
+#     makes water free after stage 78 and it is all spent.
 #   • 3 reservoir states ES / FR / EU (ES size from SS_SeasonalStorage,
 #     FR/EU from [midterm4.reservoir]); PT's small reservoir turbines a
 #     weekly inflow budget (no state).  Pumped storage cycles within
@@ -66,6 +70,11 @@ const BLOCK_HOURS = Int(mcfg["block_hours"])
 const NB          = div(168, BLOCK_HOURS)
 const ITERATIONS  = Int(mcfg["iterations"])
 const VOLL        = Float64(mcfg["voll"])
+# End-of-horizon reservoir target: the last stage must reach END_FILL × v0 or
+# pay END_PENALTY per missing MWh.  END_PENALTY = 0 disables it (zero terminal
+# value → reservoirs drained by stage N_STAGES).
+const END_FILL    = Float64(get(mcfg, "end_fill", 1.0))
+const END_PENALTY = Float64(get(mcfg, "end_penalty", 150.0))
 const SOLVER      = lowercase(String(mcfg["solver"]))
 const SIM_YEAR    = Int(mcfg["sim_year"])
 const CUTS_OUT    = joinpath(@__DIR__, empire_suffixed(mcfg["cuts_out"], cfg))
@@ -458,6 +467,10 @@ println("Mid-term SDDP (4 nodes, hybrid$(SCEN_ACTIVE ? ", scenario " * EMP.label
         "$(N_STAGES) weekly stages × $(NB) blocks of $(BLOCK_HOURS) h,")
 println("  $(NSCEN) scenarios = EDF climate years $(first(YEARS))–$(last(YEARS)) (ES/PT), each paired")
 println("  with EMPIRE year 2015+(i-1)%5 (FR/EU); solver=$(SOLVER)")
+println(END_PENALTY > 0 ?
+    @sprintf("  end-of-horizon target: %.0f%% of the initial volume, penalty %.0f EUR/MWh",
+             100 * END_FILL, END_PENALTY) :
+    "  end-of-horizon target: none (zero terminal value → reservoirs drained)")
 
 DEM = Array{Float64}(undef, N_STAGES, NSCEN, length(ZONES), NB)
 AVL = Array{Float64}(undef, N_STAGES, NSCEN, length(ZONES), NB)
@@ -531,9 +544,20 @@ model = SDDP.LinearPolicyGraph(;
             for l in 1:length(lines))
       + shed[zi, b] == 0.0)                                                     # RHS ← demand
 
-    @stageobjective(sp, BLOCK_HOURS * (
+    cost = BLOCK_HOURS * (
         sum(therm[i].cost * gth[i, b] for i in 1:length(therm), b in 1:NB)
-      + VOLL * sum(shed)))
+      + VOLL * sum(shed))
+
+    # Soft end-of-horizon target: penalise only the shortfall, so a dry final
+    # week stays feasible instead of forcing load shedding to refill.
+    if t == N_STAGES && END_PENALTY > 0
+        @variable(sp, vdef[r in RZ] >= 0)                          # shortfall [MWh]
+        @constraint(sp, [r in RZ],
+            vres[r].out + vdef[r] >= END_FILL * reservoirs[r].v0)
+        @stageobjective(sp, cost + END_PENALTY * sum(vdef[r] for r in RZ))
+    else
+        @stageobjective(sp, cost)
+    end
 
     SDDP.parameterize(sp, 1:NSCEN) do w
         for zi in 1:length(ZONES), b in 1:NB

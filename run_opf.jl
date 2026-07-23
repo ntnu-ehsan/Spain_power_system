@@ -36,6 +36,8 @@ include("crossborder.jl")
 include("da.jl")
 include("empire_scenario.jl")
 include("empire_nodal.jl")
+include("week_sampling.jl")
+include("week_profiles.jl")
 
 # ── 1. Config ────────────────────────────────────────────────
 cfg = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
@@ -202,6 +204,26 @@ RD_ONLY != "" &&
 # DA scale factors are always 1.0, so DA profiles equal the ES_old -12 baseline.
 # Stages modelled: DA → ID2 → ID3 → CID → Balancing (BE) → Redispatch.
 TARGET_DAYS = ["2024-07-08", "2024-12-02"]
+# [weeks]: sampled multi-week horizon (week_sampling.jl).  The persisted (or
+# freshly drawn, when resample = true) week sample replaces the two fixed 2024
+# study days; each sampled week is 7 SDDP-calendar days, so the Bellman
+# stage/cut/volume lookups below work unchanged.
+const WEEKS_ACTIVE = get(get(cfg, "weeks", Dict()), "enabled", false)
+const WEEK_KEY     = WEEKS_ACTIVE ? load_or_sample_weeks(cfg) : nothing
+if WEEKS_ACTIVE
+    SCEN_ACTIVE || error("config.toml: [weeks] needs an EMPIRE scenario " *
+                         "([scenario].label != \"2024\") for the ScenarioData weather")
+    TARGET_DAYS = week_study_days(WEEK_KEY)
+    println("Week sample    : $(nrow(WEEK_KEY)) weeks " *
+            (get(cfg["weeks"], "resample", false) ? "(fresh draw)" : "(from key file)"))
+    for r in eachrow(WEEK_KEY)
+        @printf "  slot %d : study %s (SDDP week %d) | weather %s (climate year %d, rows %d-%d)\n" r.slot Dates.format(r.study_start, "yyyy-mm-dd") r.week_slot Dates.format(r.data_start, "yyyy-mm-dd") r.climate_year r.row_start (r.row_start + WEEK_HOURS - 1)
+    end
+    # crossborder.csv only covers the two 2024 study days; the sampled horizon
+    # gets its exchange from the 4-zone DA clearing once that stage lands.
+    CROSSBORDER && error("[weeks]: [crossborder] fixed injections exist only for " *
+                         "the 2024 study days — disable it for sampled weeks")
+end
 # [redispatch].only may pin the whole run to a single day so the market stages,
 # Bellman pre-compute and load flow all skip the other TARGET_DAY.
 if RD_ONLY_DATE !== nothing
@@ -234,40 +256,53 @@ function load_scaled_col(date_str, new_resource, old_resource, stage_col)
     return base_mw .* scale .* profile_scale(new_resource)
 end
 
-hourly_da_rows  = NamedTuple[]
-hourly_id2_rows = NamedTuple[]
-hourly_id3_rows = NamedTuple[]
-hourly_cid_rows = NamedTuple[]
-hourly_bal_rows = NamedTuple[]
-for date_str in TARGET_DAYS
-    load_da   = load_scaled_col(date_str, "load",         "load",  "DA")
-    solar_da  = load_scaled_col(date_str, "Solar",        "Solar", "DA")
-    wind_da   = load_scaled_col(date_str, "Wind Onshore", "Wind",  "DA")
-    load_id2  = load_scaled_col(date_str, "load",         "load",  "ID2")
-    solar_id2 = load_scaled_col(date_str, "Solar",        "Solar", "ID2")
-    wind_id2  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "ID2")
-    load_id3  = load_scaled_col(date_str, "load",         "load",  "ID3")
-    solar_id3 = load_scaled_col(date_str, "Solar",        "Solar", "ID3")
-    wind_id3  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "ID3")
-    load_cid  = load_scaled_col(date_str, "load",         "load",  "CID")
-    solar_cid = load_scaled_col(date_str, "Solar",        "Solar", "CID")
-    wind_cid  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "CID")
-    load_bal  = load_scaled_col(date_str, "load",         "load",  "BE")
-    solar_bal = load_scaled_col(date_str, "Solar",        "Solar", "BE")
-    wind_bal  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "BE")
-    for h in 0:23
-        push!(hourly_da_rows,  (date=date_str, hour=h, load_mw=load_da[h+1],  solar_mw=solar_da[h+1],  wind_mw=wind_da[h+1]))
-        push!(hourly_id2_rows, (date=date_str, hour=h, load_mw=load_id2[h+1], solar_mw=solar_id2[h+1], wind_mw=wind_id2[h+1]))
-        push!(hourly_id3_rows, (date=date_str, hour=h, load_mw=load_id3[h+1], solar_mw=solar_id3[h+1], wind_mw=wind_id3[h+1]))
-        push!(hourly_cid_rows, (date=date_str, hour=h, load_mw=load_cid[h+1], solar_mw=solar_cid[h+1], wind_mw=wind_cid[h+1]))
-        push!(hourly_bal_rows, (date=date_str, hour=h, load_mw=load_bal[h+1], solar_mw=solar_bal[h+1], wind_mw=wind_bal[h+1]))
+if WEEKS_ACTIVE
+    # [weeks]: gate profiles come from the ScenarioData weather of the sampled
+    # horizon (week_profiles.jl) — same table shape as the 2024 path below, with
+    # the vintage factors season-matched to the 2024 study days until dated
+    # files appear under Data/ES/.
+    wk_tables  = week_stage_tables(cfg, EMP, WEEK_KEY)
+    hourly_da  = wk_tables["DA"]
+    hourly_id2 = wk_tables["ID2"]
+    hourly_id3 = wk_tables["ID3"]
+    hourly_cid = wk_tables["CID"]
+    hourly_bal = wk_tables["BE"]
+else
+    hourly_da_rows  = NamedTuple[]
+    hourly_id2_rows = NamedTuple[]
+    hourly_id3_rows = NamedTuple[]
+    hourly_cid_rows = NamedTuple[]
+    hourly_bal_rows = NamedTuple[]
+    for date_str in TARGET_DAYS
+        load_da   = load_scaled_col(date_str, "load",         "load",  "DA")
+        solar_da  = load_scaled_col(date_str, "Solar",        "Solar", "DA")
+        wind_da   = load_scaled_col(date_str, "Wind Onshore", "Wind",  "DA")
+        load_id2  = load_scaled_col(date_str, "load",         "load",  "ID2")
+        solar_id2 = load_scaled_col(date_str, "Solar",        "Solar", "ID2")
+        wind_id2  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "ID2")
+        load_id3  = load_scaled_col(date_str, "load",         "load",  "ID3")
+        solar_id3 = load_scaled_col(date_str, "Solar",        "Solar", "ID3")
+        wind_id3  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "ID3")
+        load_cid  = load_scaled_col(date_str, "load",         "load",  "CID")
+        solar_cid = load_scaled_col(date_str, "Solar",        "Solar", "CID")
+        wind_cid  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "CID")
+        load_bal  = load_scaled_col(date_str, "load",         "load",  "BE")
+        solar_bal = load_scaled_col(date_str, "Solar",        "Solar", "BE")
+        wind_bal  = load_scaled_col(date_str, "Wind Onshore", "Wind",  "BE")
+        for h in 0:23
+            push!(hourly_da_rows,  (date=date_str, hour=h, load_mw=load_da[h+1],  solar_mw=solar_da[h+1],  wind_mw=wind_da[h+1]))
+            push!(hourly_id2_rows, (date=date_str, hour=h, load_mw=load_id2[h+1], solar_mw=solar_id2[h+1], wind_mw=wind_id2[h+1]))
+            push!(hourly_id3_rows, (date=date_str, hour=h, load_mw=load_id3[h+1], solar_mw=solar_id3[h+1], wind_mw=wind_id3[h+1]))
+            push!(hourly_cid_rows, (date=date_str, hour=h, load_mw=load_cid[h+1], solar_mw=solar_cid[h+1], wind_mw=wind_cid[h+1]))
+            push!(hourly_bal_rows, (date=date_str, hour=h, load_mw=load_bal[h+1], solar_mw=solar_bal[h+1], wind_mw=wind_bal[h+1]))
+        end
     end
+    hourly_da  = DataFrame(hourly_da_rows);  sort!(hourly_da,  [:date, :hour])
+    hourly_id2 = DataFrame(hourly_id2_rows); sort!(hourly_id2, [:date, :hour])
+    hourly_id3 = DataFrame(hourly_id3_rows); sort!(hourly_id3, [:date, :hour])
+    hourly_cid = DataFrame(hourly_cid_rows); sort!(hourly_cid, [:date, :hour])
+    hourly_bal = DataFrame(hourly_bal_rows); sort!(hourly_bal, [:date, :hour])
 end
-hourly_da  = DataFrame(hourly_da_rows);  sort!(hourly_da,  [:date, :hour])
-hourly_id2 = DataFrame(hourly_id2_rows); sort!(hourly_id2, [:date, :hour])
-hourly_id3 = DataFrame(hourly_id3_rows); sort!(hourly_id3, [:date, :hour])
-hourly_cid = DataFrame(hourly_cid_rows); sort!(hourly_cid, [:date, :hour])
-hourly_bal = DataFrame(hourly_bal_rows); sort!(hourly_bal, [:date, :hour])
 
 function print_profile_summary(label, df)
     @printf "%s profiles: %d hours across %d days\n" label nrow(df) length(unique(df.date))
@@ -535,7 +570,10 @@ xb_data  = Dict{String,Dict{Int,@NamedTuple{FR::Float64, PT::Float64}}}()
 xb_fracs = Dict{String,Dict{String,Float64}}()
 if CROSSBORDER
     xb_data  = load_crossborder()
-    xb_fracs = crossborder_bus_fractions()
+    # Nodal scenario: split the exchange over the SCENARIO border (expanded
+    # corridors + synthetic ones), not the 2024 one.
+    xb_fracs = crossborder_bus_fractions(line_scale = LINE_SCALE,
+                                         extra_lines = EXTRA_LINES)
     println("\nCross-border exchange pre-load:")
     for (c, bf) in sort(collect(xb_fracs); by = first)
         @printf "  %s border buses: %s\n" c join(sort(collect(keys(bf))), ", ")

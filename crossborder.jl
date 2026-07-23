@@ -49,9 +49,21 @@ end
 # each one carries, proportional to the thermal rating (∝ V·Imax) of the border
 # line(s) terminating at that bus.  Returns country => (bus_id => fraction),
 # fractions summing to 1 within each country.
-function crossborder_bus_fractions()::Dict{String,Dict{String,Float64}}
+#
+# In a nodal scenario run the border is not the 2024 one: pass the nodal
+# disaggregation's `line_scale` (corridor expansion as parallel circuits) and
+# `extra_lines` (corridors EMPIRE built where no border line exists today) so
+# the exchange is split over the scenario border rather than today's.  A new
+# corridor therefore takes its rating share of the schedule, and the AC OPF has
+# a physical path for it.
+function crossborder_bus_fractions(; line_scale = nothing,
+                                     extra_lines = nothing)::Dict{String,Dict{String,Float64}}
     bus_df  = CSV.read(joinpath(DATA, "Bus_Data.csv"), DataFrame)
     line_df = CSV.read(joinpath(DATA, "lines.csv"),    DataFrame)
+    if extra_lines !== nothing && nrow(DataFrame(extra_lines)) > 0
+        line_df = vcat(line_df, DataFrame(extra_lines); cols = :intersect)
+    end
+    lscale(id) = line_scale === nothing ? 1.0 : get(line_scale, string(id), 1.0)
     country = Dict(string(r.bus_id) => string(r.country) for r in eachrow(bus_df))
 
     # Accumulate per-country, per-bus line-rating weights.
@@ -62,7 +74,8 @@ function crossborder_bus_fractions()::Dict{String,Dict{String,Float64}}
         for (foreign, home) in ((b0, b1), (b1, b0))
             c = get(country, foreign, "ES")
             (c == "FR" || c == "PT") && get(country, home, "ES") == "ES" || continue
-            w = Float64(r.voltage) * Float64(r.Imax)   # ∝ √3·V·Imax thermal rating
+            # ∝ √3·V·Imax thermal rating, at the scenario's corridor expansion
+            w = Float64(r.voltage) * Float64(r.Imax) * lscale(r.line_id)
             weight[c][foreign] = get(weight[c], foreign, 0.0) + w
         end
     end

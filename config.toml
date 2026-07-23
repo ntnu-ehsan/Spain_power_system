@@ -22,8 +22,8 @@
 # Every output (Bellman cuts, volume trajectory, cut JSON, diagnostics) gets
 # the suffix "_<label>", and the market chain writes to results/<label>/ and
 # reads its Bellman inputs from the suffixed [midterm4] outputs automatically.
-label      = "2024"             # e.g. "NECP2035"
-empire_dir = "Data/2035/GoRES"   # EMPIRE run (Input/Tab + Output) - Ignore if label = "2024"
+label      = "NECPEssentials"             # e.g. "NECP2035"
+empire_dir = "Data/2035/NECPEssentials"   # EMPIRE run (Input/Tab + Output) - Ignore if label = "2024"
 period     = 2                            # EMPIRE period index: 2 = 2030-2035
 
 # How the EMPIRE expansion is disaggregated onto the bus-level grid
@@ -39,6 +39,30 @@ period     = 2                            # EMPIRE period index: 2 = 2030-2035
 #             investments ignored, BESS on the top-20 load buses.
 disaggregation = "nodal"
 
+[weeks]
+# ── Sampled multi-week study horizon (2035 scenario target) ──────────────────
+# enabled = true replaces the two fixed 2024 TARGET_DAYS with n_weeks sampled
+# weeks: study weeks on the SDDP calendar ([bellman].bgn_date + 7-day slots, so
+# stage/cut/volume lookups are unchanged) fed by hourly weather drawn from the
+# EMPIRE ScenarioData climate years (week_sampling.jl).
+#
+#   n_weeks    — horizon length in weeks (2–3 is the target).
+#   contiguous — true: one random climate year + start slot, consecutive weeks
+#                and consecutive data rows (weather autocorrelation preserved);
+#                false: n independent (year, week) draws, distinct week slots.
+#   resample   — false: reuse key_file if present (drawn once, stable across
+#                runs and across the four EMPIRE scenarios for comparability);
+#                true: redraw every run and overwrite key_file.
+#   seed       — RNG seed for the draw; 0 = fresh entropy each (re)draw.
+#   key_file   — persisted sample key (slot, week_slot, climate_year,
+#                study_start, data_start, row_start), shared by all scenarios.
+enabled    = false
+n_weeks    = 2
+contiguous = true
+resample   = false
+seed       = 0
+key_file   = "Data/sample_weeks.csv"
+
 [network]
 # Operator-tunable network security limits applied when assembling the grid.
 #
@@ -51,8 +75,8 @@ disaggregation = "nodal"
 #                         nameplate rating made available to the OPF, derated for
 #                         N-1 / reliability margin.  Applies to AC lines,
 #                         transformers and HVDC links.  0.70 ⇒ 70 % of nameplate.
-voltage_band       = 0.1
-line_rating_factor = 1
+voltage_band       = 0.05
+line_rating_factor = 0.8
 
 # Generator voltage regulation (AVR).  Synchronous-machine buses (and the slack)
 # are voltage-regulated, so hold them to a tighter band than the load buses — the
@@ -205,7 +229,7 @@ enabled = true
 #          in cases where the AC problem is not, at the cost of reactive/voltage
 #          security.  Being linear (LP/convex QP with the quadratic anchor), it
 #          is solved exactly with Gurobi instead of Ipopt.
-power_flow = "AC"
+power_flow = "DC"
 
 # Reservoir hydro opportunity cost during redispatch:
 #   "constant"  — binding cut slope at V_ES_start used as a fixed marginal cost
@@ -255,6 +279,8 @@ n_stages    = 78         # weekly stages → Timestep 0..77 in the cut file
 block_hours = 2          # within-week time step [h]; must divide 24
 iterations  = 150        # SDDP training iterations
 voll        = 3000.0     # unserved-energy penalty [EUR/MWh]
+end_fill    = 1.0        # see [midterm4] below — same meaning
+end_penalty = 150.0
 solver      = "gurobi"   # "gurobi" | "highs"
 sim_year    = 1982       # climate year for the Volume_Scen0 trajectory
 year_stride = 1          # use every k-th climate year (1 = all 37 scenarios)
@@ -274,6 +300,23 @@ n_stages    = 78         # weekly stages → Timestep 0..77 in the cut file
 block_hours = 2          # within-week time step [h]; must divide 24
 iterations  = 60         # SDDP iterations per run (use "cont" arg to add more)
 voll        = 3000.0     # unserved-energy penalty [EUR/MWh]
+# ── End-of-horizon reservoir target ─────────────────────────────────────────
+# SDDP gives the last stage a zero value function, so water is worth nothing
+# after stage 78 and the policy empties every reservoir into the horizon end.
+# The last stage instead has to reach end_fill × (initial volume) per reservoir
+# or pay end_penalty for each missing MWh — a soft target, so a dry final week
+# stays feasible.  Expressed against v0 rather than vmax so each zone inherits
+# its own starting fill (ES from SS_SeasonalStorage, FR/EU from .reservoir).
+#   end_fill    — 1.0 ends the horizon at the starting volume.  The horizon is
+#                 78 weeks = 1.5 years (2 Jul 2024 → 30 Dec 2025), so start and
+#                 end sit in different seasons; lower it if the late-December
+#                 target should be below the early-July level.
+#   end_penalty — terminal water value [EUR/MWh].  150 sits above mid-merit
+#                 CCGT (~60–100) so the policy refills rather than burning gas
+#                 in the final weeks, and far below voll so it never buys water
+#                 with load shedding.  0 disables the target entirely.
+end_fill    = 1.0
+end_penalty = 150.0
 solver      = "gurobi"   # "gurobi" | "highs"
 sim_year    = 1982       # EDF climate year for the exported volume trajectory
 seed        = 1234

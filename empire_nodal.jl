@@ -17,13 +17,18 @@
 #      nuclear are site-bound: no new units are created — regional targets
 #      without units are redistributed over the existing fleet of that tech.
 #
-#   3. Transmission.  EMPIRE's intra-ES corridor capacities (NUTS3 pair →
-#      MW, previously discarded) become per-line expansion factors: every
+#   3. Transmission.  EMPIRE's corridor capacities (NUTS3 pair → MW,
+#      previously discarded) become per-line expansion factors: every
 #      physical line crossing a corridor is scaled by
 #      installed(period)/initial, modelled as parallel circuits (rating ×f,
 #      series impedance /f, shunt ×f).  Corridors EMPIRE builds where no
 #      physical line exists today get a synthetic 400 kV line between the
-#      strongest buses of the two regions.
+#      strongest buses of the two regions.  ES↔FR/PT corridors go through the
+#      same treatment: interconnection EMPIRE holds or builds on a NUTS3 that
+#      no border line reaches today (Biscay Gulf HVDC, the new Navarra–France
+#      corridor) is synthesised onto the country's nearest terminal bus, capped
+#      at the country-level shortfall so a misassigned terminal bus cannot
+#      double-count.
 #
 #   4. Storage.  The Li-Ion BESS fleet is sited per NUTS3 node (previously a
 #      national top-20-load-bus split): each node's power is spread over the
@@ -307,6 +312,33 @@ _haversine_km(lat1, lon1, lat2, lon2) =
 
 _pair(a::String, b::String) = a < b ? (a, b) : (b, a)
 
+# EMPIRE foreign node → the country code Bus_Data.csv uses (and that bus_nuts3
+# assigns to foreign buses).  Countries absent from the bus grid (Italy, the EU
+# aggregate) are deliberately unmapped: their corridors stay diagnostic-only.
+const NODAL_XB_COUNTRY = Dict("France" => "FR", "Portugal" => "PT")
+
+# Terminal bus on the foreign side of a synthetic border corridor: the nearest
+# bus of that country among those at its highest modelled voltage.  A 2 GW
+# corridor must land on the 400 kV terminal rather than a 225 kV one — the
+# synthetic line takes its terminal's voltage, since data_preparation.jl
+# derives z_base and the thermal rating from the line's own `voltage` field.
+function _nearest_foreign_bus(country::String, anchor::String, bus_df)
+    cand = [r for r in eachrow(bus_df) if String(r.country) == country]
+    isempty(cand) && return nothing
+    kvmax = maximum(Float64(r.voltage) for r in cand)
+    cand  = [r for r in cand if Float64(r.voltage) >= kvmax - 1e-6]
+    ai = findfirst(==(anchor), String.(bus_df.bus_id))
+    ai === nothing && return nothing
+    ay, ax = Float64(bus_df[ai, :y]), Float64(bus_df[ai, :x])
+    best, bd = nothing, Inf
+    for r in cand
+        d = _haversine_km(ay, ax, Float64(r.y), Float64(r.x))
+        d < bd && (best = r; bd = d)
+    end
+    best === nothing && return nothing
+    return (bus_id = String(best.bus_id), voltage = Float64(best.voltage), km = bd)
+end
+
 # Strongest bus of a region: prefer 400 kV, rank by connected line rating.
 function _region_anchor_bus(region::String, b2r, bus_df, line_df)
     cap = Dict{String,Float64}()             # bus_id → Σ connected MW
@@ -331,7 +363,7 @@ end
     nodal_line_scale(cfg; data_dir, new_corridor_min_mw)
         -> (line_scale, new_lines, corr_diag)
 
-Per-line expansion factors from EMPIRE's intra-ES corridor capacities:
+Per-line expansion factors from EMPIRE's corridor capacities:
 factor = installed(period) / initial, applied to every physical line (AC or
 HVDC) whose endpoints lie in the two NUTS3 regions of the corridor.  Factors
 are floored at 1.0 (EMPIRE never has to de-rate the operating grid; raw
@@ -339,6 +371,15 @@ values < 1 are reported in the diagnostics).  Corridors with capacity but no
 physical line get a synthetic 400 kV line between the two regions' anchor
 buses, with median 400 kV per-length parameters and Imax sized so
 √3·V·Imax = corridor MW.
+
+ES↔FR/PT corridors are treated the same way, with one extra guard.  Their
+foreign end is a country, not a NUTS3, so a border terminal bus that
+point-in-polygon put in the neighbouring region would otherwise let the same
+MW be scaled onto an existing line *and* synthesised as a new one.  The
+capacity synthesised for a country is therefore capped at that country's
+shortfall — EMPIRE's total installed interconnection minus what the scaled
+physical border lines already carry — and split over the corridors that no
+border line reaches, each landing on the nearest foreign terminal bus.
 """
 function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
                           new_corridor_min_mw::Float64 = 50.0)
@@ -356,12 +397,13 @@ function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
                     DataFrame; delim = '\t', header = false, skipto = 2,
                     types = [String, String, Int, Float64])
     # Key: intra-ES corridors as an unordered NUTS3 pair; cross-border
-    # corridors (ES NUTS3 ↔ France/Portugal/Italy/…) with the ES node first.
-    # Cross-border corridors are DIAGNOSTIC-ONLY here: they enter the market
-    # chain through the zonal NTCs (load_empire_scenario) and the fixed
-    # crossborder.csv injections, not through bus-level line scaling.
+    # corridors (ES NUTS3 ↔ France/Portugal/Italy/…) with the ES node first and
+    # the foreign node reduced to its Bus_Data country code, so the key matches
+    # the way border lines group below.  Countries outside the bus grid keep
+    # their EMPIRE name and stay diagnostic-only.
+    _xb(n) = get(NODAL_XB_COUNTRY, n, n)
     _corr_key(f, t) = startswith(f, "ES") && startswith(t, "ES") ? _pair(f, t) :
-                      startswith(f, "ES") ? (f, t) : (t, f)
+                      startswith(f, "ES") ? (f, _xb(t)) : (t, _xb(f))
     _corr_keep(f, t) = startswith(f, "ES") || startswith(t, "ES")
     for r in eachrow(df_i)
         r[3] == period || continue
@@ -380,13 +422,17 @@ function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
         inst[k] = max(get(inst, k, 0.0), Float64(r.transmissionInstalledCap))
     end
 
-    # physical lines per corridor (both AC and HVDC cross-region lines)
+    # Physical lines per corridor (both AC and HVDC cross-region lines).
+    # bus_nuts3 tags foreign buses with their country code, so an ES↔FR/PT line
+    # keys as (ES NUTS3, "FR"/"PT") — the same key shape _corr_key produces.
     corr_lines = Dict{Tuple{String,String},Vector{String}}()
     corr_mw    = Dict{Tuple{String,String},Float64}()      # Σ nameplate MW
     for r in eachrow(line_df)
         r0, r1 = get(b2r, String(r.bus0), ""), get(b2r, String(r.bus1), "")
-        (startswith(r0, "ES") && startswith(r1, "ES") && r0 != r1) || continue
-        k = _pair(r0, r1)
+        (isempty(r0) || isempty(r1) || r0 == r1) && continue
+        es0, es1 = startswith(r0, "ES"), startswith(r1, "ES")
+        (es0 || es1) || continue                  # foreign–foreign: not ours
+        k = es0 && es1 ? _pair(r0, r1) : es0 ? (r0, r1) : (r1, r0)
         push!(get!(corr_lines, k, String[]), String(r.line_id))
         corr_mw[k] = get(corr_mw, k, 0.0) + sqrt(3) * Float64(r.voltage) *
                      Float64(r.Imax) * max(Float64(r.circuits), 1.0)
@@ -403,8 +449,9 @@ function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
     # corridor capacities were aggregated from these same line ratings).
     empire_keys = union(keys(init), keys(inst))
     free = Set(p for p in keys(corr_lines)
-               if !(p in empire_keys) ||
-                  (get(init, p, 0.0) <= 1.0 && get(inst, p, 0.0) < new_corridor_min_mw))
+               if startswith(p[2], "ES") &&           # never re-match onto a border group
+                  (!(p in empire_keys) ||
+                   (get(init, p, 0.0) <= 1.0 && get(inst, p, 0.0) < new_corridor_min_mw)))
     unmatched = [k for k in empire_keys
                  if startswith(k[2], "ES") &&           # intra-ES only
                     get(init, k, 0.0) > 1.0 && isempty(get(corr_lines, k, String[]))]
@@ -422,6 +469,33 @@ function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
         delete!(free, best)
     end
 
+    # Cross-border capacity that has no physical path.  Border lines are scaled
+    # like any other corridor; what EMPIRE holds or builds on a NUTS3 no border
+    # line reaches has to be synthesised.  Sizing that per corridor alone would
+    # double-count whenever a terminal bus landed in the neighbouring NUTS3
+    # (its MW would be scaled onto the existing line AND synthesised), so the
+    # synthesised total per country is capped at the country-level shortfall
+    # — EMPIRE's installed interconnection minus what the scaled border lines
+    # already carry — and shared over the corridors that have no line.
+    _corr_factor(k) = (get(init, k, 0.0) > 1.0 && !isempty(get(corr_lines, k, String[]))) ?
+                      max(get(inst, k, 0.0) / init[k], 1.0) : 1.0
+    xb_new = Dict{Tuple{String,String},Float64}()      # corridor ⇒ MW to synthesise
+    xb_short = Dict{String,Float64}()                  # country  ⇒ shortfall MW
+    for ctry in values(NODAL_XB_COUNTRY)
+        ks = [k for k in empire_keys if k[2] == ctry]
+        isempty(ks) && continue
+        want = sum(get(inst, k, 0.0) for k in ks)
+        have = sum(get(corr_mw, k, 0.0) * _corr_factor(k) for k in ks)
+        short = max(want - have, 0.0)
+        xb_short[ctry] = short
+        orphans = [k for k in ks if isempty(get(corr_lines, k, String[])) &&
+                                    get(inst, k, 0.0) >= new_corridor_min_mw]
+        otot = sum(get(inst, k, 0.0) for k in orphans; init = 0.0)
+        (short > new_corridor_min_mw && otot > 1e-3) || continue
+        share = min(1.0, short / otot)                 # never exceed the shortfall
+        for k in orphans; xb_new[k] = get(inst, k, 0.0) * share; end
+    end
+
     # synthetic-line electrical parameters: median of the 400 kV AC lines
     m400 = filter(r -> Float64(r.voltage) == 400 && String(r.dc) == "f", line_df)
     r_pl, x_pl, c_pl = median(Float64.(m400.r_per_length)),
@@ -436,13 +510,43 @@ function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
         c_ini, c_ins = get(init, k, 0.0), get(inst, k, 0.0)
         if !startswith(k[2], "ES")                        # ES ↔ foreign corridor
             max(c_ini, c_ins) > 1.0 || continue
-            raw = c_ini > 1.0 ? c_ins / c_ini : Inf
+            raw   = c_ini > 1.0 ? c_ins / c_ini : Inf
+            lines = get(corr_lines, k, String[])
+            note  = ""
+            if !(k[2] in values(NODAL_XB_COUNTRY))
+                note = "country outside the bus grid: zonal NTC only"
+            elseif !isempty(lines)                        # existing border lines
+                f = max(raw, 1.0)
+                raw < 0.99 && (note = "installed < initial; floored at 1.0")
+                f > 1.0 + 1e-6 && (for l in lines; line_scale[l] = f; end)
+            elseif haskey(xb_new, k)                      # no line: synthesise
+                mw = xb_new[k]
+                b0 = _region_anchor_bus(k[1], b2r, bus_df, line_df)
+                fb = b0 === nothing ? nothing : _nearest_foreign_bus(k[2], b0, bus_df)
+                if b0 === nothing || fb === nothing
+                    note = "no anchor bus in $(k[1]) or no $(k[2]) terminal bus"
+                else
+                    (la0, lo0) = bxy[b0]
+                    (la1, lo1) = bxy[fb.bus_id]
+                    len  = max(_haversine_km(la0, lo0, la1, lo1) * 1.3, 10.0)
+                    imax = mw / (sqrt(3) * fb.voltage)     # kA so √3·V·I = MW
+                    push!(new_rows, (line_id = "NEWXB_$(k[1])_$(k[2])",
+                                     bus0 = b0, bus1 = fb.bus_id,
+                                     voltage = fb.voltage,
+                                     circuits = 1.0, length = len, dc = "f",
+                                     r_per_length = r_pl, x_per_length = x_pl,
+                                     c_per_length = c_pl, Imax = imax))
+                    note = @sprintf("synthetic border line %s - %s (%.0f MW, %.0f km)",
+                                    b0, fb.bus_id, mw, len)
+                end
+            else
+                note = "capacity already carried by the existing border lines"
+            end
             push!(diag_rows, (from = k[1], to = k[2], initial_mw = c_ini,
                               installed_mw = c_ins,
                               factor = isfinite(raw) ? raw : NaN,
-                              n_lines = 0, kind = "xborder",
-                              note = "cross-border: enters the chain as zonal NTC; " *
-                                     "bus-grid border flows stay the fixed crossborder.csv schedule"))
+                              n_lines = length(lines), kind = "xborder",
+                              note = note))
             continue
         end
         lines = get(corr_lines, k, String[])
@@ -489,7 +593,7 @@ function nodal_line_scale(cfg; data_dir = joinpath(@__DIR__, "Data"),
                   dc = String[], r_per_length = Float64[], x_per_length = Float64[],
                   c_per_length = Float64[], Imax = Float64[]) :
         DataFrame(new_rows)
-    return (line_scale = line_scale, new_lines = new_lines,
+    return (line_scale = line_scale, new_lines = new_lines, xb_short = xb_short,
             corr_diag = sort(DataFrame(diag_rows), :installed_mw, rev = true))
 end
 
@@ -647,6 +751,7 @@ function build_nodal_disaggregation(cfg, emp; data_dir = joinpath(@__DIR__, "Dat
     b = nodal_bess_units(cfg; data_dir, line_scale = l.line_scale, new_lines = l.new_lines)
     return (unit_scale = g.scale, new_units = g.new_units,
             line_scale = l.line_scale, new_lines = l.new_lines,
+            xb_short = l.xb_short,
             bess = b, gen_diag = g.gen_diag, corr_diag = l.corr_diag)
 end
 
@@ -708,6 +813,13 @@ if abspath(PROGRAM_FILE) == @__FILE__
         @printf "  %s %-24s  EMPIRE %9.1f | fleet %9.1f\n" flag t want got
     end
     @printf "\nNew units: %d (%.1f MW) | reinforced lines: %d | new corridors: %d\n" nrow(nd.new_units) sum(nd.new_units.capacity_mw; init = 0.0) length(nd.line_scale) nrow(nd.new_lines)
+    println("\nCross-border (EMPIRE installed vs the scaled physical border):")
+    for (c, short) in sort(collect(nd.xb_short); by = first)
+        built = sum(sqrt(3) * r.voltage * r.Imax for r in eachrow(nd.new_lines)
+                    if startswith(String(r.line_id), "NEWXB_") &&
+                       endswith(String(r.line_id), "_$c"); init = 0.0)
+        @printf "  %s: shortfall %7.1f MW | synthesised %7.1f MW\n" c short built
+    end
     nbess = length(nd.bess)
     @printf "BESS sites: %d (%.1f MW / %.1f MWh)\n" nbess sum(b.power_mw for b in nd.bess; init = 0.0) sum(b.energy_mwh for b in nd.bess; init = 0.0)
     println("\nDiagnostics written to $outdir")
