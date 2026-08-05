@@ -79,6 +79,13 @@ const SOLVER      = lowercase(String(mcfg["solver"]))
 const SIM_YEAR    = Int(mcfg["sim_year"])
 const CUTS_OUT    = joinpath(@__DIR__, empire_suffixed(mcfg["cuts_out"], cfg))
 const VOLUME_OUT  = joinpath(@__DIR__, empire_suffixed(mcfg["volume_out"], cfg))
+const TURBINE_OUT = joinpath(@__DIR__, empire_suffixed(
+    get(mcfg, "turbine_out", "Data/TurbineSchedule_sddp4.csv"), cfg))
+# Hourly ES-FR / ES-PT net position of the simulated policy (import into ES
+# positive).  Consumed by the market chain only when [crossborder].source =
+# "sddp"; written unconditionally so the two exchange sources can be compared.
+const EXCHANGE_OUT = joinpath(@__DIR__, empire_suffixed(
+    get(mcfg, "exchange_out", "Data/ExchangeSchedule_sddp4.csv"), cfg))
 const DATA_DIR    = joinpath(@__DIR__, "Data")
 const SMSPP_IN    = joinpath(DATA_DIR, "smspp_in")
 const TS_DIR      = joinpath(DATA_DIR, "ts")
@@ -252,10 +259,25 @@ const ES_COST = Dict(
 iberia_therm = [(zone = u.zone, tech = u.tech, pmax = u.pmax,
                  cost = ES_COST[u.tech], src = "smspp cap / 2024 cost")
                 for u in iberia_therm]
-# ES cogeneration (CHP): ~5.5 GW real fleet producing ~20.5 TWh/yr near-baseload
-# on heat demand; represented at its average output with a heat-credited cost.
-push!(iberia_therm, (zone = "ES", tech = "Cogeneration", pmax = 2400.0, cost = 50.0,
-                     src = "added (REE 2024 CHP)"))
+# ES cogeneration / waste / mini-hydro — the OMIE "Cogeneración / Residuos /
+# Mini hidráulica" market group, absent from both smspp_in and generations.csv.
+# Sized and priced from the SAME [chp] config the market chain uses, so the
+# water values this model produces are computed against the same residual
+# demand the day-ahead stage will face.  The annual defaults are used here (the
+# per-day [chp.by_date] overrides belong to the two study days only).
+let chp = get(cfg, "chp", Dict())
+    if get(chp, "enabled", false)
+        for (key, tech) in (("gas", "Cogeneration"), ("waste", "Waste_CHP"),
+                            ("minihydro", "Mini_hydro"))
+            mw = Float64(get(chp, key * "_mw", 0.0))
+            mw > 1e-6 || continue
+            push!(iberia_therm,
+                  (zone = "ES", tech = tech, pmax = mw,
+                   cost = Float64(get(chp, key * "_cost_eur_mwh", 0.0)),
+                   src  = "added ([chp] " * key * ")"))
+        end
+    end
+end
 
 therm = vcat(iberia_therm, eur_therm)
 
@@ -436,6 +458,13 @@ if SCEN_ACTIVE
     end
 end
 EMP_INF  = Dict(z => year_matrix(df_hs, Float64.(df_hs[:, z])) for z in ("FR", "PT", "EU"))
+# ES seasonal inflow from EMPIRE: unlike FR/PT/EU it is reported per NUTS3, so
+# the national series is the sum of the ES columns.  Only used when
+# [midterm4].es_inflow_source selects it — see ES_INFLOW_SRC below.
+let es_hs = [c for c in names(df_hs) if startswith(String(c), "ES")]
+    EMP_INF["ES"] = year_matrix(df_hs,
+        vec(sum(Matrix{Float64}(df_hs[:, es_hs]), dims = 2)))
+end
 EMP_VRE  = Dict{String,Matrix{Float64}}()
 for z in ("FR", "PT", "EU")
     m  = year_matrix(df_so, Float64.(df_so[:, z])) .* caps[z]["Solar"]
@@ -472,6 +501,36 @@ println(END_PENALTY > 0 ?
              100 * END_FILL, END_PENALTY) :
     "  end-of-horizon target: none (zero terminal value → reservoirs drained)")
 
+# ── ES seasonal inflow: which dataset ────────────────────────
+# The two sources disagree on BOTH level and seasonality, and the seasonality
+# decides whether the policy releases any water in summer:
+#
+#            Jun   Jul   Aug   Sep  |  Jun-Sep   annual
+#   EDF      5.3%  3.0%  1.5%  2.2% |   12.0%   27.08 TWh/yr
+#   EMPIRE   7.4%  7.8%  5.0%  5.3% |   25.5%   21.86 TWh/yr
+#
+# Under EDF's near-dry summer a reservoir starting 30 % full refuses to release
+# any water from July to late October, which leaves the market chain's
+# day-ahead with zero reservoir hydro on 8 July 2024 against ~74 GWh actually
+# generated.  "empire_scaled" keeps EMPIRE's seasonality but rescales to the
+# SS_SeasonalStorage annual total, so the shape can be tested on its own.
+const ES_INFLOW_SRC = lowercase(String(get(mcfg, "es_inflow_source", "edf")))
+ES_INFLOW_SRC ∈ ("edf", "empire", "empire_scaled") ||
+    error("config.toml: [midterm4].es_inflow_source must be " *
+          "\"edf\", \"empire\" or \"empire_scaled\"")
+# mean MW over every hour of the EMPIRE series ⇒ its implied annual MWh
+const ES_INFLOW_SCALE = if ES_INFLOW_SRC == "empire_scaled"
+    emp_yr = mean(EMP_INF["ES"]) * 8760
+    emp_yr > 0 ? reservoirs["ES"].inflow_yr / emp_yr : 1.0
+else
+    1.0
+end
+if ES_INFLOW_SRC == "edf"
+    @printf "ES seasonal inflow: edf  (%.2f TWh/yr × EDF weekly coefficient)\n" (reservoirs["ES"].inflow_yr / 1e6)
+else
+    @printf "ES seasonal inflow: %s  (EMPIRE hydroseasonal, %.2f TWh/yr, scale ×%.3f)\n" ES_INFLOW_SRC (ES_INFLOW_SCALE * mean(EMP_INF["ES"]) * 8760 / 1e6) ES_INFLOW_SCALE
+end
+
 DEM = Array{Float64}(undef, N_STAGES, NSCEN, length(ZONES), NB)
 AVL = Array{Float64}(undef, N_STAGES, NSCEN, length(ZONES), NB)
 INF = Array{Float64}(undef, N_STAGES, NSCEN, length(RZ), NB)
@@ -492,7 +551,9 @@ for t in 1:N_STAGES, w in 1:NSCEN
         AVL[t, w, zidx["PT"], b] = emp_block(EMP_VRE["PT"], w, t, b)
         AVL[t, w, zidx["FR"], b] = emp_block(EMP_VRE["FR"], w, t, b)
         AVL[t, w, zidx["EU"], b] = emp_block(EMP_VRE["EU"], w, t, b)
-        INF[t, w, 1, b] = reservoirs["ES"].inflow_yr * edf_block(prof_inf_es, w, t, b) * BLOCK_HOURS
+        INF[t, w, 1, b] = ES_INFLOW_SRC == "edf" ?
+            reservoirs["ES"].inflow_yr * edf_block(prof_inf_es, w, t, b) * BLOCK_HOURS :
+            ES_INFLOW_SCALE * emp_block(EMP_INF["ES"], w, t, b) * BLOCK_HOURS
         INF[t, w, 2, b] = emp_block(EMP_INF["FR"], w, t, b) * BLOCK_HOURS
         INF[t, w, 3, b] = emp_block(EMP_INF["EU"], w, t, b) * BLOCK_HOURS
     end
@@ -627,10 +688,18 @@ if "cont" in ARGS && isfile(joinpath(@__DIR__, "results", "midterm4_cuts$(SCEN_S
     SDDP.read_cuts_from_file(model, joinpath(@__DIR__, "results", "midterm4_cuts$(SCEN_SUFFIX).json"))
     println("Warm-started from results/midterm4_cuts$(SCEN_SUFFIX).json")
 end
-SDDP.train(model; iteration_limit = ITERATIONS,
-           log_file = joinpath(@__DIR__, "results", "midterm4_sddp$(SCEN_SUFFIX).log"))
-lb = SDDP.calculate_bound(model)
-@printf "Training done: %d iterations, lower bound %.4e EUR\n" ITERATIONS lb
+# `export` arg: reload the trained cuts and go straight to the simulate/export
+# section, skipping training.  Used to regenerate the exported schedules (cuts,
+# volumes, turbine, exchange) after a change to the exporters alone.
+if "export" in ARGS
+    SDDP.read_cuts_from_file(model, joinpath(@__DIR__, "results", "midterm4_cuts$(SCEN_SUFFIX).json"))
+    println("Export-only: reloaded results/midterm4_cuts$(SCEN_SUFFIX).json, skipping training")
+else
+    SDDP.train(model; iteration_limit = ITERATIONS,
+               log_file = joinpath(@__DIR__, "results", "midterm4_sddp$(SCEN_SUFFIX).log"))
+    lb = SDDP.calculate_bound(model)
+    @printf "Training done: %d iterations, lower bound %.4e EUR\n" ITERATIONS lb
+end
 
 # ── simulate (volume trajectories, also folds the EU slope) ──
 w_sim = findfirst(==(SIM_YEAR), YEARS)
@@ -640,6 +709,28 @@ recorders = Dict{Symbol,Function}(
     Symbol("v", lowercase(r)) => let rr = r
         sp -> JuMP.value.([sp[:vtraj][rr, b] for b in 0:NB])
     end for r in RZ)
+# Turbine schedule per block [MW].  This is the mid-term model's own decision on
+# how much water to release, and it is what the market chain's day-ahead uses as
+# a daily energy budget: the Bellman cuts alone do not bind a single day (a day's
+# draw is ~1 % of the reservoir, over which the cuts are essentially flat), so
+# without it the DA runs reservoir hydro to its nameplate whenever the water
+# value undercuts gas.
+for r in RZ
+    recorders[Symbol("turb", lowercase(r))] =
+        let rr = r
+            sp -> JuMP.value.([sp[:turb][rr, b] for b in 1:NB])
+        end
+end
+# Cleared cross-zone exchange per block [MW], for the ES borders only.  Sign is
+# flipped to the market chain's convention (import INTO Spain positive):
+# flow[ES→FR] > 0 is a Spanish export, flow[PT→ES] > 0 is a Spanish import.
+let l_esfr = findfirst(l -> l.from == "ES" && l.to == "FR", lines),
+    l_ptes = findfirst(l -> l.from == "PT" && l.to == "ES", lines)
+    l_esfr === nothing && error("no ES→FR line in Data/Transmission.csv")
+    l_ptes === nothing && error("no PT→ES line in Data/Transmission.csv")
+    recorders[:impfr] = sp -> [-JuMP.value(sp[:flow][l_esfr, b]) for b in 1:NB]
+    recorders[:imppt] = sp -> [ JuMP.value(sp[:flow][l_ptes, b]) for b in 1:NB]
+end
 sims = SDDP.simulate(model, 1, Symbol[]; sampling_scheme = scheme,
                      custom_recorders = recorders)
 veu_out = [sims[1][t][:veu][NB + 1] for t in 1:N_STAGES]
@@ -702,6 +793,43 @@ for (t, stage) in enumerate(sims[1]), (col, k) in
 end
 CSV.write(VOLUME_OUT, vol)
 println("Wrote volume trajectory (climate year $SIM_YEAR) → $VOLUME_OUT")
+
+# ── reservoir turbine schedule (hourly, MW) ──────────────────
+# Piecewise-constant within a block (a release rate, not a stock, so it is held
+# rather than interpolated).  The market chain integrates the 24 hours of a
+# study day into that day's reservoir energy budget.
+turb_cols = Dict("ES" => "Turbine_ES_MW", "FR" => "Turbine_FR_MW",
+                 "EU" => "Turbine_EU_MW")
+tsched = DataFrame(Timestep = 0:nH)
+for r in RZ
+    tsched[!, turb_cols[r]] = zeros(nH + 1)
+end
+for (t, stage) in enumerate(sims[1]), r in RZ
+    p = stage[Symbol("turb", lowercase(r))]
+    for b in 1:NB, j in 0:BLOCK_HOURS-1
+        h = (t - 1) * 168 + (b - 1) * BLOCK_HOURS + j
+        tsched[h + 1, turb_cols[r]] = p[b]
+    end
+    t == N_STAGES && (tsched[nH + 1, turb_cols[r]] = p[NB])
+end
+CSV.write(TURBINE_OUT, tsched)
+@printf "Wrote turbine schedule → %s  (ES mean %.0f MW = %.1f GWh/day)\n" TURBINE_OUT mean(tsched.Turbine_ES_MW) (24 * mean(tsched.Turbine_ES_MW) / 1e3)
+
+# ── cross-border exchange schedule (hourly, MW, import into ES positive) ─────
+# Piecewise-constant within a block, like the turbine schedule.  Read by the
+# market chain when [crossborder].source = "sddp".
+xsched = DataFrame(Timestep = 0:nH, Import_FR_MW = zeros(nH + 1),
+                   Import_PT_MW = zeros(nH + 1))
+for (t, stage) in enumerate(sims[1]), (col, k) in
+        (("Import_FR_MW", :impfr), ("Import_PT_MW", :imppt))
+    p = stage[k]
+    for b in 1:NB, j in 0:BLOCK_HOURS-1
+        xsched[(t - 1) * 168 + (b - 1) * BLOCK_HOURS + j + 1, col] = p[b]
+    end
+    t == N_STAGES && (xsched[nH + 1, col] = p[NB])
+end
+CSV.write(EXCHANGE_OUT, xsched)
+@printf "Wrote exchange schedule → %s  (mean FR %+.0f MW | PT %+.0f MW, + = import to ES)\n" EXCHANGE_OUT mean(xsched.Import_FR_MW) mean(xsched.Import_PT_MW)
 println("\nTo use these cuts in the market chain, point [bellman] in config.toml at:")
 println("  bellman_file = \"$(mcfg["cuts_out"])\"")
 println("  volume_file  = \"$(mcfg["volume_out"])\"")

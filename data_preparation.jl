@@ -33,6 +33,12 @@ const REACTOR_MVAR_LE220KV    =  3_722.0
 const REACTOR_HV_THRESHOLD_KV = 380.0      # base_kv ≥ ⇒ "400 kV" group, else "≤220 kV"
 const REACTOR_FILE            = joinpath(DATA, "reactors.csv")
 
+# Round-trip efficiency of the pumped-storage fleet.  Unlike the Li-Ion BESS —
+# where the loss is second order at the fleet sizes involved — Spain's ~8 GW of
+# pumping cycles enough energy that a lossless store would be a free arbitrage
+# machine.  0.75 is the usual planning figure for reversible hydro.
+const PUMPED_ROUND_TRIP_EFF = 0.75
+
 const COST_MAP = Dict(
     ("Solar",   "PV")             => ("Solar",               "PV"),
     ("Solar",   "CSP")            => ("Solar",               "CSP"),
@@ -52,6 +58,41 @@ const COST_MAP = Dict(
     ("Oil",     "Combined_cycle") => ("Oil",                 "Internal Combustion"),
     ("Oil",     "Gas_turbine")    => ("Oil",                 "Internal Combustion"),
 )
+
+# ── Ramp rates (thermal units) ───────────────────────────────────────────────
+# Data/power_unit_tech_params.csv gives a sustained ramp rate per technology as
+# a PERCENT OF NAMEPLATE PER HOUR (Nuclear 20, Hard Coal 40, Gas CC 50,
+# Gas OCGT 100, Oil 40).  It is applied per unit, so the fleet-level limit is the
+# sum over units rather than a national aggregate.
+#
+# Only the technologies present in that file are limited.  Hydro (reservoir,
+# pumped, run-of-river), wind, solar, biomass and the CHP blocks carry no entry
+# and are therefore left free: hydro and inverter-based plant ramp far faster
+# than the hourly resolution can resolve, and the CHP/waste/mini-hydro blocks are
+# already pinned between their technical minimum and their block size.
+const RAMP_FILE = joinpath(DATA, "power_unit_tech_params.csv")
+const RAMP_MAP = Dict(
+    ("Nuclear", "Nuclear")        => "Nuclear",
+    ("Coal",    "Coal")           => "Hard Coal",
+    ("Gas",     "Combined_cycle") => "Gas CC",
+    ("Gas",     "Gas_turbine")    => "Gas OCGT",
+    ("Oil",     "Combined_cycle") => "Oil",
+    ("Oil",     "Gas_turbine")    => "Oil",
+)
+
+# (fuel, technology) ⇒ ramp rate as a fraction of nameplate per hour.
+# Missing key ⇒ the unit is not ramp-limited.
+function load_ramp_rates()::Dict{Tuple{String,String},Float64}
+    isfile(RAMP_FILE) || return Dict{Tuple{String,String},Float64}()
+    df  = CSV.read(RAMP_FILE, DataFrame)
+    pct = Dict(strip(String(r.Technology)) => Float64(r.Ramping_pct_per_h) / 100.0
+               for r in eachrow(df))
+    out = Dict{Tuple{String,String},Float64}()
+    for (key, tech) in RAMP_MAP
+        haskey(pct, tech) && (out[key] = pct[tech])
+    end
+    return out
+end
 
 function q_limits(pmax_pu::Float64)::Tuple{Float64,Float64}
     return (pmax_pu, -pmax_pu)   # ±Pmax: conservative fallback ensuring reactive feasibility
@@ -149,9 +190,22 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          wind_avail_mw::Float64  = Inf;
                          hydro_reservoir_cost::Union{Float64,Nothing} = nothing,
                          crossborder_inj::Union{Dict{String,Float64},Nothing} = nothing,
+                         crossborder_exports::Bool = false,
+                         # bus ⇒ nameplate MW of its border lines.  When given,
+                         # XB units are free within ±rating×line_rating_factor.
+                         # This is used by the OFFLINE hourly NTC capacity
+                         # calculation.  Redispatch omits it and therefore keeps
+                         # every DA boundary-bus injection strictly fixed.
+                         crossborder_bus_caps::Union{Dict{String,Float64},Nothing} = nothing,
                          da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          nuclear_da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          nuclear_min_frac::Float64   = 0.0,
+                         # Fraction of nuclear nameplate actually available on the
+                         # study day (planned + forced outages).  Applied to pmax,
+                         # so nuclear_min_frac remains a floor on what is
+                         # available rather than on the nameplate.  1.0 = fully
+                         # available (the previous, implicit behaviour).
+                         nuclear_availability::Float64 = 1.0,
                          voltage_band::Float64       = 0.05,
                          line_rating_factor::Float64 = 0.70,
                          reactors_enabled::Bool      = true,
@@ -186,13 +240,28 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          unit_scale_by_id::Union{Dict{String,Float64},Nothing} = nothing,
                          extra_units = nothing,
                          line_scale::Union{Dict{String,Float64},Nothing} = nothing,
-                         extra_lines = nothing)
+                         extra_lines = nothing,
+                         # Industrial cogeneration / waste / mini-hydro fleet
+                         # ([chp]; see the build block below).  Each entry is a
+                         # NamedTuple (tag, fuel, technology, power_mw, min_frac,
+                         # cost_eur_mwh) describing one national block, spread
+                         # over the largest demand buses.
+                         chp_blocks = nothing,
+                         chp_siting_buses::Int = 100,
+                         # Thermal ramp limits ([da].ramp_limits).  When true,
+                         # each unit whose (fuel, technology) appears in
+                         # Data/power_unit_tech_params.csv carries a
+                         # "ramp_mw_per_h" field; solve_da turns it into an
+                         # hour-to-hour bound on |Δpg|.  The network build itself
+                         # is unaffected — a ramp rate is not a network property.
+                         ramp_limits::Bool = false)
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
     load_df  = CSV.read(joinpath(DATA, "load.csv"),                          DataFrame)
     cost_df  = CSV.read(joinpath(DATA, "generation_cost_pypsa_2024.csv"),    DataFrame)
     xfmr_df  = CSV.read(joinpath(DATA, "transformers_reactance.csv"),        DataFrame)
+    ramp_rt  = ramp_limits ? load_ramp_rates() : Dict{Tuple{String,String},Float64}()
 
     # nodal scenario: greenfield units / synthetic corridor lines join the
     # 2024 tables before anything downstream (totals, siting, network build).
@@ -384,6 +453,29 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     end
 
     # ── Generators ───────────────────────────────────────────
+    # Pumped-storage reservoir sizing.  These units are a STORE, not a source:
+    # without an energy limit the LP runs the whole fleet flat out at its
+    # 0.036 EUR/MWh variable cost and it silently supplies ~26 % of Spanish
+    # demand as free baseload, crowding out gas and the Bellman-priced
+    # reservoir hydro.  The national usable energy comes from Data/Storage.csv
+    # (the same figure the mid-term SDDP uses) and is split across the fleet in
+    # proportion to unit power, so the country total is preserved rather than
+    # invented.  solve_da then enforces the SOC window + daily energy balance.
+    pumped_total_mw = sum((Float64(r.capacity_mw) * uscale(r)
+                           for r in eachrow(gen_df)
+                           if String(r.primary_fuel) == "Hydro" &&
+                              lowercase(String(r.technology)) == "pumped_storage");
+                          init = 0.0)
+    pumped_total_mwh = let f = joinpath(DATA, "Storage.csv")
+        if isfile(f)
+            sdf = CSV.read(f, DataFrame)
+            rows = filter(r -> String(r.Nodes) == "Spain", sdf)
+            isempty(rows) ? 0.0 : Float64(rows[1, :Energy_MWh])
+        else
+            0.0
+        end
+    end
+
     gens      = Dict{String,Any}()
     gen_count = 0
     for row in eachrow(gen_df)
@@ -394,11 +486,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             min(cap_mw, solar_avail_mw * cap_mw / total_solar_mw) / BASEMVA
         elseif row.primary_fuel == "Wind" && isfinite(wind_avail_mw) && total_wind_mw > 0
             min(cap_mw, wind_avail_mw * cap_mw / total_wind_mw) / BASEMVA
+        elseif String(row.primary_fuel) == "Nuclear"
+            cap_mw * nuclear_availability / BASEMVA
         else
             cap_mw / BASEMVA
         end
         is_reservoir = String(row.primary_fuel) == "Hydro" &&
                        lowercase(String(row.technology)) == "reservoir"
+        is_pumped    = String(row.primary_fuel) == "Hydro" &&
+                       lowercase(String(row.technology)) == "pumped_storage"
         c1 = if is_reservoir && !isnothing(hydro_reservoir_cost)
             hydro_reservoir_cost * BASEMVA
         elseif cost_override !== nothing &&
@@ -457,10 +553,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         # >= nuclear_min_frac·Pmax so baseload can't be shut down at the solar peak.
         nuc_floor = (nuclear_min_frac > 0.0 && String(row.primary_fuel) == "Nuclear") ?
                     nuclear_min_frac * pmax_pu : 0.0
-        pmin_g  = is_frozen ? frozen_pu : nuc_floor
+        # Pumped storage is bidirectional: negative pg = pumping (consumption).
+        # Its floor is therefore −Pmax, not 0 — with a 0 floor the unit can only
+        # ever generate, which is what let it run as free baseload.
+        pmin_free = is_pumped ? -pmax_pu : nuc_floor
+        pmin_g  = is_frozen ? frozen_pu : pmin_free
         pmax_g  = is_frozen ? frozen_pu : pmax_pu
-        pg_strt = frozen_pu !== nothing ? clamp(frozen_pu, 0.0, pmax_pu) :
-                  nuc_floor > 0.0       ? pmax_pu : pmax_pu/2
+        pg_strt = frozen_pu !== nothing ? clamp(frozen_pu, pmin_free, pmax_pu) :
+                  nuc_floor > 0.0       ? pmax_pu :
+                  is_pumped             ? 0.0     : pmax_pu/2
 
         gen_count += 1
         gens[string(gen_count)] = Dict{String,Any}(
@@ -484,6 +585,92 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             "cost"       => [c1, 0.0],
             "startup"    => 0.0,  "shutdown" => 0.0,
         )
+        # Sustained ramp limit [MW/h] = nameplate × the technology's percent per
+        # hour.  Sized on the INSTALLED capacity, not the hourly-derated pmax:
+        # a machine's ramp rate is a property of the plant, not of how much of it
+        # happens to be available that day.  Absent key ⇒ no limit.
+        let rr = get(ramp_rt, (String(row.primary_fuel), String(row.technology)), nothing)
+            rr === nothing || (gens[string(gen_count)]["ramp_mw_per_h"] = rr * cap_mw)
+        end
+        # Pumped storage carries its usable reservoir and round-trip efficiency
+        # so solve_da can hold it to an SOC window and a daily energy balance.
+        # Sized pro-rata on unit power out of the national Data/Storage.csv
+        # figure, so the fleet total matches the mid-term model's assumption.
+        if is_pumped && pumped_total_mw > 0 && pumped_total_mwh > 0
+            gens[string(gen_count)]["energy_mwh"] =
+                pumped_total_mwh * cap_mw / pumped_total_mw
+            gens[string(gen_count)]["eta_rt"] = PUMPED_ROUND_TRIP_EFF
+        end
+    end
+
+    # ── Industrial cogeneration / waste / mini-hydro ([chp]) ──
+    # OMIE clears these units inside one market group, "Cogeneración / Residuos
+    # / Mini hidráulica", which generations.csv does not represent at all (493 MW
+    # of Biomass against a 3.4–3.9 GW cleared block on the 2024 study days).
+    # ENTSO-E splits the same fleet by FUEL, which is how the block is sized:
+    # its gas-fired CHP half lands in "Fossil Gas" together with the CCGTs, the
+    # waste/biomass half in "Biomass"+"Waste", and mini-hydro inside "Hydro".
+    #
+    # The gas CHP block burns gas (fuel = "Gas", so emissions accounting sees
+    # it) but offers far BELOW its fuel cost: the steam is sold to the host
+    # industrial process, so most of the fuel is charged to heat rather than to
+    # electricity, and RECORE remuneration lowers the break-even pool price
+    # further.  This is why it cleared 3 115 MW at 32 EUR/MWh on 8 July while
+    # every real CCGT was at zero.  Modelling it at the CCGT cost would shut it
+    # down; modelling it as strictly must-run would deny the (weak) price
+    # response actually observed, so it is a cheap price-taking block with a
+    # technical-minimum floor set by the process steam demand.
+    #
+    # Siting: the largest `chp_siting_buses` demand buses, weighted by demand.
+    # Industrial CHP sits at industrial sites, so concentrating it on the big
+    # load buses is closer to reality than spreading it over all 1 057 of them —
+    # and it keeps the LP from growing by thousands of units.
+    if chp_blocks !== nothing && !isempty(chp_blocks)
+        sites = sort([(String(r.bus_id), Float64(r.demand)) for r in eachrow(load_df)
+                      if haskey(bus_idx, String(r.bus_id)) && Float64(r.demand) > 0.0];
+                     by = last, rev = true)
+        n_site = min(chp_siting_buses, length(sites))
+        sites  = sites[1:n_site]
+        w_sum  = sum(last, sites; init = 0.0)
+        for blk in chp_blocks
+            (blk.power_mw > 1e-6 && w_sum > 0.0) || continue
+            for (bus_id, w) in sites
+                p_mw = blk.power_mw * w / w_sum
+                p_mw > 1e-6 || continue
+                name  = String(blk.tag) * "_" * bus_id
+                p_pu  = p_mw / BASEMVA
+                lo_pu = Float64(blk.min_frac) * p_pu
+                # CHP follows process heat, not price signals, and mini-hydro
+                # follows the river: neither provides redispatch, so both are
+                # frozen at the cleared DA set-point in every later stage —
+                # the same treatment biomass and run-of-river already get.
+                da_pu = (!isnothing(da_dispatch) && haskey(da_dispatch, name)) ?
+                        da_dispatch[name] / BASEMVA : nothing
+                s_pu  = apparent_power_limit ? p_pu / rated_power_factor : p_pu
+                gen_count += 1
+                gens[string(gen_count)] = Dict{String,Any}(
+                    "index"        => gen_count,
+                    "gen_bus"      => bus_idx[bus_id],
+                    "name"         => name,
+                    "fuel"         => String(blk.fuel),
+                    "technology"   => String(blk.technology),
+                    "installed_mw" => p_mw,
+                    "pmax"         => da_pu === nothing ? p_pu  : da_pu,
+                    "pmin"         => da_pu === nothing ? lo_pu : da_pu,
+                    "pg0"          => da_pu === nothing ? p_pu  : da_pu,
+                    "pg"           => da_pu === nothing ? p_pu  : da_pu,
+                    "qmax"         => s_pu,   "qmin" => -s_pu,
+                    "smax"         => s_pu,   "qp_ratio" => Inf,
+                    "qg"           => 0.0,
+                    "vg"           => 1.0,
+                    "mbase"        => BASEMVA,
+                    "gen_status"   => 1,
+                    "model"        => 2,  "ncost" => 2,
+                    "cost"         => [Float64(blk.cost_eur_mwh) * BASEMVA, 0.0],
+                    "startup"      => 0.0,  "shutdown" => 0.0,
+                )
+            end
+        end
     end
 
     # Slack generator (balancing unit, very high cost)
@@ -506,8 +693,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         "startup"    => 0.0,  "shutdown" => 0.0,
     )
 
-    # ── Cross-border exchange (fixed market-cleared imports only) ──
-    # Only positive net injections (imports into Spain) are modelled as fixed
+    # ── Cross-border exchange (fixed market-cleared injections) ──
+    # crossborder_exports = false (legacy crossborder.csv / SMS++-anchor path):
+    # only positive net injections (imports into Spain) are modelled as fixed
     # generators.  Negative values (Spanish exports, e.g. to Portugal) are skipped:
     # the SMS++ intraday market clearing (used as the redispatch anchor) cleared
     # Spanish generators against domestic load + FR imports only — it placed the
@@ -515,11 +703,23 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     # Injecting the PT export as a fixed withdrawal would create a 1–4 GW gap
     # between the OPF's required generation and the anchor's reference schedule,
     # forcing the optimizer to massively deviate from the market dispatch.
+    # crossborder_exports = true (4-zone DA source): the ES market cleared WITH
+    # the exchange as a decision, so exports must bind too — negative injections
+    # become fixed withdrawals (pmin = pmax < 0) at the border buses, and the
+    # XB generators exist in every hour (stable generator keys across hours).
     if !isnothing(crossborder_inj)
+        bus_country = Dict(String(r.bus_id) => String(r.country) for r in eachrow(bus_df))
         for (bus_id, mw) in crossborder_inj
             haskey(bus_idx, bus_id) || continue
-            mw > 0 || continue          # skip exports (negative net injections)
+            (crossborder_exports || mw > 0) || continue   # legacy: skip exports
             p_pu  = mw / BASEMVA
+            # Free-split mode: bounds = ±(border-line rating, derated); the
+            # reactive box follows the active bound.
+            cap_pu = crossborder_bus_caps === nothing ? nothing :
+                     get(crossborder_bus_caps, bus_id, 0.0) * line_rating_factor / BASEMVA
+            lo = cap_pu === nothing ? p_pu : -cap_pu
+            hi = cap_pu === nothing ? p_pu :  cap_pu
+            qb = cap_pu === nothing ? abs(p_pu) : cap_pu
             gen_count += 1
             gens[string(gen_count)] = Dict{String,Any}(
                 "index"        => gen_count,
@@ -527,9 +727,10 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                 "name"         => "XB_" * bus_id,
                 "fuel"         => "CrossBorder",
                 "technology"   => "Interconnector",
-                "installed_mw" => mw,
-                "pmax"       => p_pu,   "pmin" => p_pu,
-                "qmax"       => p_pu,   "qmin" => -p_pu,
+                "country"      => get(bus_country, bus_id, "?"),
+                "installed_mw" => abs(mw),
+                "pmax"       => hi,     "pmin" => lo,
+                "qmax"       => qb,     "qmin" => -qb,
                 "pg"         => p_pu,   "qg"   => 0.0,
                 "vg"         => 1.0,
                 "mbase"      => BASEMVA,

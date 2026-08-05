@@ -24,12 +24,125 @@ the redispatch is the only stage with a full AC network.
 | 6 | **Redispatch (RD)** | — | AC or DC OPF (`[redispatch].power_flow`), anchored to BAL | `[redispatch]` |
 
 The forecast columns live in the new `Data/ES/<resource>/` files; actual MW at
-each stage is `ES_old "-12" baseline × stage scale-factor`. Each intraday and
+each stage is `ES_old "-12" baseline × stage scale-factor` (sampled-week
+scenario runs instead use the EMPIRE ScenarioData weather as the DA baseline
+with the dated `Data/ES` factors on top — see `[weeks]`).
+
+**4-zone DA (sampled weeks)**: in `[weeks]` mode the day-ahead is a **joint
+ES/PT/FR/EU clearing** (`foreign_zones.jl` + the `foreign` block in `da.jl`):
+the foreign zones are per-tech aggregates of the EMPIRE scenario fleet coupled
+on the PT–ES–FR–EU chain by NTC-bounded flow variables, with the ES–FR/ES–PT
+limits calculated offline by `ntc_capacity.jl`. For every hour it solves a
+zero-exchange DC reference case, applies a fixed downward-headroom GSK for
+imports and an optimised corrective-redispatch GSK for exports/transit,
+finds four asymmetric directional limits, and tests every joint ES–FR/ES–PT
+corner to prevent an individually valid pair of limits from admitting an
+undeliverable FR→ES→PT transit. A further `[weeks.ntc].reliability_margin` is
+then applied. The DA still receives only four scalar NTC bounds—no Spanish
+branch or PTDF constraint enters market clearing.
+
+The cleared hourly ES–FR/ES–PT net positions are **fixed** for every later gate
+and the redispatch. Their border-bus allocation is also fixed using the
+scenario border ratings; border buses cannot reverse independently and there
+is no countertrade feasibility slack. Capacity diagnostics are cached in
+`results/<label>/hourly_ntc.csv`; exchange, the applied directional limits and
+zonal prices are written to `results/<label>/xb_flows.csv`. Set
+`[weeks.ntc].enabled=false` to use the legacy symmetric
+`[weeks].xb_ntc_margin` fallback.
+
+## Cross-border exchange (2024 path)
+
+**The Spanish load series already contains the net export.** `Data/ES_old/load`
+column `-12` is ENTSO-E total consumption for Spain, and
+`Data/OMIE/actual_generation_*.csv` balances its generation columns plus the FR
+import column against exactly that series — to 0.0 GWh, in all 48 study hours,
+with no Portugal term at all. Exports must therefore be **relocated** to the
+border, never **added** to the balance; adding them injects ~60 GWh/day of
+demand that does not exist and dumps all of it on CCGT.
+
+What was wrong was only the *location*: the export was spread over the 1 227
+Spanish load buses in proportion to demand, so the AC redispatch saw 5–10 MW on
+the Portuguese border lines against a real 0.7–3.9 GW export, and exactly 0 MW
+on the French ones in the six export hours of 8 July.
+
+`[crossborder].export_at_border = true` subtracts the export from the
+distributed Spanish load and places it as a fixed withdrawal at the FR/PT
+terminal buses, split by line thermal rating. Total load is unchanged, so the
+copper-plate gates clear identically (verified to the euro) and only the
+redispatch differs. Full derivation and evidence in
+[`docs/method_export_relocation.md`](docs/method_export_relocation.md).
+
+In `[weeks]` mode this does not apply: the ES demand comes from EMPIRE
+ScenarioData and carries no exchange, so the 4-zone DA's cleared export is a
+genuine addition.
+
+## Nuclear availability
+
+Thermal units carry no availability derating by default — `pmax = capacity_mw` —
+so the nuclear fleet would otherwise sit on the bar at its full nameplate every
+hour of every day. `[da].nuclear_availability` scales nuclear `pmax` by the
+fraction of the fleet actually available (planned refuelling + forced outages);
+`[da].nuclear_min_gen_frac` then acts as a floor on that *available* capacity
+rather than on the nameplate.
+
+Because a single annual factor cannot match two days that sat at very different
+availability, `[da.nuclear_availability_by_date]` overrides it per study day:
+
+```toml
+[da]
+nuclear_min_gen_frac = 0.8
+nuclear_availability = 0.85          # default for unlisted days
+
+[da.nuclear_availability_by_date]
+"2024-07-08" = 0.93
+"2024-12-02" = 0.69
+```
+
+The two 2024 figures are taken from the OMIE cleared programme against the
+7 408 MW nameplate in `Data/generations.csv`. (TOML requires the sub-table to
+come after every scalar key of `[da]`.)
+
+## Storage (pumped hydro and Li-Ion BESS)
+
+Both storage families are held to an **intra-day SOC window plus a daily energy
+balance** in every market gate (`solve_da`, `da.jl`): starting half-full, the
+state of charge must stay inside `[0, E]` and return to its opening level by the
+end of the day. A store therefore only *shifts* energy within the day — it never
+supplies net energy. This matters because a store's variable cost is near zero
+(pumped hydro is 0.036 EUR/MWh in `generation_cost_pypsa_2024.csv`): without the
+energy limit the LP runs the whole fleet flat out and it silently becomes the
+cheapest baseload on the system.
+
+| | Power bounds | Reservoir `E` | Round trip |
+| - | - | - | - |
+| Pumped hydro | `pmin = −pmax` (negative `pg` = pumping) | national figure from `Data/Storage.csv`, split pro-rata on unit power | `PUMPED_ROUND_TRIP_EFF` = 0.75 |
+| Li-Ion BESS | `pmin = −pmax` | per-unit, from the EMPIRE scenario | lossless |
+
+Units with a round-trip efficiency below 1 split `pg` into non-negative
+discharge/charge legs so the loss is charged to the reservoir
+(`drawdown = p_dis/η_d − p_chg·η_c`, `η_d = η_c = √η_rt`). Running both legs at
+once always drains the reservoir on net, so the LP never does it and no
+complementarity constraint is needed. Lossless units keep the original
+single-variable form.
+
+The **redispatch** stage has no SOC constraint — it solves hour by hour, so
+storage there is free within its power band and held near its market schedule by
+the anchor term only.
+
+Each intraday and
 balancing gate is an **adjustment** market, not a fresh re-clear: it minimises
 dispatch cost first (merit order), then — among cost-optimal solutions —
 minimises total movement from the previous gate's schedule, so flexible units
 only move to cover the genuine net forecast change. Nuclear is frozen at its DA
 dispatch from ID2 onward.
+
+**Market prices** are written to `results/<label>/market_prices.csv` (long
+format: `date, hour, stage, price_eur_mwh`) — the marginal price of the ES
+copper-plate balance at each gate. They are read from the *cost* solve: the
+lexicographic pass that follows replaces the objective with total movement, so
+after it the same duals price a MW of movement rather than a MWh of energy. A
+gate only prices the hours it actually trades, so ID3 contributes hours 12–23 and
+each rolling CID gate contributes the single hour it commits.
 
 **Balancing (stage 5)** is the final adjustment market, cleared after the
 continuous intraday and just before the redispatch. It reads the probabilistic

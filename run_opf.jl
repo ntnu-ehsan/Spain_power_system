@@ -38,9 +38,16 @@ include("empire_scenario.jl")
 include("empire_nodal.jl")
 include("week_sampling.jl")
 include("week_profiles.jl")
+include("foreign_zones.jl")
+include("ntc_capacity.jl")
 
 # ── 1. Config ────────────────────────────────────────────────
-cfg = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
+# SPAIN_CONFIG lets a run point at an alternative config file (A/B experiments)
+# without editing the tracked config.toml; unset ⇒ the tracked one.
+const CONFIG_PATH = get(ENV, "SPAIN_CONFIG", joinpath(@__DIR__, "config.toml"))
+cfg = TOML.parsefile(CONFIG_PATH)
+CONFIG_PATH == joinpath(@__DIR__, "config.toml") ||
+    @printf "Config         : %s\n" CONFIG_PATH
 
 const BELLMAN_BGN_DATE = Date(cfg["bellman"]["bgn_date"])
 const BELLMAN_SSV_STEP = cfg["bellman"]["ssv_step"]
@@ -54,7 +61,26 @@ const SCEN_ACTIVE = empire_active(cfg)
 const SCEN_LABEL  = empire_label(cfg)
 const EMP           = SCEN_ACTIVE ? load_empire_scenario(cfg)  : nothing
 const UNIT_SCALE    = SCEN_ACTIVE ? empire_unit_scale(EMP)     : nothing
-const COST_OVERRIDE = SCEN_ACTIVE ? empire_cost_override(EMP)  : nothing
+const COST_OVERRIDE = let
+    ov = SCEN_ACTIVE ? empire_cost_override(EMP) : Dict{Tuple{String,String},Float64}()
+    # [costs].gas_from_midterm: take the ES gas marginal cost from
+    # [midterm4.gas_cost] instead of generation_cost_pypsa_2024.csv, so the
+    # market chain and the mid-term model price gas identically.  This matters
+    # because the Bellman water value the chain imports IS the mid-term's gas
+    # cost (the ES cut slopes sit at exactly 78.00 = [midterm4.gas_cost].ccgt.ES).
+    # Against the pypsa figure of 93.16 that hands reservoir hydro a 15 EUR/MWh
+    # advantage it should not have, and the day-ahead runs it to nameplate.
+    # Scenario runs keep the EMPIRE costs — their gas comes from EMPIRE's own
+    # marginal_costs.csv plus the CO2 adder, not from this table.
+    if !SCEN_ACTIVE && get(get(cfg, "costs", Dict()), "gas_from_midterm", false)
+        gc = get(get(cfg, "midterm4", Dict()), "gas_cost", Dict())
+        haskey(gc, "ccgt") && haskey(gc["ccgt"], "ES") &&
+            (ov[("Gas", "Combined_cycle")] = Float64(gc["ccgt"]["ES"]))
+        haskey(gc, "ocgt") && haskey(gc["ocgt"], "ES") &&
+            (ov[("Gas", "Gas_turbine")] = Float64(gc["ocgt"]["ES"]))
+    end
+    isempty(ov) ? nothing : ov
+end
 # [scenario].disaggregation: "nodal" (default) maps the EMPIRE expansion onto
 # the grid at NUTS3 resolution — per-unit capacity factors, greenfield units,
 # intra-ES corridor reinforcement of line ratings, and regional BESS siting
@@ -78,6 +104,23 @@ const BELLMAN_FILE = joinpath(@__DIR__, SCEN_ACTIVE ?
     empire_suffixed(cfg["midterm4"]["cuts_out"], cfg)   : cfg["bellman"]["bellman_file"])
 const VOLUME_FILE  = joinpath(@__DIR__, SCEN_ACTIVE ?
     empire_suffixed(cfg["midterm4"]["volume_out"], cfg) : cfg["bellman"]["volume_file"])
+# Hourly reservoir turbine schedule from the mid-term SDDP.  Integrated over
+# each study day it becomes that day's reservoir energy budget in the market
+# stages (see bellman.jl → reservoir_day_budget).  Empty string / missing file
+# ⇒ no budget, i.e. the cuts alone govern (the pre-2026-08 behaviour).
+const TURBINE_FILE = let f = get(cfg["bellman"], "turbine_file",
+                                 get(cfg["midterm4"], "turbine_out", ""))
+    isempty(String(f)) ? "" : joinpath(@__DIR__, empire_suffixed(String(f), cfg))
+end
+const HYDRO_BUDGET_ENABLED = get(cfg["bellman"], "hydro_budget", true)
+# "week" (default) shares the mid-term model's WEEKLY release evenly over the
+# week; "day" takes the literal 24-hour slice.  Weekly is the safe default: the
+# SDDP's shaping inside a week is close to arbitrary for a single day (the
+# 2024-07-08 slice is 0 MWh in a week that releases 268 GWh).
+const HYDRO_BUDGET_BASIS = Symbol(lowercase(String(
+    get(cfg["bellman"], "hydro_budget_basis", "week"))))
+HYDRO_BUDGET_BASIS ∈ (:week, :day) ||
+    error("config.toml: [bellman].hydro_budget_basis must be \"week\" or \"day\"")
 
 const VOLTAGE_BAND       = Float64(get(get(cfg, "network", Dict()), "voltage_band", 0.05))
 const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
@@ -107,7 +150,27 @@ end
 @printf "Line rating    : %.0f %% of nameplate\n" (100 * LINE_RATING_FACTOR)
 
 const CROSSBORDER = get(get(cfg, "crossborder", Dict()), "enabled", false)
-@printf "Cross-border   : %s\n" (CROSSBORDER ? "ON" : "OFF")
+# [crossborder].export_at_border — RELOCATE the export, do not add it.
+# The ES load series already contains the net export (verified against
+# Data/OMIE/actual_generation_*.csv, which balances generation + imports against
+# exactly this load in all 48 study hours), so the energy is present — but it is
+# spread over the 1 227 Spanish load buses in proportion to demand instead of
+# leaving through the border.  With this on, the export MW is subtracted from
+# the distributed Spanish load and placed as a fixed WITHDRAWAL at the FR/PT
+# terminal buses.  Total load is unchanged, so the copper-plate market stages
+# are numerically identical; only the AC redispatch sees a difference.
+const XB_EXPORT_AT_BORDER =
+    get(get(cfg, "crossborder", Dict()), "export_at_border", false)
+# [crossborder].source — "observed" (Data/crossborder.csv, the settled 2024
+# schedule) or "sddp" (the mid-term model's own cleared exchange, read from the
+# hourly schedule midterm_sddp4.jl exports alongside the turbine schedule).
+const XB_SOURCE = lowercase(String(get(get(cfg, "crossborder", Dict()),
+                                       "source", "observed")))
+XB_SOURCE in ("observed", "sddp") ||
+    error("config.toml: [crossborder].source must be \"observed\" or \"sddp\"")
+@printf "Cross-border   : %s\n" (CROSSBORDER ?
+    @sprintf("ON  source=%s  exports=%s", XB_SOURCE,
+             XB_EXPORT_AT_BORDER ? "relocated to border buses" : "left inside the ES load") : "OFF")
 
 # ── Market-chain stages ──────────────────────────────────────
 # Stage 1 (DA):  copper-plate, 24h Bellman-coupled, DA forecast (-12h) data.
@@ -119,6 +182,55 @@ const CROSSBORDER = get(get(cfg, "crossborder", Dict()), "enabled", false)
 #                BESS free within ±rated power, anchored to its BAL schedule.
 const DA_ENABLED  = get(get(cfg, "da",         Dict()), "enabled", true)
 const NUCLEAR_MIN_FRAC = Float64(get(get(cfg, "da", Dict()), "nuclear_min_gen_frac", 0.0))
+# Nuclear availability (planned + forced outages) as a fraction of nameplate.
+# [da].nuclear_availability is the default; [da.nuclear_availability_by_date]
+# overrides it per study day, because a single annual factor cannot match two
+# days that sat at very different fleet availability.
+const NUCLEAR_AVAIL = Float64(get(get(cfg, "da", Dict()), "nuclear_availability", 1.0))
+const NUCLEAR_AVAIL_BY_DATE = Dict{String,Float64}(
+    String(k) => Float64(v) for (k, v) in
+        get(get(cfg, "da", Dict()), "nuclear_availability_by_date", Dict{String,Any}()))
+nuclear_avail_for(date_str) = get(NUCLEAR_AVAIL_BY_DATE, String(date_str), NUCLEAR_AVAIL)
+# [da].ramp_limits — hour-to-hour ramp bounds on the thermal fleet, from the
+# per-technology percent-of-nameplate rates in Data/power_unit_tech_params.csv.
+# Applies to every copper-plate gate (DA, ID2, ID3, the rolling CID gates and
+# balancing), since they share solve_da; the hour-by-hour AC redispatch is
+# unaffected.
+const RAMP_LIMITS = get(get(cfg, "da", Dict()), "ramp_limits", false)
+@printf "Ramp limits    : %s\n" (RAMP_LIMITS ?
+    "ON (Data/power_unit_tech_params.csv, thermal only)" : "OFF")
+
+# ── Industrial cogeneration / waste / mini-hydro ([chp]) ────────────────────
+# The OMIE "Cogeneración / Residuos / Mini hidráulica" market group, absent from
+# generations.csv.  Three blocks with independent sizes, offer prices and
+# technical minima; sizes may be overridden per study day.  See [chp] in
+# config.toml for how each figure is derived from OMIE vs ENTSO-E.
+const CHP_CFG     = get(cfg, "chp", Dict())
+const CHP_ENABLED = get(CHP_CFG, "enabled", false)
+const CHP_SITING_BUSES = Int(get(CHP_CFG, "siting_buses", 100))
+const CHP_BY_DATE = get(CHP_CFG, "by_date", Dict{String,Any}())
+# (config key prefix, fuel, technology) for each block.  The gas block keeps
+# fuel = "Gas" so emissions accounting sees it, despite its low offer price.
+const CHP_SPEC = (("gas",       "Gas",     "CHP"),
+                  ("waste",     "Biomass", "CHP_Waste"),
+                  ("minihydro", "Hydro",   "mini_hydro"))
+function chp_blocks_for(date_str)
+    CHP_ENABLED || return nothing
+    day = get(CHP_BY_DATE, String(date_str), Dict{String,Any}())
+    blocks = NamedTuple[]
+    for (key, fuel, tech) in CHP_SPEC
+        mw = Float64(get(day, key * "_mw", get(CHP_CFG, key * "_mw", 0.0)))
+        mw > 1e-6 || continue
+        push!(blocks, (tag          = uppercase(key),
+                       fuel         = fuel,
+                       technology   = tech,
+                       power_mw     = mw,
+                       min_frac     = Float64(get(CHP_CFG, key * "_min_frac", 0.0)),
+                       cost_eur_mwh = Float64(get(CHP_CFG, key * "_cost_eur_mwh", 0.0))))
+    end
+    isempty(blocks) ? nothing : blocks
+end
+
 const ID2_ENABLED = get(get(cfg, "id2",        Dict()), "enabled", true)
 const ID3_ENABLED = get(get(cfg, "id3",        Dict()), "enabled", true)
 const CID_ENABLED = get(get(cfg, "cid",        Dict()), "enabled", true)
@@ -220,9 +332,11 @@ if WEEKS_ACTIVE
         @printf "  slot %d : study %s (SDDP week %d) | weather %s (climate year %d, rows %d-%d)\n" r.slot Dates.format(r.study_start, "yyyy-mm-dd") r.week_slot Dates.format(r.data_start, "yyyy-mm-dd") r.climate_year r.row_start (r.row_start + WEEK_HOURS - 1)
     end
     # crossborder.csv only covers the two 2024 study days; the sampled horizon
-    # gets its exchange from the 4-zone DA clearing once that stage lands.
+    # gets its exchange from the joint 4-zone DA clearing instead (the cleared
+    # ES–FR / ES–PT net positions are fixed for every later gate).
     CROSSBORDER && error("[weeks]: [crossborder] fixed injections exist only for " *
-                         "the 2024 study days — disable it for sampled weeks")
+                         "the 2024 study days — the sampled horizon clears its own " *
+                         "exchange in the 4-zone DA; disable [crossborder]")
 end
 # [redispatch].only may pin the whole run to a single day so the market stages,
 # Bellman pre-compute and load flow all skip the other TARGET_DAY.
@@ -259,14 +373,19 @@ end
 if WEEKS_ACTIVE
     # [weeks]: gate profiles come from the ScenarioData weather of the sampled
     # horizon (week_profiles.jl) — same table shape as the 2024 path below, with
-    # the vintage factors season-matched to the 2024 study days until dated
-    # files appear under Data/ES/.
+    # the vintage factors taken from the dated Data/ES/ file of each study day
+    # (full-year 2024 coverage; only Jan 1 / Dec 30 / Dec 31 season-match).
     wk_tables  = week_stage_tables(cfg, EMP, WEEK_KEY)
-    hourly_da  = wk_tables["DA"]
-    hourly_id2 = wk_tables["ID2"]
-    hourly_id3 = wk_tables["ID3"]
-    hourly_cid = wk_tables["CID"]
-    hourly_bal = wk_tables["BE"]
+    # [redispatch].only may have pinned TARGET_DAYS to a single day — restrict
+    # the profile tables to it too (the 2024 path gets this for free because
+    # its tables are built FROM TARGET_DAYS; the weeks tables cover the whole
+    # sampled horizon).
+    _days      = Set(TARGET_DAYS)
+    hourly_da  = filter(r -> r.date in _days, wk_tables["DA"])
+    hourly_id2 = filter(r -> r.date in _days, wk_tables["ID2"])
+    hourly_id3 = filter(r -> r.date in _days, wk_tables["ID3"])
+    hourly_cid = filter(r -> r.date in _days, wk_tables["CID"])
+    hourly_bal = filter(r -> r.date in _days, wk_tables["BE"])
 else
     hourly_da_rows  = NamedTuple[]
     hourly_id2_rows = NamedTuple[]
@@ -322,8 +441,10 @@ print_profile_summary("BAL", hourly_bal)
 # ── 3. Solver setup ──────────────────────────────────────────
 PowerModels.silence()
 # Scenario runs write to results/<label>/ so the 2024 outputs stay untouched.
-RESULTS = SCEN_ACTIVE ? joinpath(@__DIR__, "results", SCEN_LABEL) :
-                        joinpath(@__DIR__, "results")
+# SPAIN_RESULTS overrides the destination entirely (A/B experiment runs).
+RESULTS = get(ENV, "SPAIN_RESULTS",
+              SCEN_ACTIVE ? joinpath(@__DIR__, "results", SCEN_LABEL) :
+                            joinpath(@__DIR__, "results"))
 mkpath(RESULTS)
 
 # Per-solve Ipopt logs, written here so infeasible hours can be diagnosed.
@@ -564,15 +685,28 @@ for date_str in TARGET_DAYS
     v_fr  = v_fr_at_date(VOLUME_FILE, date_str, BELLMAN_BGN_DATE)
     cuts  = load_cuts_at_stage(BELLMAN_FILE, stage, v_fr)
     wv    = binding_water_value(cuts, v_es)
-    day_bellman[date_str] = (stage=stage, cuts=cuts, v_es=v_es, v_fr=v_fr, water_value=wv)
+    budget = (HYDRO_BUDGET_ENABLED && TURBINE_FILE != "") ?
+             reservoir_day_budget(TURBINE_FILE, date_str, BELLMAN_BGN_DATE;
+                                  basis = HYDRO_BUDGET_BASIS,
+                                  ssv_step = BELLMAN_SSV_STEP) : nothing
+    day_bellman[date_str] = (stage=stage, cuts=cuts, v_es=v_es, v_fr=v_fr,
+                             water_value=wv, budget=budget)
     @printf "  %s : stage=%d  V_ES=%.0f MWh  V_FR=%.0f MWh  water_value=%.2f EUR/MWh\n" date_str stage v_es v_fr wv
+    @printf "                 reservoir budget: %s\n" (budget === nothing ?
+        "none (cuts only)" : @sprintf("%.1f GWh/day (mid-term schedule)", budget / 1e3))
 end
 
 # ── 6b. Cross-border exchange pre-load ───────────────────────
+# Two exchange sources, mutually exclusive:
+#   • [crossborder] (2024 path): fixed schedule from Data/crossborder.csv;
+#   • weeks mode: the joint 4-zone DA clears the exchange itself — its hourly
+#     ES–FR / ES–PT net positions land in `xb_da_inj` after the DA stage and
+#     are FIXED for every later gate and the redispatch (exports included).
+# Both are disaggregated over the border buses by line thermal rating.
 xb_data  = Dict{String,Dict{Int,@NamedTuple{FR::Float64, PT::Float64}}}()
 xb_fracs = Dict{String,Dict{String,Float64}}()
-if CROSSBORDER
-    xb_data  = load_crossborder()
+xb_da_inj = Dict{Tuple{String,Int},Dict{String,Float64}}()   # (date,hour) ⇒ bus ⇒ MW
+if CROSSBORDER || WEEKS_ACTIVE
     # Nodal scenario: split the exchange over the SCENARIO border (expanded
     # corridors + synthetic ones), not the 2024 one.
     xb_fracs = crossborder_bus_fractions(line_scale = LINE_SCALE,
@@ -581,6 +715,14 @@ if CROSSBORDER
     for (c, bf) in sort(collect(xb_fracs); by = first)
         @printf "  %s border buses: %s\n" c join(sort(collect(keys(bf))), ", ")
     end
+end
+if CROSSBORDER
+    xb_data = XB_SOURCE == "sddp" ?
+        load_midterm_exchange(joinpath(@__DIR__, empire_suffixed(
+                                  get(cfg["bellman"], "exchange_file",
+                                      "Data/ExchangeSchedule_sddp4.csv"), cfg)),
+                              TARGET_DAYS, BELLMAN_BGN_DATE) :
+        load_crossborder()
     for date_str in TARGET_DAYS
         nets = xb_data[date_str]
         fr = extrema(t.FR for t in values(nets)); pt = extrema(t.PT for t in values(nets))
@@ -588,8 +730,114 @@ if CROSSBORDER
     end
 end
 
+# FR/PT/EU hourly series of the sampled horizon (4-zone DA input), and the
+# physical bus-level border ratings that cap the DA's ES–FR / ES–PT NTC at
+# what the AC network can deliver (see foreign_day).
+FOREIGN_SERIES = WEEKS_ACTIVE ? foreign_week_series(cfg, EMP, WEEK_KEY) : nothing
+BORDER_MW = WEEKS_ACTIVE ?
+    crossborder_border_ratings(line_scale = LINE_SCALE, extra_lines = EXTRA_LINES) : nothing
+# Per-bus border-line nameplate MW.  The hourly NTC preprocessor uses these as
+# bounds while preserving fixed rating-proportional boundary shares.
+XB_BUS_CAPS = WEEKS_ACTIVE ?
+             Dict(bus => mw for (_, busw) in
+             crossborder_bus_ratings(line_scale = LINE_SCALE, extra_lines = EXTRA_LINES)
+         for (bus, mw) in busw) : nothing
+WEEKS_ACTIVE && @printf "  physical border nameplate: FR %.0f MW | PT %.0f MW\n" BORDER_MW["FR"] BORDER_MW["PT"]
+
+# Hourly coordinated directional NTCs are calculated before DA.  The DC grid is
+# used only here; solve_da receives ordinary scalar border bounds.
+NTC_CFG = get(get(cfg, "weeks", Dict()), "ntc", Dict())
+NTC_HOURLY_ENABLED = WEEKS_ACTIVE && get(NTC_CFG, "enabled", true)
+NTC_HOURLY = Dict{Tuple{String,Int},Any}()
+if NTC_HOURLY_ENABLED && RUN_MARKET
+    ntc_reliability = Float64(get(NTC_CFG, "reliability_margin", 0.90))
+    ntc_reuse = get(NTC_CFG, "reuse", true)
+    ntc_cache = joinpath(RESULTS, String(get(NTC_CFG, "cache_file", "hourly_ntc.csv")))
+    commercial_caps = Dict(
+        "FR" => min(get(EMP.ntc, ("ES", "FR"), 0.0),
+                    BORDER_MW["FR"] * LINE_RATING_FACTOR),
+        "PT" => min(get(EMP.ntc, ("PT", "ES"), 0.0),
+                    BORDER_MW["PT"] * LINE_RATING_FACTOR),
+    )
+    zero_xb = Dict(bus => 0.0 for bus in keys(XB_BUS_CAPS))
+    function ntc_network_builder(ts)
+        prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
+                        hydro_reservoir_cost = 0.0,
+                        crossborder_inj = zero_xb,
+                        crossborder_exports = true,
+                        crossborder_bus_caps = XB_BUS_CAPS,
+                        nuclear_min_frac = NUCLEAR_MIN_FRAC,
+                        nuclear_availability = nuclear_avail_for(ts.date),
+                        chp_blocks = chp_blocks_for(ts.date),
+                        chp_siting_buses = CHP_SITING_BUSES,
+                        voltage_band = VOLTAGE_BAND,
+                        line_rating_factor = LINE_RATING_FACTOR,
+                        reactors_enabled = false,
+                        reactor_in_service_pct = 0.0,
+                        load_power_factor = LOAD_PF,
+                        apparent_power_limit = APPARENT_POWER_LIMIT,
+                        rated_power_factor = RATED_PF,
+                        renewable_power_factor = RENEWABLE_PF,
+                        gen_bus_voltage_control = false,
+                        unit_scale = UNIT_SCALE,
+                        cost_override = COST_OVERRIDE,
+                        bess_units = BESS_UNITS,
+                        unit_scale_by_id = UNIT_SCALE_ID,
+                        extra_units = EXTRA_UNITS,
+                        line_scale = LINE_SCALE,
+                        extra_lines = EXTRA_LINES)
+    end
+    println("\nHourly coordinated directional NTC preprocessing:")
+    NTC_HOURLY, _ = derive_hourly_ntcs(
+        hourly_da, ntc_network_builder, xb_fracs, commercial_caps;
+        line_rating_factor = LINE_RATING_FACTOR,
+        reliability_margin = ntc_reliability,
+        cache_file = ntc_cache,
+        reuse = ntc_reuse)
+elseif WEEKS_ACTIVE
+    static_margin = Float64(get(cfg["weeks"], "xb_ntc_margin", 0.65))
+    @printf "  Hourly NTC preprocessing OFF; using symmetric static margin %.2f\n" static_margin
+end
+
+# Store one day's cleared 4-zone exchange as fixed border-bus injections.
+function store_xb_da!(date_str, xb)
+    for (h_idx, net) in enumerate(xb)
+        inj = Dict{String,Float64}()
+        for (c, tot) in (("FR", net.FR), ("PT", net.PT))
+            for (bus, f) in xb_fracs[c]
+                inj[bus] = get(inj, bus, 0.0) + tot * f
+            end
+        end
+        xb_da_inj[(date_str, h_idx - 1)] = inj
+    end
+end
+
 crossborder_inj_for(date_str, hour) =
-    CROSSBORDER ? crossborder_injections(xb_data, xb_fracs, date_str, hour) : nothing
+    CROSSBORDER   ? crossborder_injections(xb_data, xb_fracs, date_str, hour) :
+    WEEKS_ACTIVE  ? get(xb_da_inj, (date_str, hour), nothing) : nothing
+
+# ── Export relocation ([crossborder].export_at_border) ───────────────────────
+# MW of net EXPORT in this hour, summed over the borders that are exporting.
+# The ES load series already contains it (see XB_EXPORT_AT_BORDER above), so it
+# is SUBTRACTED from the load spread over the Spanish buses and re-injected as a
+# withdrawal at the FR/PT terminal buses by prepare_network.  The two cancel in
+# the copper-plate power balance:
+#
+#     Σ domestic gen + imports − exports = (load − exports)
+#  ⇒  Σ domestic gen + imports          =  load          (unchanged)
+#
+# so DA/ID2/ID3/CID/BAL clear exactly as before and only the AC redispatch — the
+# one stage that cares where the power leaves the country — sees a difference.
+#
+# Weeks mode is excluded: there the ES demand comes from EMPIRE ScenarioData and
+# does NOT contain the exchange, which the 4-zone DA clears as a decision, so the
+# export is a genuine addition rather than a relocation.
+function xb_export_offset(date_str, hour)::Float64
+    (XB_EXPORT_AT_BORDER && CROSSBORDER && !WEEKS_ACTIVE) || return 0.0
+    net = get(get(xb_data, date_str, Dict()), hour, nothing)
+    net === nothing && return 0.0
+    return max(0.0, -net.FR) + max(0.0, -net.PT)
+end
 
 # ── 6c. Stage 1 — Day-ahead copper-plate dispatch ─────────────
 # Solve each day's 24-hour energy-only economic dispatch (no network limits)
@@ -633,6 +881,11 @@ id2_rows_all = []
 id3_rows_all = []
 cid_rows_all = []
 bal_rows_all = []
+# Marginal price of the copper-plate ES balance at every gate that cleared an
+# hour [EUR/MWh] → results/market_prices.csv.  Gates only price the hours they
+# actually trade, so ID3 contributes hours 12–23 and each CID gate contributes
+# the single hour it commits.
+price_rows_all = []
 da_schedule  = Dict{Tuple{String,Int},Dict{String,Float64}}()
 id2_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 id3_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
@@ -643,12 +896,18 @@ bal_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 # nuclear_sched: the full da_schedule dict — when provided, Nuclear units are frozen
 # at their DA dispatch values (pmin=pmax) for this copper-plate stage.
 function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
-    [prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
+    [prepare_network(ts.load_mw - xb_export_offset(date_str, ts.hour),
+                     ts.solar_mw, ts.wind_mw;
                      hydro_reservoir_cost = 0.0,
                      crossborder_inj = crossborder_inj_for(date_str, ts.hour),
+                     crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                      nuclear_da_dispatch = nuclear_sched === nothing ? nothing :
                                            get(nuclear_sched, (date_str, ts.hour), nothing),
                      nuclear_min_frac = NUCLEAR_MIN_FRAC,
+                     nuclear_availability = nuclear_avail_for(date_str),
+                     ramp_limits = RAMP_LIMITS,
+                     chp_blocks = chp_blocks_for(date_str),
+                     chp_siting_buses = CHP_SITING_BUSES,
                      voltage_band = VOLTAGE_BAND,
                      line_rating_factor = LINE_RATING_FACTOR,
                      reactors_enabled = REACTORS_ENABLED,
@@ -694,6 +953,18 @@ function store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, sched)
     end
 end
 
+# Append the cleared marginal prices of one gate.  `es_price` is keyed by net
+# index (solve_da's hour position); only the hours the gate actually traded are
+# present, so frozen hours are simply skipped rather than repeating a stale price.
+function record_prices!(stage, date_str, day_ts, es_price; only_idx = nothing)
+    for (h_idx, ts) in enumerate(eachrow(day_ts))
+        (only_idx === nothing || h_idx == only_idx) || continue
+        haskey(es_price, h_idx) || continue
+        push!(price_rows_all, (date = date_str, hour = ts.hour, stage = stage,
+                               price_eur_mwh = round(es_price[h_idx]; digits = 2)))
+    end
+end
+
 # Helper: run solve_da over one day and populate a schedule dict + rows accumulator.
 # free_hours_actual : Set of delivery hours (0–23) tradable at this gate; the rest
 #                     are frozen at `prev_schedule` (the previous gate's (date,hour)
@@ -701,7 +972,8 @@ end
 function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_tag;
                             nuclear_sched = nothing,
                             free_hours_actual = nothing,
-                            prev_schedule = nothing)
+                            prev_schedule = nothing,
+                            foreign = nothing)
     nets = build_da_nets(date_str, day_ts; nuclear_sched = nuclear_sched)
     reservoir_gen_ids = reservoir_ids_of(nets)
 
@@ -733,11 +1005,15 @@ function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_
     t_start  = time()
     result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es,
                         gurobi_da(log_file = log_file);
-                        free_hours = free_set, prev_sched = prev_map, anchor = anchor_map)
+                        free_hours = free_set, prev_sched = prev_map, anchor = anchor_map,
+                        foreign = foreign,
+                        hydro_budget_mwh = get(bv, :budget, nothing))
     @printf "  %s %s : status=%s  cost=%.0f EUR  (%.1f s)\n" label date_str result.status result.objective (time() - t_start)
     result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
         error("$label dispatch failed for $date_str: $(result.status)")
     store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, result.sched)
+    record_prices!(label, date_str, day_ts, result.es_price)
+    return result
 end
 
 # Continuous Intraday modelled as auction gates closing one hour before delivery.
@@ -767,10 +1043,14 @@ function run_cid_rolling!(schedule, rows_acc, date_str, day_ts, bv;
         free_set   = Set(hgate:H)
         anchor_map = Dict(h => prev_full[h] for h in hgate:H if haskey(prev_full, h))
         result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es, gurobi_da();
-                            free_hours = free_set, prev_sched = committed, anchor = anchor_map)
+                            free_hours = free_set, prev_sched = committed, anchor = anchor_map,
+                            hydro_budget_mwh = get(bv, :budget, nothing))
         result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
             error("CID gate h=$(day_ts.hour[hgate]) failed for $date_str: $(result.status)")
         committed[hgate] = result.sched[hgate]
+        # Each rolling gate re-clears the whole remaining horizon but only
+        # commits `hgate`; that hour's balance dual is its CID price.
+        record_prices!("CID", date_str, day_ts, result.es_price; only_idx = hgate)
         for h in hgate:H
             prev_full[h] = result.sched[h]
         end
@@ -779,12 +1059,45 @@ function run_cid_rolling!(schedule, rows_acc, date_str, day_ts, bv;
     store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, committed)
 end
 
+xb_rows_all = []          # per-hour cleared exchange + zonal prices (weeks mode)
 if DA_ENABLED && RUN_MARKET
-    println("\n── Stage 1: Day-ahead market (copper-plate, 24h Bellman-coupled) ──")
+    println(WEEKS_ACTIVE ?
+        "\n── Stage 1: Day-ahead market (joint 4-zone ES/PT/FR/EU, NTC-coupled, 24h Bellman-coupled) ──" :
+        "\n── Stage 1: Day-ahead market (copper-plate, 24h Bellman-coupled) ──")
     for date_str in TARGET_DAYS
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly_da)
-        run_copper_plate!(da_schedule, da_rows_all, "DA", date_str, day_ts, bv, "da")
+        foreign = WEEKS_ACTIVE ?
+            foreign_day(cfg, EMP, FOREIGN_SERIES, date_str, bv;
+                        border_mw = BORDER_MW,
+                        ntc_override = NTC_HOURLY_ENABLED ? NTC_HOURLY : nothing) : nothing
+        result  = run_copper_plate!(da_schedule, da_rows_all, "DA", date_str, day_ts, bv, "da";
+                                    foreign = foreign)
+        if result.xb !== nothing
+            store_xb_da!(date_str, result.xb)
+            for h in 1:24
+                ntc_h = NTC_HOURLY_ENABLED ?
+                    NTC_HOURLY[(date_str, h - 1)] : nothing
+                push!(xb_rows_all, (date = date_str, hour = h - 1,
+                    fr_mw = round(result.xb[h].FR; digits = 1),
+                    pt_mw = round(result.xb[h].PT; digits = 1),
+                    eufr_mw = round(result.xb[h].EUFR; digits = 1),
+                    fr_import_ntc_mw = ntc_h === nothing ? missing :
+                        round(ntc_h.fr_import_mw; digits = 1),
+                    fr_export_ntc_mw = ntc_h === nothing ? missing :
+                        round(ntc_h.fr_export_mw; digits = 1),
+                    pt_import_ntc_mw = ntc_h === nothing ? missing :
+                        round(ntc_h.pt_import_mw; digits = 1),
+                    pt_export_ntc_mw = ntc_h === nothing ? missing :
+                        round(ntc_h.pt_export_mw; digits = 1),
+                    price_es = round(result.prices[h].ES; digits = 2),
+                    price_fr = round(result.prices[h].FR; digits = 2),
+                    price_pt = round(result.prices[h].PT; digits = 2),
+                    price_eu = round(result.prices[h].EU; digits = 2)))
+            end
+            fr = extrema(x.FR for x in result.xb); pt = extrema(x.PT for x in result.xb)
+            @printf "       net FR %.0f…%.0f MW | net PT %.0f…%.0f MW  (+ = import to ES; FR wv %.2f EUR/MWh)\n" fr[1] fr[2] pt[1] pt[2] foreign.fr_wv
+        end
     end
 end
 
@@ -879,6 +1192,17 @@ end
 # In standalone mode the anchor comes from the saved CSV; otherwise it is the
 # last in-memory cleared schedule: BAL > CID > ID3 > ID2 > DA.
 loaded_schedule = RD_FROM_SAVED_ACTIVE ? load_saved_schedule(RD_FROM_SAVED) : nothing
+# Weeks-mode standalone: the saved schedule's XB_<bus> rows carry the 4-zone
+# DA exchange — rebuild the fixed injections so the load flow sees the same
+# border power the market cleared with.
+if RD_FROM_SAVED_ACTIVE && WEEKS_ACTIVE
+    for ((d, h), sched) in loaded_schedule, (name, mw) in sched
+        startswith(name, "XB_") || continue
+        get!(xb_da_inj, (d, h), Dict{String,Float64}())[name[4:end]] = mw
+    end
+    n_xb = count(p -> !isempty(p[2]), xb_da_inj)
+    n_xb > 0 && @printf "  Rebuilt 4-zone DA exchange injections for %d delivery hours from the saved schedule\n" n_xb
+end
 rd_sched_for(date_str, hour) =
     RD_FROM_SAVED_ACTIVE ? get(loaded_schedule, (date_str, hour), nothing) :
                                 BAL_ENABLED  ? bal_sched_for(date_str, hour)  :
@@ -989,6 +1313,26 @@ function rd_dump_iis(pm, network; label::Union{Nothing,String} = nothing)
     println("  IIS: $n_conflict conflicting constraints written to $out")
 end
 
+# Any future bounded border-share adjustment must retain an exact country total.
+# The normal weeks path now fixes every boundary injection to its DA share, so
+# this helper is normally a no-op.  There is deliberately no countertrade slack:
+# an infeasible fixed exchange must be exposed as an NTC-capacity problem.
+const XB_SPLIT_WEIGHT = 1e-3
+function add_xb_group_constraints!(pm, gen_dict; nw = PowerModels.nw_id_default)
+    by_c  = Dict{String,Vector{Int}}()
+    tgt_c = Dict{String,Float64}()
+    for (_, g) in gen_dict
+        (startswith(g["name"], "XB_") && abs(g["pmax"] - g["pmin"]) > 1e-9) || continue
+        push!(get!(by_c, g["country"], Int[]), g["index"])
+        tgt_c[g["country"]] = get(tgt_c, g["country"], 0.0) + g["pg"]
+    end
+    for (c, gids) in by_c
+        tot = sum(PowerModels.var(pm, nw, :pg, i) for i in gids)
+        JuMP.@constraint(pm.model, tot == tgt_c[c])
+    end
+    return JuMP.AffExpr(0.0), Dict{String,Tuple{JuMP.VariableRef,JuMP.VariableRef}}()
+end
+
 function solve_anchored_opf(network, gens, optimizer, sched;
                             iis_label::Union{Nothing,String} = nothing)
     if sched === nothing || (RD_OBJECTIVE == "quadratic" && ANCHOR_WEIGHT <= 0)
@@ -996,6 +1340,7 @@ function solve_anchored_opf(network, gens, optimizer, sched;
     end
     pm = PowerModels.instantiate_model(network, RD_PM_TYPE, PowerModels.build_opf)
     add_gen_capability!(pm, gens)
+    xb_ct_cost, _ = add_xb_group_constraints!(pm, gens)
 
     # Anchored units: market units ("G…") present in the schedule, plus every
     # battery ("BESS_…") — a battery absent from the schedule is anchored to
@@ -1012,8 +1357,15 @@ function solve_anchored_opf(network, gens, optimizer, sched;
             pg = PowerModels.var(pm, :pg, g["index"])
             JuMP.add_to_expression!(pen, ((pg - tgt_pu) * BASEMVA)^2)
         end
+        xb_pen = zero(JuMP.QuadExpr)
+        for (_, g) in gens
+            (startswith(g["name"], "XB_") && abs(g["pmax"] - g["pmin"]) > 1e-9) || continue
+            pg = PowerModels.var(pm, :pg, g["index"])
+            JuMP.add_to_expression!(xb_pen, ((pg - g["pg"]) * BASEMVA)^2)
+        end
         base_obj = JuMP.objective_function(pm.model)
-        JuMP.@objective(pm.model, Min, base_obj + ANCHOR_WEIGHT * pen)
+        JuMP.@objective(pm.model, Min,
+            base_obj + ANCHOR_WEIGHT * pen + XB_SPLIT_WEIGHT * xb_pen + xb_ct_cost)
     else   # cost_weighted
         dev = zero(JuMP.AffExpr)
         for (_, g) in gens
@@ -1029,7 +1381,7 @@ function solve_anchored_opf(network, gens, optimizer, sched;
                 JuMP.add_to_expression!(dev, g["cost"][1], pg)   # keep penalties active
             end
         end
-        JuMP.@objective(pm.model, Min, dev)
+        JuMP.@objective(pm.model, Min, dev + xb_ct_cost)
     end
     result = PowerModels.optimize_model!(pm; optimizer = optimizer)
     if RD_PF_MODEL == "DC" &&
@@ -1072,10 +1424,15 @@ if RD_WATER_VALUE == "constant"
         bv       = day_bellman[date_str]
         label    = "$date_str h$(lpad(hour, 2, '0'))"
 
-        net = prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
+        net = prepare_network(ts.load_mw - xb_export_offset(date_str, hour),
+                              ts.solar_mw, ts.wind_mw;
                               hydro_reservoir_cost = bv.water_value,
                               crossborder_inj = crossborder_inj_for(date_str, hour),
+                              crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                               da_dispatch = rd_sched_for(date_str, hour),
+                              nuclear_availability = nuclear_avail_for(date_str),
+                              chp_blocks = chp_blocks_for(date_str),
+                              chp_siting_buses = CHP_SITING_BUSES,
                               voltage_band = VOLTAGE_BAND,
                               line_rating_factor = LINE_RATING_FACTOR,
                               reactors_enabled = REACTORS_ENABLED,
@@ -1134,10 +1491,15 @@ elseif RD_WATER_VALUE == "piecewise"
         # biomass/coal are frozen at their CID set-point, every other unit is free.
         # Reservoir hydro carries no separate linear adder here because the
         # Bellman cost-to-go term below supplies its opportunity cost.
-        nets = [prepare_network(ts.load_mw, ts.solar_mw, ts.wind_mw;
+        nets = [prepare_network(ts.load_mw - xb_export_offset(date_str, ts.hour),
+                                ts.solar_mw, ts.wind_mw;
                                 hydro_reservoir_cost = 0.0,
                                 crossborder_inj = crossborder_inj_for(date_str, ts.hour),
+                                crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                                 da_dispatch = rd_sched_for(date_str, ts.hour),
+                                nuclear_availability = nuclear_avail_for(date_str),
+                                chp_blocks = chp_blocks_for(date_str),
+                                chp_siting_buses = CHP_SITING_BUSES,
                                 voltage_band = VOLTAGE_BAND,
                                 line_rating_factor = LINE_RATING_FACTOR,
                                 reactors_enabled = REACTORS_ENABLED,
@@ -1205,9 +1567,14 @@ elseif RD_WATER_VALUE == "piecewise"
 
             nw_ids = sort(collect(keys(PowerModels.nws(pm))))
 
-            # Generator reactive-capability limits per hour/network.
+            # Generator reactive-capability limits per hour/network.  Fixed XB
+            # injections need no group constraint; the helper remains for any
+            # explicitly bounded share-adjustment experiment.
+            xb_ct_total = JuMP.AffExpr(0.0)
             for n in nw_ids
                 add_gen_capability!(pm, nets[parse(Int, n) + 1].network["gen"]; nw = n)
+                ct, _ = add_xb_group_constraints!(pm, nets[parse(Int, n) + 1].network["gen"]; nw = n)
+                JuMP.add_to_expression!(xb_ct_total, ct)
             end
 
             # Express reservoir energy in pu·h (= MWh / BASEMVA) so V_ES variables
@@ -1331,6 +1698,19 @@ if DA_ENABLED && RUN_MARKET
     CSV.write(joinpath(RESULTS, "da_dispatch.csv"), da_df)
     CSV.write(joinpath(RESULTS, "da_profiles.csv"),  hourly_da)
     @printf "  da_dispatch.csv  : %d rows\n" nrow(da_df)
+    if !isempty(xb_rows_all)
+        CSV.write(joinpath(RESULTS, "xb_flows.csv"), DataFrame(xb_rows_all))
+        @printf "  xb_flows.csv     : %d rows (4-zone DA exchange + zonal prices)\n" length(xb_rows_all)
+    end
+end
+
+# Marginal price of the ES copper-plate balance at each gate (long format:
+# date, hour, stage, price_eur_mwh).  Written whenever any market stage ran.
+if RUN_MARKET && !isempty(price_rows_all)
+    price_df = DataFrame(price_rows_all)
+    sort!(price_df, [:date, :stage, :hour])
+    CSV.write(joinpath(RESULTS, "market_prices.csv"), price_df)
+    @printf "  market_prices.csv: %d rows (%s)\n" nrow(price_df) join(unique(price_df.stage), "/")
 end
 
 # Stage 2 — ID2 cleared schedule + load profile
@@ -1385,4 +1765,15 @@ if RD_ENABLED
     @printf "  fuel_mix.csv     : %d rows\n" nrow(fuel_df)
     @printf "  branch_flows.csv : %d rows\n" length(branch_rows_all)
     @printf "  Solved %d / %d hours successfully\n" n_solved n_total
+    if WEEKS_ACTIVE
+        shed_total = sum(max(Float64(r.load_shed_mw), 0.0)
+                         for r in summary_rows if isfinite(Float64(r.load_shed_mw));
+                         init = 0.0)
+        if n_solved == n_total
+            @printf "  Fixed-exchange %s validation: PASS (%d/%d hours solved; DA border totals remained hard-fixed)\n" RD_PF_MODEL n_solved n_total
+        else
+            @printf "  Fixed-exchange %s validation: FAIL (%d/%d hours solved)\n" RD_PF_MODEL n_solved n_total
+        end
+        @printf "  Domestic adequacy diagnostic: %.1f MWh load shedding (not an exchange-relaxation variable)\n" shed_total
+    end
 end
