@@ -32,6 +32,7 @@ const GRB_ENV = Gurobi.Env()
 
 include("data_preparation.jl")
 include("bellman.jl")
+include("fuel_prices.jl")
 include("crossborder.jl")
 include("da.jl")
 include("empire_scenario.jl")
@@ -61,6 +62,12 @@ const SCEN_ACTIVE = empire_active(cfg)
 const SCEN_LABEL  = empire_label(cfg)
 const EMP           = SCEN_ACTIVE ? load_empire_scenario(cfg)  : nothing
 const UNIT_SCALE    = SCEN_ACTIVE ? empire_unit_scale(EMP)     : nothing
+# [costs.gas_srmc]: price the gas fleet per study day from the observed daily
+# MIBGAS + EUA series instead of a single annual figure (fuel_prices.jl).
+# 2024 path only — scenario runs keep EMPIRE's own marginal costs.
+const GAS_SRMC_ON = !SCEN_ACTIVE &&
+    get(get(get(cfg, "costs", Dict()), "gas_srmc", Dict()), "enabled", false)
+const FUEL_PRICES = GAS_SRMC_ON ? load_fuel_prices(cfg) : nothing
 const COST_OVERRIDE = let
     ov = SCEN_ACTIVE ? empire_cost_override(EMP) : Dict{Tuple{String,String},Float64}()
     # [costs].gas_from_midterm: take the ES gas marginal cost from
@@ -72,7 +79,11 @@ const COST_OVERRIDE = let
     # advantage it should not have, and the day-ahead runs it to nameplate.
     # Scenario runs keep the EMPIRE costs — their gas comes from EMPIRE's own
     # marginal_costs.csv plus the CO2 adder, not from this table.
-    if !SCEN_ACTIVE && get(get(cfg, "costs", Dict()), "gas_from_midterm", false)
+    # Skipped when [costs.gas_srmc] is on: gas is then priced per study day from
+    # the observed MIBGAS/EUA series (cost_override_for below), and the mid-term
+    # model reads the same series, so the seam closes without this hand-off.
+    if !SCEN_ACTIVE && !GAS_SRMC_ON &&
+       get(get(cfg, "costs", Dict()), "gas_from_midterm", false)
         gc = get(get(cfg, "midterm4", Dict()), "gas_cost", Dict())
         haskey(gc, "ccgt") && haskey(gc["ccgt"], "ES") &&
             (ov[("Gas", "Combined_cycle")] = Float64(gc["ccgt"]["ES"]))
@@ -138,7 +149,7 @@ const APPARENT_POWER_LIMIT = get(get(cfg, "generators", Dict()), "apparent_power
 const RATED_PF             = Float64(get(get(cfg, "generators", Dict()), "rated_power_factor", 0.90))
 const RENEWABLE_PF         = Float64(get(get(cfg, "generators", Dict()), "renewable_power_factor", 0.95))
 if SCEN_ACTIVE
-    @printf "Scenario       : %s (EMPIRE period %d, CO2 %.1f EUR/t)\n" SCEN_LABEL EMP.period EMP.co2_price
+    @printf "Scenario       : %s (EMPIRE period %d, CO2 %.1f EUR/t — %s)\n" SCEN_LABEL EMP.period EMP.co2_price EMP.co2_src
     @printf "                 load ×%.3f | solar ×%.3f | wind ×%.3f | BESS %.0f MW / %.0f MWh\n" ES_LOAD_SCALE ES_SOLAR_SCALE ES_WIND_SCALE EMP.storage["ES"].bess_mw EMP.storage["ES"].bess_mwh
     if NODAL_ACTIVE
         @printf "                 NUTS3 nodal disaggregation: %d unit factors | %d new units (%.0f MW) | %d reinforced lines | %d new corridors | %d BESS sites\n" length(NODAL.unit_scale) nrow(NODAL.new_units) sum(NODAL.new_units.capacity_mw; init = 0.0) length(NODAL.line_scale) nrow(NODAL.new_lines) length(NODAL.bess)
@@ -191,6 +202,32 @@ const NUCLEAR_AVAIL_BY_DATE = Dict{String,Float64}(
     String(k) => Float64(v) for (k, v) in
         get(get(cfg, "da", Dict()), "nuclear_availability_by_date", Dict{String,Any}()))
 nuclear_avail_for(date_str) = get(NUCLEAR_AVAIL_BY_DATE, String(date_str), NUCLEAR_AVAIL)
+# Coal availability — same treatment as nuclear, and needed for the same
+# reason: generations.csv carries the full 2 900 MW nameplate of a fleet that
+# had largely closed by 2024.  See [da].coal_availability in config.toml.
+const COAL_AVAIL = Float64(get(get(cfg, "da", Dict()), "coal_availability", 1.0))
+const COAL_AVAIL_BY_DATE = Dict{String,Float64}(
+    String(k) => Float64(v) for (k, v) in
+        get(get(cfg, "da", Dict()), "coal_availability_by_date", Dict{String,Any}()))
+coal_avail_for(date_str) = get(COAL_AVAIL_BY_DATE, String(date_str), COAL_AVAIL)
+
+# Marginal-cost overrides for one study day.  Identical to COST_OVERRIDE except
+# under [costs.gas_srmc], where the two Gas technologies are repriced from that
+# day's MIBGAS quote and EUA settlement.  The [chp] gas block is deliberately
+# NOT repriced: its 22 EUR/MWh offer is a calibrated market bid, not a fuel
+# cost — the host process buys the steam, so most of the gas is charged to heat.
+function cost_override_for(date_str)
+    GAS_SRMC_ON || return COST_OVERRIDE
+    ov = COST_OVERRIDE === nothing ? Dict{Tuple{String,String},Float64}() :
+                                     copy(COST_OVERRIDE)
+    d = Date(String(date_str))
+    ov[("Gas", "Combined_cycle")] = gas_srmc(FUEL_PRICES, :ccgt, d)
+    ov[("Gas", "Gas_turbine")]    = gas_srmc(FUEL_PRICES, :ocgt, d)
+    return ov
+end
+if GAS_SRMC_ON
+    println("Gas marginal cost: observed MIBGAS + EUA (per study day)")
+end
 # [da].ramp_limits — hour-to-hour ramp bounds on the thermal fleet, from the
 # per-technology percent-of-nameplate rates in Data/power_unit_tech_params.csv.
 # Applies to every copper-plate gate (DA, ID2, ID3, the rolling CID gates and
@@ -768,6 +805,7 @@ if NTC_HOURLY_ENABLED && RUN_MARKET
                         crossborder_bus_caps = XB_BUS_CAPS,
                         nuclear_min_frac = NUCLEAR_MIN_FRAC,
                         nuclear_availability = nuclear_avail_for(ts.date),
+                        coal_availability = coal_avail_for(ts.date),
                         chp_blocks = chp_blocks_for(ts.date),
                         chp_siting_buses = CHP_SITING_BUSES,
                         voltage_band = VOLTAGE_BAND,
@@ -780,7 +818,7 @@ if NTC_HOURLY_ENABLED && RUN_MARKET
                         renewable_power_factor = RENEWABLE_PF,
                         gen_bus_voltage_control = false,
                         unit_scale = UNIT_SCALE,
-                        cost_override = COST_OVERRIDE,
+                        cost_override = cost_override_for(ts.date),
                         bess_units = BESS_UNITS,
                         unit_scale_by_id = UNIT_SCALE_ID,
                         extra_units = EXTRA_UNITS,
@@ -905,6 +943,7 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                                            get(nuclear_sched, (date_str, ts.hour), nothing),
                      nuclear_min_frac = NUCLEAR_MIN_FRAC,
                      nuclear_availability = nuclear_avail_for(date_str),
+                     coal_availability = coal_avail_for(date_str),
                      ramp_limits = RAMP_LIMITS,
                      chp_blocks = chp_blocks_for(date_str),
                      chp_siting_buses = CHP_SITING_BUSES,
@@ -920,7 +959,7 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                      gen_bus_vmin = GEN_BUS_VMIN,
                      gen_bus_vmax = GEN_BUS_VMAX,
                      unit_scale = UNIT_SCALE,
-                     cost_override = COST_OVERRIDE,
+                     cost_override = cost_override_for(date_str),
                      bess_units = BESS_UNITS,
                      unit_scale_by_id = UNIT_SCALE_ID,
                      extra_units = EXTRA_UNITS,
@@ -1431,6 +1470,7 @@ if RD_WATER_VALUE == "constant"
                               crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                               da_dispatch = rd_sched_for(date_str, hour),
                               nuclear_availability = nuclear_avail_for(date_str),
+                              coal_availability = coal_avail_for(date_str),
                               chp_blocks = chp_blocks_for(date_str),
                               chp_siting_buses = CHP_SITING_BUSES,
                               voltage_band = VOLTAGE_BAND,
@@ -1445,7 +1485,7 @@ if RD_WATER_VALUE == "constant"
                               gen_bus_vmin = GEN_BUS_VMIN,
                               gen_bus_vmax = GEN_BUS_VMAX,
                               unit_scale = UNIT_SCALE,
-                              cost_override = COST_OVERRIDE,
+                              cost_override = cost_override_for(date_str),
                               bess_units = BESS_UNITS,
                               unit_scale_by_id = UNIT_SCALE_ID,
                               extra_units = EXTRA_UNITS,
@@ -1498,6 +1538,7 @@ elseif RD_WATER_VALUE == "piecewise"
                                 crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                                 da_dispatch = rd_sched_for(date_str, ts.hour),
                                 nuclear_availability = nuclear_avail_for(date_str),
+                                coal_availability = coal_avail_for(date_str),
                                 chp_blocks = chp_blocks_for(date_str),
                                 chp_siting_buses = CHP_SITING_BUSES,
                                 voltage_band = VOLTAGE_BAND,
@@ -1512,7 +1553,7 @@ elseif RD_WATER_VALUE == "piecewise"
                                 gen_bus_vmin = GEN_BUS_VMIN,
                                 gen_bus_vmax = GEN_BUS_VMAX,
                                 unit_scale = UNIT_SCALE,
-                                cost_override = COST_OVERRIDE,
+                                cost_override = cost_override_for(date_str),
                                 bess_units = BESS_UNITS,
                                 unit_scale_by_id = UNIT_SCALE_ID,
                                 extra_units = EXTRA_UNITS,

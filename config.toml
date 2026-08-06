@@ -39,6 +39,42 @@ period     = 2                            # EMPIRE period index: 2 = 2030-2035
 #             investments ignored, BESS on the top-20 load buses.
 disaggregation = "nodal"
 
+# ── CO2 price ───────────────────────────────────────────────────────────────
+# EMPIRE solved these runs against an EMISSION CAP, so General_CO2Price.tab is
+# 0 for every period in all four scenarios and marginal_costs.csv carries no
+# carbon either.  Dispatching on that leaves ES coal (16.5 EUR/MWh) BELOW CCGT
+# (30.9) and inverts the merit order — the crossover sits at 22.8 (Go RES) to
+# 45.1 (Trinity) EUR/t.
+#
+# The scenario-consistent figure is the cap's shadow price, published per region
+# and year with the EnVis scenario set.  ES @ 2035:
+#     Go RES 1703.0 | NECPEssentials 368.0 | REPowerEU++ 314.8 | Trinity 63.1
+# These are marginal abatement costs under a deep-decarbonisation cap, NOT an
+# ETS forward price, so they run far above today's ~70 EUR/t.  Go RES in
+# particular prices CCGT at ~621 and coal at ~1339 EUR/MWh, i.e. both are out of
+# merit in essentially every hour — which is that scenario's whole point.
+#
+#   co2_price_file   — set to "" to fall back to General_CO2Price.tab (zeros)
+#   co2_price_region — "ES"; "Europe (average)" also available
+#   co2_price_year   — defaults to 2025 + 5*period, so period 2 -> 2035
+#   co2_price_model  — defaults to basename(empire_dir); matched case- and
+#                      punctuation-insensitively against "Model Version"
+#   co2_price        — an explicit number here overrides all of the above
+#                      (set 0.0 to restore the old no-carbon behaviour)
+co2_price_file   = "Data/EU-EnVis-2060_Annual_Regional_CO2_Prices_v1.2.0.csv"
+co2_price_region = "ES"
+
+# Negative-emission credit.  BioCCS has a NEGATIVE CO2 content (-0.1 tCO2/GJ_el),
+# so a positive carbon price gives it a negative marginal cost: -87 EUR/MWh in
+# NECPEssentials, -250 in REPowerEU++, -522 in Go RES.  ES BioCCS capacity is
+# 217 / 2 631 / 250 / 0 MW, so the choice only really moves Go RES.
+#   false — the removal credit is settled OUTSIDE the energy market (a separate
+#           CDR mechanism); the adder is floored at 0, BioCCS keeps its EMPIRE
+#           cost, and the clearing price is not dragged below zero by it.
+#   true  — the credit clears inside the market: BioCCS runs at Pmax always and
+#           sets a deeply negative price in any hour it is marginal.
+negative_co2_credit = false
+
 [costs]
 # ── Marginal-cost source for the market chain ───────────────────────────────
 # gas_from_midterm = true takes the ES gas marginal cost from
@@ -56,7 +92,48 @@ disaggregation = "nodal"
 # permanently out of merit.
 # Applies to the 2024 case only — scenario runs price gas from EMPIRE's own
 # marginal_costs.csv plus the CO2 adder.
+# SUPERSEDED when [costs.gas_srmc].enabled = true, which prices gas from the
+# observed daily MIBGAS + EUA series on both sides of the seam instead.
 gas_from_midterm = true
+
+[costs.gas_srmc]
+# ── Gas marginal cost from the OBSERVED daily market prices ──────────────────
+# enabled = true supersedes both `gas_from_midterm` and the pypsa-2024 table for
+# the two Gas technologies, and computes instead
+#
+#   SRMC [EUR/MWh_el] = P_gas / eta  +  3.6 * co2_content * P_CO2  +  vom
+#
+# from Data/MIBGAS_Data_2024.csv (daily GDAES_D+1, EUR/MWh_th, 2024-2025) and
+# Data/Carbon Emissions Price.csv (EUA settlement, EUR/tCO2, business days).
+# The same series drives the mid-term model when [midterm4].gas_price_source =
+# "mibgas", so the water value and the day-ahead gas cost stay consistent — the
+# seam `gas_from_midterm` was papering over.
+#
+# Delivery-day convention: MIBGAS quotes GDAES_D+1 on trading day D for delivery
+# on D+1, so gas burned on day D is priced from the row dated D-1; the EUA leg
+# takes the last settlement on or before D-1, matching the information set the
+# day-ahead market clears on.  2024 study days:
+#     8 Jul : gas 32.09, EUA 70.35 -> CCGT  86.6, OCGT 113.7
+#     2 Dec : gas 50.79, EUA 68.40 -> CCGT 119.4, OCGT 156.8
+# against the fixed 78 / 105 previously used (OMIE cleared 73.2 and 143.2 mean).
+#
+# Parameters below come from the EMPIRE input tables — the only place in the
+# repo where they are recorded:
+#   eta          Generator_Efficiency.tab, period 1
+#   co2_content  Generator_CO2Content.tab   ** tCO2 per GJ of ELECTRICITY:
+#                the efficiency is ALREADY divided in.  Multiplying back by eta
+#                returns the textbook fuel factors for every fuel in that table
+#                (gas 0.0545, coal 0.0913, lignite 0.1077, oil 0.0740 tCO2/GJ),
+#                which is how we know.  Hence 3.6*content*price, NOT
+#                (3.6/eta)*content*price — see the note in fuel_prices.jl.
+#   vom          Generator_VariableOMCosts.tab
+# Applies to the 2024 path only; scenario runs keep EMPIRE's own marginal costs.
+enabled     = true
+mibgas_file = "Data/MIBGAS_Data_2024.csv"
+carbon_file = "Data/Carbon Emissions Price.csv"
+eta         = { ccgt = 0.5600044800358402, ocgt = 0.4250074376301585 }
+co2_content = { ccgt = 0.09735481800000001, ocgt = 0.128053746 }
+vom         = { ccgt = 4.68, ocgt = 5.76 }
 
 [weeks]
 # ── Sampled multi-week study horizon (2035 scenario target) ──────────────────
@@ -248,6 +325,35 @@ nuclear_min_gen_frac = 0.8
 #     annual factor cannot match both.
 nuclear_availability = 0.85
 
+# ── Coal availability ───────────────────────────────────────────────────────
+# Same mechanism as nuclear, and needed for the same reason: generations.csv
+# still carries the full 2 900 MW nameplate of a fleet that had largely closed
+# by 2024, and unlike nuclear it had no derating at all.
+#
+# It only became visible once [costs.gas_srmc] priced gas from the observed
+# daily market.  With gas at the flat 78 it sat below coal's 94.01 and coal
+# never cleared; on 2 Dec 2024 the real gas cost is 119.4, coal goes into merit,
+# and the undated model ran the whole 2 900 MW flat out — 69.6 GWh against
+# 14.9 GWh actually cleared.  The coal PRICE is not the problem: 94.01 implies
+# 15.6-16.2 EUR/MWh_th at that day's EUA, which matches the market.
+#
+# The figures are read off the observed profile the same way the nuclear ones
+# are (OMIE cleared programme vs the 2 900 MW nameplate).  On 2 Dec coal was in
+# merit and cycled 413 -> 933 MW, tracking load, with 413/933 = 0.44 sitting
+# right on the 37.5 % technical minimum in Data/power_unit_tech_params.csv — so
+# 933 MW is what was actually available, not what was economic:
+#     2 Dec : 933 MW (OMIE) / 1 024 MW (ENTSO-E) of 2 900  ->  0.32
+#     8 Jul : coal out of merit (gas 86.6 < coal 94.0); ENTSO-E metered a
+#             446 MW peak  ->  0.15.  Non-binding, recorded for completeness.
+#
+# CAVEAT: this sets the CEILING, and the copper-plate LP has no unit commitment,
+# so coal runs flat at the ceiling instead of cycling to its technical minimum.
+# Expect ~22 GWh on 2 Dec against the real 14.9 — far better than 69.6, but the
+# residual needs min-load/commitment, not a smaller availability figure.  Do not
+# tune this down to reproduce the daily energy; that would trade a physical
+# quantity for a fitted one.
+coal_availability = 0.35
+
 # ── Thermal ramp limits ─────────────────────────────────────────────────────
 # Bound the hour-to-hour change of every thermal unit by its sustained ramp
 # rate, read from Data/power_unit_tech_params.csv as a percent of NAMEPLATE per
@@ -265,6 +371,11 @@ ramp_limits = true
 [da.nuclear_availability_by_date]
 "2024-07-08" = 0.93
 "2024-12-02" = 0.69
+
+# Per-day coal availability (see [da].coal_availability above for the derivation).
+[da.coal_availability_by_date]
+"2024-07-08" = 0.15
+"2024-12-02" = 0.32
 
 [chp]
 # ── Industrial cogeneration / waste / mini-hydro ─────────────────────────────
@@ -562,6 +673,30 @@ turbine_out = "Data/TurbineSchedule_sddp4.csv"
 #   "empire_scaled" — EMPIRE's seasonality rescaled to the SS_SeasonalStorage
 #                     annual total, so the shape can be tested on its own.
 es_inflow_source = "empire_scaled"
+
+# ── Gas cost of the Iberian fleet ───────────────────────────────────────────
+# "config" — the flat [midterm4.gas_cost] figures (ES/PT CCGT 78, OCGT 105).
+# "mibgas" — the weekly mean of the OBSERVED daily short-run marginal cost from
+#   [costs.gas_srmc] (MIBGAS + EUA).  Over the 78 stages this runs 82.6 to 128.8
+#   EUR/MWh (mean 96.4) against the flat 78, and it is SEASONAL: the 2024 gas
+#   price nearly doubles from February (25.3) to December (46.3 EUR/MWh_th).
+#
+# Why this matters more than it looks: the water value IS the gas cost in this
+# model, because Spanish reservoir hydro displaces Spanish CCGT — the ES cut
+# slopes sit at exactly the ES gas figure.  With a flat cost the water value is
+# flat too (76.68 in July vs 73.60 in December — i.e. water is worth LESS in
+# winter, which is backwards).  A seasonal gas price makes winter water dearer,
+# so the policy saves it, which is the actual driver of seasonal reservoir
+# management and something the flat model cannot represent at all.
+#
+# FR/EU keep their config values: they buy on TTF, not MIBGAS.  The ES [chp]
+# blocks are excluded — their offer price is a calibrated bid, not a fuel cost.
+#
+# CAVEAT: this is a DETERMINISTIC seasonal path, so the policy has perfect
+# foresight of the 2024-25 gas market.  Declare it when reporting.  Modelling
+# gas as a stochastic autocorrelated process would need it as a STATE variable,
+# taking the value function from 3 to 4 dimensions.
+gas_price_source = "mibgas"
 
 [midterm4.reservoir]
 # Seasonal reservoir sizes (public data): FR ≈ French lakes; EU ≈ Norway 87 +

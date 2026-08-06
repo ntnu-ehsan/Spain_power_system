@@ -17,13 +17,13 @@
 #
 # Gate (forecast-vintage) factors: the ScenarioData week is the DA baseline
 # (DA factor ≡ 1.0, as in the 2024 path); the ID2/ID3/CID/BE columns come
-# from Data/ES/<resource>/<d_m_yyyy>.csv when a file for the study date
-# exists, else from the season-matched 2024 study day (Apr–Sep → 8_7_2024,
-# Oct–Mar → 2_12_2024).  Drop date-named files into Data/ES/ to refine.
-# Caveat: the Solar factor is 0 in the reference day's night hours, so a study
-# week whose daylight window is wider than the reference day's loses its
-# shoulder hours (e.g. a March week under the December factors) — the error is
-# bounded by the season matching and disappears once dated files exist.
+# from Data/ES/<resource>/<d_m_yyyy>.csv for the study date.  Data/ES covers
+# 363 of the 366 days of 2024, and the study calendar runs on 2024 dates
+# ([bellman].bgn_date), so every study day gets its own dated deviation
+# vintages; only the missing days (Jan 1, Dec 30, Dec 31) fall back to the
+# season-matched 2024 study day (Apr–Sep → 8_7_2024, Oct–Mar → 2_12_2024).
+# The factors are 2024 forecast-error vintages applied to the scenario
+# portfolio, i.e. forecast quality per MW is assumed to stay at 2024 levels.
 #
 # foreign_week_series assembles the FR/PT/EU hourly series (load MW rescaled
 # to EMPIRE annual demand; solar/wind/offshore/ROR as capacity factors) for
@@ -38,11 +38,16 @@ const GATE_STAGES    = ["DA", "ID2", "ID3", "CID", "BE"]
 # Data/ES file naming, e.g. 2024-07-08 → "8_7_2024.csv" (no zero padding).
 _vintage_filename(d::Date) = "$(day(d))_$(month(d))_$(year(d)).csv"
 
-# 24×stages factor table for one resource and study date, with the
-# season-matched 2024 fallback when the date has no file of its own.
+# 24×stages factor table for one resource and study date.  The Data/ES files
+# are dated 2024, but the study calendar spans bgn_date + 52 weeks, so slots
+# after New Year carry 2025 dates — those map to the same day/month of 2024
+# (the deviation vintages are calendar-seasonal, not year-specific).  Only
+# day/months with no 2024 file at all (Jan 1, Dec 30, Dec 31) fall back to
+# the season-matched study day.
 function _vintage_factors(resource::String, d::Date)::DataFrame
     dir = joinpath(ES_VINTAGE_DIR, resource)
     f   = joinpath(dir, _vintage_filename(d))
+    isfile(f) || (f = joinpath(dir, _vintage_filename(Date(2024, month(d), day(d)))))
     isfile(f) || (f = joinpath(dir, month(d) in 4:9 ? "8_7_2024.csv" :
                                                       "2_12_2024.csv"))
     df = CSV.read(f, DataFrame)
@@ -119,12 +124,15 @@ end
 
 # FR/PT/EU hourly series over the sampled horizon (4-zone DA input):
 #   Dict(zone => DataFrame(date, hour, load_mw, solar_cf, windon_cf,
-#                          windoff_cf, ror_cf))
+#                          windoff_cf, ror_cf, inflow_mw))
 # Loads are MW at EMPIRE annual demand; the CF columns are 0–1 availability
 # to be multiplied by the zone's installed capacity by the DA assembly.
+# inflow_mw is the seasonal-reservoir inflow power (hydroseasonal.csv, MW) —
+# the PT reservoir's daily energy budget in the 4-zone DA.
 function foreign_week_series(cfg, emp, key::DataFrame)::Dict{String,DataFrame}
     times = scenario_time_axis(cfg)
     dfl   = _read_scen(cfg, "electricload.csv")
+    dfi   = _read_scen(cfg, "hydroseasonal.csv")
     cf    = Dict("solar_cf"   => _read_scen(cfg, "solar.csv"),
                  "windon_cf"  => _read_scen(cfg, "windonshore.csv"),
                  "windoff_cf" => _read_scen(cfg, "windoffshore.csv"),
@@ -134,6 +142,7 @@ function foreign_week_series(cfg, emp, key::DataFrame)::Dict{String,DataFrame}
         load = _load_to_annual(Float64.(dfl[!, z]), times, emp.demand[z])
         cols = Dict(k => z in names(df) ? Float64.(df[!, z]) :
                          zeros(length(times)) for (k, df) in cf)
+        infl = z in names(dfi) ? Float64.(dfi[!, z]) : zeros(length(times))
         acc = NamedTuple[]
         for r in eachrow(key), d in 0:6
             date_str = Dates.format(r.study_start + Day(d), "yyyy-mm-dd")
@@ -144,7 +153,8 @@ function foreign_week_series(cfg, emp, key::DataFrame)::Dict{String,DataFrame}
                             solar_cf   = cols["solar_cf"][rows[h+1]],
                             windon_cf  = cols["windon_cf"][rows[h+1]],
                             windoff_cf = cols["windoff_cf"][rows[h+1]],
-                            ror_cf     = cols["ror_cf"][rows[h+1]]))
+                            ror_cf     = cols["ror_cf"][rows[h+1]],
+                            inflow_mw  = infl[rows[h+1]]))
             end
         end
         out[z] = sort!(DataFrame(acc), [:date, :hour])

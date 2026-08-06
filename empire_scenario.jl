@@ -14,15 +14,18 @@
 #   Output/transmissionInstalledCap.tab FromNode × ToNode × Period → MW
 #   Output/stor{PW,EN}InstalledCap.tab  Node × Storage × Period → MW / MWh
 #   Input/Tab/Node_ElectricAnnualDemand.tab   Node × Period → MWh/yr
-#   Input/Tab/General_CO2Price.tab            Period → EUR/tCO2
-#   Input/Tab/Generator_Efficiency.tab        Generator × Period → η
-#   Input/Tab/Generator_CO2Content.tab        Generator → tCO2/GJ_fuel
+#   Input/Tab/Generator_CO2Content.tab        Generator → tCO2/GJ_ELECTRICITY
 #                                       (already the *remaining* content for
 #                                        CCS units; negative for BioCCS)
+# and, from the repo Data/ folder:
+#   EU-EnVis-2060_Annual_Regional_CO2_Prices_v1.2.0.csv   the emission cap's
+#                                       shadow price per scenario/region/year
+#                                       (General_CO2Price.tab is 0 everywhere).
 #
 # Marginal cost with CO2:
-#   cost(g) = marginal_costs.csv(g, period) + (3.6/η_g)·content_g·CO2price
-# (the CCS capture/transport cost is already inside marginal_costs.csv).
+#   cost(g) = marginal_costs.csv(g, period) + 3.6·content_g·CO2price
+# (the CCS capture/transport cost is already inside marginal_costs.csv; no η
+# appears — see the note above envis_co2_price and in the loader).
 #
 # EMPIRE nodes: ES111…ES620 (NUTS3), "France", "Portugal", "EU" — mapped to
 # the 4 model zones ES / FR / PT / EU.  EMPIRE generator names are mapped to
@@ -90,6 +93,48 @@ read_in_tab(dir, f; ncol) = CSV.read(joinpath(dir, "Input", "Tab", f), DataFrame
                                      delim = '\t', header = false, skipto = 2,
                                      types = vcat(String, fill(Float64, ncol - 1)))
 
+# ── CO2 price ────────────────────────────────────────────────
+# Every EMPIRE run in Data/2035/ carries General_CO2Price.tab = 0 for all four
+# periods: the investment model was solved against an EMISSION CAP, not a price,
+# so neither marginal_costs.csv nor that table prices carbon anywhere.  Taking
+# it at face value leaves the dispatch with no carbon cost at all, which puts
+# ES coal (16.5 EUR/MWh) BELOW CCGT (30.9) and inverts the merit order.
+#
+# The scenario-consistent price is the shadow price of that cap, published per
+# region and year alongside the EnVis scenario set:
+#   Data/EU-EnVis-2060_Annual_Regional_CO2_Prices_v1.2.0.csv
+#     Model Version, Region, Unit, Year, Value        (EUR/tCO2)
+# ES @ 2035:  Go RES 1703.0 | NECPEssentials 368.0 | REPowerEU++ 314.8
+#             Trinity 63.1  — the four scenarios' abatement effort, in order.
+# These are marginal abatement costs of a deep-decarbonisation cap, not an ETS
+# forward price, so they are far above today's ~70 EUR/t.  That is the correct
+# figure to dispatch against: it is the price at which this scenario's own
+# emission budget is respected.
+#
+# [scenario] keys:
+#   co2_price        — explicit number, wins over everything (set to 0.0 to
+#                      restore the old no-carbon behaviour)
+#   co2_price_file   — EnVis CSV; "" falls back to General_CO2Price.tab
+#   co2_price_region — default "ES"
+#   co2_price_year   — default 2025 + 5·period  (period 2 → 2035)
+#   co2_price_model  — default: matched from basename(empire_dir)
+
+# "REPowerEU++ v1.2.0" → "repowereu";  "GoRES" → "gores"
+_envis_key(s) = lowercase(replace(String(s), r"\s+v[\d.]+$" => "", r"[^A-Za-z0-9]" => ""))
+
+function envis_co2_price(path::AbstractString, model::AbstractString,
+                         region::AbstractString, year::Int)::Float64
+    df = CSV.read(path, DataFrame)
+    rename!(df, [strip(String(n), ['﻿', ' ']) for n in names(df)])
+    want = _envis_key(model)
+    hit  = [Float64(r.Value) for r in eachrow(df)
+            if _envis_key(r[Symbol("Model Version")]) == want &&
+               strip(String(r.Region)) == region && Int(r.Year) == year]
+    isempty(hit) && error("$path: no CO2 price for model=$model " *
+                          "region=$region year=$year")
+    return only(unique(hit))
+end
+
 # ── main loader ──────────────────────────────────────────────
 """
     load_empire_scenario(cfg; data_dir) -> NamedTuple
@@ -122,22 +167,62 @@ function load_empire_scenario(cfg; data_dir = joinpath(@__DIR__, "Data"))
 
     # ── marginal costs (EUR/MWh) + CO2 adder ──────────────────
     # EMPIRE optimised under an emission cap, so marginal_costs.csv carries NO
-    # CO2 cost; the adder prices the (remaining) emissions at the exogenous
-    # CO2 price of the same period:  (3.6/η)·content·price.
+    # CO2 cost; the adder prices the (remaining) emissions at the cap's shadow
+    # price for this scenario/region/year (see envis_co2_price above).
+    #
+    #   adder = 3.6 · content · price          [EUR/MWh_el]
+    #
+    # NOT (3.6/η)·content·price.  Generator_CO2Content.tab is tCO2 per GJ of
+    # ELECTRICITY — the efficiency is already divided in.  Multiplying the
+    # column back by η returns the textbook FUEL emission factor for every row
+    # (gas 0.0545, coal 0.0913, lignite 0.1077, oil 0.0740 tCO2/GJ_fuel), which
+    # is how we know.  Dividing again inflated the adder and, because coal's η
+    # (0.435) is well below CCGT's (0.570), inflated coal ~1.3x more than gas:
+    # the coal/CCGT crossover moved from 33.8 to 12.3 EUR/t in NECPEssentials.
+    # The bug was invisible while the price was 0.  Same convention as
+    # fuel_prices.jl, so the 2024 and scenario paths now price carbon alike.
     df_mc  = CSV.read(joinpath(dir, "Output", "marginal_costs.csv"), DataFrame)
-    df_co2 = read_in_tab(dir, "General_CO2Price.tab";      ncol = 2)  # (period, EUR/t)
-    df_eta = read_in_tab(dir, "Generator_Efficiency.tab";  ncol = 3)  # (gen, period, η)
-    df_cnt = read_in_tab(dir, "Generator_CO2Content.tab";  ncol = 2)  # (gen, tCO2/GJ)
-    co2_price = only(df_co2[parse.(Int, String.(df_co2[:, 1])) .== period, 2])
-    eta = Dict(empire_tech(String(r[1])) => Float64(r[3])
-               for r in eachrow(df_eta) if Int(r[2]) == period)
+    df_cnt = read_in_tab(dir, "Generator_CO2Content.tab";  ncol = 2)  # (gen, tCO2/GJ_el)
+
+    co2_file = String(get(scfg, "co2_price_file",
+                          "Data/EU-EnVis-2060_Annual_Regional_CO2_Prices_v1.2.0.csv"))
+    co2_path = isempty(co2_file) ? "" : joinpath(@__DIR__, co2_file)
+    co2_price, co2_src =
+        if haskey(scfg, "co2_price")
+            Float64(scfg["co2_price"]), "config [scenario].co2_price"
+        elseif !isempty(co2_path) && isfile(co2_path)
+            yr = Int(get(scfg, "co2_price_year", 2025 + 5 * period))
+            rg = String(get(scfg, "co2_price_region", "ES"))
+            md = String(get(scfg, "co2_price_model", basename(rstrip(String(scfg["empire_dir"]), '/'))))
+            envis_co2_price(co2_path, md, rg, yr),
+                "EnVis $(md) / $(rg) / $(yr)"
+        else
+            df_co2 = read_in_tab(dir, "General_CO2Price.tab"; ncol = 2)
+            only(df_co2[parse.(Int, String.(df_co2[:, 1])) .== period, 2]),
+                "General_CO2Price.tab (period $period)"
+        end
+
+    # BioCCS carries a NEGATIVE content (-0.1 tCO2/GJ_el), so a positive carbon
+    # price turns its marginal cost negative: -87 (NECPEssentials), -250
+    # (REPowerEU++), -522 EUR/MWh (Go RES).  That is scenario-consistent — the
+    # removal earns the same price the emissions pay — but it makes the unit the
+    # cheapest thing on the system (always at Pmax) and drops the clearing price
+    # far below zero in any hour it is marginal.  ES BioCCS capacity is 217 /
+    # 2 631 / 250 / 0 MW across the four scenarios, so it only really bites in
+    # Go RES.  [scenario].negative_co2_credit decides which world we are in:
+    #   false (default) — the removal credit is OUT of the energy market (paid
+    #                     through a separate CDR mechanism); the adder is
+    #                     floored at 0 and BioCCS keeps its EMPIRE cost.
+    #   true            — the credit clears inside the market, negative prices
+    #                     and all.
+    neg_credit = Bool(get(scfg, "negative_co2_credit", false))
     co2 = Dict(empire_tech(String(r[1])) => Float64(r[2]) for r in eachrow(df_cnt))
     costs = Dict{String,Float64}()
     for r in eachrow(df_mc)
         Int(r.Period) == period || continue
         t = empire_tech(String(r.Generator))
-        adder = get(co2, t, 0.0) == 0.0 ? 0.0 :
-                (3.6 / eta[t]) * co2[t] * co2_price
+        adder = get(co2, t, 0.0) == 0.0 ? 0.0 : 3.6 * co2[t] * co2_price
+        neg_credit || (adder = max(adder, 0.0))
         costs[t] = Float64(r.MarginalCost_EurperMWh) + adder
     end
 
@@ -210,6 +295,7 @@ function load_empire_scenario(cfg; data_dir = joinpath(@__DIR__, "Data"))
     load_scale_es = demand["ES"] / es24
 
     return (label = label, period = period, co2_price = Float64(co2_price),
+            co2_src = co2_src,
             caps = caps, caps_nuts = caps_nuts, costs = costs, demand = demand,
             ntc = ntc, storage = storage, growth = growth,
             load_scale_es = load_scale_es)

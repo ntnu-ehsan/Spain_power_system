@@ -52,6 +52,7 @@ using JuMP, SDDP
 import JSON
 
 include("empire_scenario.jl")
+include("fuel_prices.jl")
 
 # ── configuration ────────────────────────────────────────────
 cfg  = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
@@ -256,8 +257,18 @@ const ES_COST = Dict(
     "Diesel"         => TECH_COST["Oil"],
     "Oil/Gas/Diesel" => TECH_COST["Oil"],
     "Oil/Gas"        => tech_cost("ES", "Gas OCGT"))
-iberia_therm = [(zone = u.zone, tech = u.tech, pmax = u.pmax,
-                 cost = ES_COST[u.tech], src = "smspp cap / 2024 cost")
+# ES coal carries the same availability derating as the market chain
+# ([da].coal_availability): the smspp/generations 2 900 MW is the nameplate of a
+# fleet that had largely closed by 2024.  It matters here for the same reason —
+# once gas is priced seasonally the expensive weeks put coal in merit, and an
+# underated fleet would run 2 900 MW against a real ~930 MW.
+const ES_COAL_AVAIL = Float64(get(get(cfg, "da", Dict()), "coal_availability", 1.0))
+iberia_therm = [(zone = u.zone, tech = u.tech,
+                 pmax = u.tech == "Coal" ? u.pmax * ES_COAL_AVAIL : u.pmax,
+                 cost = ES_COST[u.tech],
+                 src = u.tech == "Coal" ?
+                       @sprintf("smspp cap x %.3f avail / 2024 cost", ES_COAL_AVAIL) :
+                       "smspp cap / 2024 cost")
                 for u in iberia_therm]
 # ES cogeneration / waste / mini-hydro — the OMIE "Cogeneración / Residuos /
 # Mini hidráulica" market group, absent from both smspp_in and generations.csv.
@@ -280,6 +291,47 @@ let chp = get(cfg, "chp", Dict())
 end
 
 therm = vcat(iberia_therm, eur_therm)
+
+# ── Observed daily gas price → per-STAGE gas cost ([midterm4].gas_price_source)
+# "mibgas" replaces the flat [midterm4.gas_cost] figure for the IBERIAN gas
+# fleet with the weekly mean of the observed MIBGAS + EUA short-run marginal
+# cost (fuel_prices.jl).  FR/EU buy on TTF, not MIBGAS, so they keep their
+# config values.  The ES [chp] blocks are excluded: their offer price is a
+# calibrated market bid, not a fuel cost.
+#
+# This is a DETERMINISTIC seasonal path — the cost of stage t is known, not a
+# random variable — so the policy has perfect foresight of the 2024-25 gas
+# market.  Declare that when reporting: a real operator did not know it.  The
+# alternative (gas price as a stochastic, autocorrelated process) would need it
+# as a STATE variable, taking the value function from 3 to 4 dimensions.
+const GAS_SRC = lowercase(String(get(mcfg, "gas_price_source", "config")))
+GAS_SRC in ("config", "mibgas") ||
+    error("config.toml: [midterm4].gas_price_source must be \"config\" or \"mibgas\"")
+
+# unit index ⇒ :ccgt | :ocgt for the Iberian gas fleet, `nothing` otherwise.
+const GAS_KIND = [
+    let z = therm[i].zone, t = therm[i].tech
+        !(z in ("ES", "PT"))                      ? nothing :
+        occursin("Cogeneration", t)               ? nothing :   # [chp] block
+        t == "Gas" || occursin("CCGT", t)         ? :ccgt   :
+        t == "Oil/Gas" || occursin("OCGT", t)     ? :ocgt   : nothing
+    end for i in 1:length(therm)]
+
+const GAS_STAGE = if GAS_SRC == "mibgas" && !SCEN_ACTIVE
+    fp = load_fuel_prices(cfg)
+    d = Dict(k => gas_srmc_stages(fp, k, BGN_DATE, N_STAGES) for k in (:ccgt, :ocgt))
+    @printf("Iberian gas cost: observed MIBGAS+EUA, %d weekly stages — CCGT %.1f…%.1f (mean %.1f), OCGT %.1f…%.1f EUR/MWh\n",
+            N_STAGES, minimum(d[:ccgt]), maximum(d[:ccgt]), mean(d[:ccgt]),
+            minimum(d[:ocgt]), maximum(d[:ocgt]))
+    d
+else
+    nothing
+end
+
+# Marginal cost of unit i at stage t.
+therm_cost(i::Int, t::Int) =
+    (GAS_STAGE === nothing || GAS_KIND[i] === nothing) ? therm[i].cost :
+    GAS_STAGE[GAS_KIND[i]][t]
 
 df_tr = CSV.read(joinpath(DATA_DIR, "Transmission.csv"), DataFrame)
 lines = [(from = node_of(String(r[1])), to = node_of(String(r.ToNode)),
@@ -311,7 +363,8 @@ reservoirs = Dict(
 # volumes / initial fills / inflows, and the ES CHP block.
 if SCEN_ACTIVE
     println("Scenario $(EMP.label): EMPIRE period $(EMP.period), CO2 " *
-            "$(round(EMP.co2_price; digits = 1)) EUR/t — overriding 2024 system")
+            "$(round(EMP.co2_price; digits = 1)) EUR/t ($(EMP.co2_src)) — " *
+            "overriding 2024 system")
 
     # zone × tech capacities (model tech names) for FR/PT/EU lookups below
     for z in ("FR", "PT", "EU")
@@ -606,7 +659,7 @@ model = SDDP.LinearPolicyGraph(;
       + shed[zi, b] == 0.0)                                                     # RHS ← demand
 
     cost = BLOCK_HOURS * (
-        sum(therm[i].cost * gth[i, b] for i in 1:length(therm), b in 1:NB)
+        sum(therm_cost(i, t) * gth[i, b] for i in 1:length(therm), b in 1:NB)
       + VOLL * sum(shed))
 
     # Soft end-of-horizon target: penalise only the shortfall, so a dry final

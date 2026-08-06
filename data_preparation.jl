@@ -206,6 +206,13 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          # available rather than on the nameplate.  1.0 = fully
                          # available (the previous, implicit behaviour).
                          nuclear_availability::Float64 = 1.0,
+                         # Same idea for the coal fleet.  generations.csv still
+                         # carries the full 2 900 MW nameplate, but most of the
+                         # Spanish fleet had closed by 2024 — on 2 Dec it peaked
+                         # at 933 MW (OMIE) / 1 024 MW (ENTSO-E).  Without this
+                         # the whole 2 900 MW runs flat whenever coal is in
+                         # merit, which a daily gas price makes happen.
+                         coal_availability::Float64 = 1.0,
                          voltage_band::Float64       = 0.05,
                          line_rating_factor::Float64 = 0.70,
                          reactors_enabled::Bool      = true,
@@ -488,6 +495,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             min(cap_mw, wind_avail_mw * cap_mw / total_wind_mw) / BASEMVA
         elseif String(row.primary_fuel) == "Nuclear"
             cap_mw * nuclear_availability / BASEMVA
+        elseif String(row.primary_fuel) == "Coal"
+            cap_mw * coal_availability / BASEMVA
         else
             cap_mw / BASEMVA
         end
