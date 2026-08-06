@@ -1382,6 +1382,21 @@ function add_xb_group_constraints!(pm, gen_dict; nw = PowerModels.nw_id_default)
     return JuMP.AffExpr(0.0), Dict{String,Tuple{JuMP.VariableRef,JuMP.VariableRef}}()
 end
 
+# Every generator that cleared in the market has to be anchored to its cleared
+# set-point.  The test is by exclusion, not by name prefix: the bus-level fleet
+# carries legacy "G…"/"GAS_ES…" names but the EMPIRE nodal disaggregation also
+# mints "NEW_GasOCGT_ES…", "NEW_Waste_ES…", "WASTE_ES…", "MINIHYDRO_ES…" units
+# (empire_nodal.jl).  Matching on "G" left ~5 GW of those free to float away
+# from the market schedule — the redispatch then started unanchored 80 EUR/MWh
+# OCGT in preference to moving anchored 61 EUR/MWh CCGT, because only the
+# latter pays the anchor penalty.  Excluded here are the modelling pseudo-units
+# that have no market schedule to be held to: load shedding, the slack machine
+# and the fixed cross-border injections (XB_ is pinned by its own group
+# constraint).  Batteries are handled separately by the callers.
+rd_is_market_unit(name::AbstractString) =
+    !startswith(name, "LS_")   && !startswith(name, "SLACK") &&
+    !startswith(name, "XB_")   && !startswith(name, "BESS_")
+
 function solve_anchored_opf(network, gens, optimizer, sched;
                             iis_label::Union{Nothing,String} = nothing)
     if sched === nothing || (RD_OBJECTIVE == "quadratic" && ANCHOR_WEIGHT <= 0)
@@ -1391,12 +1406,13 @@ function solve_anchored_opf(network, gens, optimizer, sched;
     add_gen_capability!(pm, gens)
     xb_ct_cost, _ = add_xb_group_constraints!(pm, gens)
 
-    # Anchored units: market units ("G…") present in the schedule, plus every
+    # Anchored units: every market unit present in the schedule, plus every
     # battery ("BESS_…") — a battery absent from the schedule is anchored to
     # 0 MW so it cannot act as a free energy source (no hourly energy budget).
     rd_anchor_tgt(g) =
-        startswith(g["name"], "G")     ? (haskey(sched, g["name"]) ? sched[g["name"]] / BASEMVA : nothing) :
-        startswith(g["name"], "BESS_") ? get(sched, g["name"], 0.0) / BASEMVA : nothing
+        startswith(g["name"], "BESS_")  ? get(sched, g["name"], 0.0) / BASEMVA :
+        rd_is_market_unit(g["name"])    ? (haskey(sched, g["name"]) ? sched[g["name"]] / BASEMVA : nothing) :
+                                          nothing
 
     if RD_OBJECTIVE == "quadratic"
         pen = zero(JuMP.QuadExpr)
@@ -1690,8 +1706,9 @@ elseif RD_WATER_VALUE == "piecewise"
                         # Market units anchored when scheduled; batteries always
                         # anchored (to 0 MW when absent from the schedule).
                         tgt_mw =
-                            startswith(g["name"], "G")     ? get(sched_n, g["name"], nothing) :
-                            startswith(g["name"], "BESS_") ? get(sched_n, g["name"], 0.0) : nothing
+                            startswith(g["name"], "BESS_") ? get(sched_n, g["name"], 0.0) :
+                            rd_is_market_unit(g["name"])   ? get(sched_n, g["name"], nothing) :
+                                                             nothing
                         tgt_mw === nothing && continue
                         abs(g["pmax"] - g["pmin"]) > 1e-9 || continue   # skip frozen
                         tgt_pu = tgt_mw / BASEMVA
