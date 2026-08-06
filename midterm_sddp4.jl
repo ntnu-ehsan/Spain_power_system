@@ -55,7 +55,15 @@ include("empire_scenario.jl")
 include("fuel_prices.jl")
 
 # ── configuration ────────────────────────────────────────────
-cfg  = TOML.parsefile(joinpath(@__DIR__, "config.toml"))
+# SPAIN_CONFIG points a run at an alternative config file, exactly as in
+# run_opf.jl — the two must honour the same override or a scenario A/B lands
+# the market chain on cuts trained for a different system.  Without this the
+# env var was silently ignored here and the run retrained the tracked config's
+# scenario while writing to the file names that config implies.
+const CONFIG_PATH = get(ENV, "SPAIN_CONFIG", joinpath(@__DIR__, "config.toml"))
+cfg  = TOML.parsefile(CONFIG_PATH)
+CONFIG_PATH == joinpath(@__DIR__, "config.toml") ||
+    println("Config         : $CONFIG_PATH")
 mcfg = cfg["midterm4"]
 
 # [scenario]: label != "2024" replaces capacities / costs / demand / NTCs /
