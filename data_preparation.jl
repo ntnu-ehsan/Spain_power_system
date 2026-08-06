@@ -261,7 +261,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          # "ramp_mw_per_h" field; solve_da turns it into an
                          # hour-to-hour bound on |Δpg|.  The network build itself
                          # is unaffected — a ramp rate is not a network property.
-                         ramp_limits::Bool = false)
+                         ramp_limits::Bool = false,
+                         # Stage-6 redispatch freeze set ([redispatch].frozen_fuels
+                         # in config.toml).  A bare "Fuel" entry (e.g. "Nuclear")
+                         # freezes every technology under that fuel; "Fuel:technology"
+                         # (e.g. "Hydro:run_of_river") freezes only that technology,
+                         # for fuels with more than one (Hydro's reservoir / pumped
+                         # storage / run-of-river split).  Only matters when
+                         # da_dispatch is also given (Stage 6); ignored otherwise.
+                         frozen_fuels = ("Nuclear", "Biomass", "Coal"))
     bus_df   = CSV.read(joinpath(DATA, "Bus_Data.csv"),                      DataFrame)
     line_df  = CSV.read(joinpath(DATA, "lines.csv"),                         DataFrame)
     gen_df   = CSV.read(joinpath(DATA, "generations.csv"),                   DataFrame)
@@ -483,6 +491,14 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         end
     end
 
+    # Split frozen_fuels once into bare-fuel and (fuel, technology) matchers —
+    # see the keyword doc above.  Technology is matched case-insensitively.
+    _frozen_bare  = Set(String(f) for f in frozen_fuels if !occursin(':', String(f)))
+    _frozen_pairs = Set(let p = split(String(f), ':'; limit = 2)
+                             (p[1], lowercase(p[2]))
+                         end for f in frozen_fuels if occursin(':', String(f)))
+    is_fuel_frozen(fuel, tech) = fuel in _frozen_bare || (fuel, lowercase(tech)) in _frozen_pairs
+
     gens      = Dict{String,Any}()
     gen_count = 0
     for row in eachrow(gen_df)
@@ -539,9 +555,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
 
         # ── Anchor to the day-ahead schedule (redispatch stage) ──────────────
         # When a DA dispatch is supplied, warm-start every unit from it and
-        # *freeze* the units that do not provide redispatch (Nuclear, run-of-
-        # river hydro, biomass) at their DA set-point (pmin = pmax = P_DA).  All
-        # other units stay free; the anchor objective keeps them near P_DA.
+        # *freeze* the units in [redispatch].frozen_fuels at their DA set-point
+        # (pmin = pmax = P_DA).  Everything else stays free; the anchor
+        # objective keeps it near P_DA.  (Run-of-river hydro used to be frozen
+        # by default: an EMPIRE-scenario region can inflate an existing
+        # run-of-river unit's nameplate several-fold — the nodal disaggregation
+        # has nowhere else to put a region's growth once a tech is site-bound,
+        # see empire_nodal.jl — and a hard pmin=pmax on that inflated MW then
+        # makes the local network infeasible with no way to relieve it. The
+        # default frozen_fuels no longer includes it.)
         da_pu = (!isnothing(da_dispatch) && haskey(da_dispatch, String(row.unit_id))) ?
                 da_dispatch[String(row.unit_id)] / BASEMVA : nothing
         # Nuclear DA dispatch is carried unchanged into all subsequent market stages.
@@ -551,12 +573,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                   haskey(nuclear_da_dispatch, String(row.unit_id))) ?
                  nuclear_da_dispatch[String(row.unit_id)] / BASEMVA : nothing
         is_frozen = nuc_pu !== nothing ||
-                    (da_pu !== nothing && (
-                        String(row.primary_fuel) == "Nuclear" ||
-                        String(row.primary_fuel) == "Biomass" ||
-                        String(row.primary_fuel) == "Coal"    ||
-                        (String(row.primary_fuel) == "Hydro" &&
-                         lowercase(String(row.technology)) == "run_of_river")))
+                    (da_pu !== nothing &&
+                     is_fuel_frozen(String(row.primary_fuel), String(row.technology)))
         frozen_pu = nuc_pu !== nothing ? nuc_pu : da_pu
         # Nuclear must-run floor: when not frozen (the DA clear), hold nuclear at
         # >= nuclear_min_frac·Pmax so baseload can't be shut down at the solar peak.

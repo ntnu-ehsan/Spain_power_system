@@ -535,15 +535,29 @@ source = "observed"
 # ── Stage 2: Redispatch ──────────────────────────────────────────────────────
 [redispatch]
 # Make the CID schedule network-feasible with a full AC OPF anchored to the
-# CID dispatch.  Nuclear, run-of-river hydro, biomass and coal are frozen at
-# their CID set-point; every other unit (Gas, Oil, reservoir & pumped hydro,
-# Li-Ion BESS within ±rated power, plus curtailable Wind and Solar) is free
-# to be re-dispatched around its anchored market schedule.
+# CID dispatch.  Units in frozen_fuels are pinned at their CID set-point
+# (pmin = pmax); every other unit (by default: Gas, Oil, reservoir & run-of-
+# river hydro, pumped hydro, Li-Ion BESS within ±rated power, plus curtailable
+# Wind and Solar) is free to be re-dispatched around its anchored market
+# schedule.
 #   enabled = false → run the day-ahead stage only.
 # The CHP / waste / mini-hydro blocks are frozen at their cleared set-point too:
 # cogeneration follows process heat and mini-hydro follows the river, so neither
 # offers redispatch.
 enabled = true
+
+# Which technologies are pinned (pmin = pmax = P_DA) at this stage instead of
+# being freely re-dispatchable.  A bare fuel name freezes every technology
+# under it; "Fuel:technology" freezes only that one (Hydro splits into
+# reservoir / pumped_storage / run_of_river — see generations.csv).
+#   Nuclear, Biomass, Coal — no redispatch flexibility offered in practice.
+# Run-of-river hydro is NOT frozen by default: an EMPIRE 2035 scenario can
+# inflate an existing run-of-river unit's nameplate several-fold (it is
+# site-bound, so the nodal disaggregation has nowhere else to put a region's
+# growth — see empire_nodal.jl), and pinning that inflated MW makes the local
+# network infeasible with no way to relieve it. Add "Hydro:run_of_river" here
+# to restore the old fully-frozen behaviour once the grid can actually carry it.
+frozen_fuels = ["Nuclear", "Biomass", "Coal"]
 
 # Network model used to make the anchored schedule feasible:
 #   "AC" — full nonlinear AC OPF (Ipopt): bus voltages, reactive power and the

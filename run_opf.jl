@@ -189,8 +189,10 @@ XB_SOURCE in ("observed", "sddp") ||
 #                data, Nuclear fixed at DA.
 # Stage 5 (BAL): same copper-plate formulation, balancing (BE) data, Nuclear
 #                fixed at DA; anchored to the CID schedule.
-# Stage 6 (RD):  AC OPF anchored to BAL; Nuclear/Biomass/Coal/ROR frozen at BAL (=DA) values;
-#                BESS free within ±rated power, anchored to its BAL schedule.
+# Stage 6 (RD):  AC OPF anchored to BAL; [redispatch].frozen_fuels pinned at BAL
+#                (=DA) values (default Nuclear/Biomass/Coal); BESS free within
+#                ±rated power, anchored to its BAL schedule; everything else
+#                (incl. run-of-river hydro by default) free/curtailable.
 const DA_ENABLED  = get(get(cfg, "da",         Dict()), "enabled", true)
 const NUCLEAR_MIN_FRAC = Float64(get(get(cfg, "da", Dict()), "nuclear_min_gen_frac", 0.0))
 # Nuclear availability (planned + forced outages) as a fraction of nameplate.
@@ -282,6 +284,14 @@ const ANCHOR_WEIGHT  = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weigh
 # by every redispatch solve (constant and piecewise paths).
 const RD_PF_MODEL  = uppercase(get(get(cfg, "redispatch", Dict()), "power_flow", "AC"))
 const RD_PM_TYPE   = RD_PF_MODEL == "DC" ? PowerModels.DCPPowerModel : PowerModels.ACPPowerModel
+# [redispatch].frozen_fuels: which technologies are pinned (pmin=pmax=P_DA) at
+# this stage vs left free/curtailable (anchored to their DA/CID/BAL schedule
+# via the objective, but adjustable if the local grid can't carry it). A bare
+# "Fuel" entry freezes the whole fuel; "Fuel:technology" (e.g.
+# "Hydro:run_of_river") freezes only that technology — see data_preparation.jl
+# prepare_network's frozen_fuels keyword / is_fuel_frozen for the matching rule.
+const RD_FROZEN_FUELS = String.(get(get(cfg, "redispatch", Dict()), "frozen_fuels",
+                                     ["Nuclear", "Biomass", "Coal"]))
 
 # ── Standalone load-flow / single-hour options ───────────────────────────────
 # [redispatch].from_saved: run ONLY the network load flow (redispatch), reading
@@ -1469,6 +1479,7 @@ if RD_WATER_VALUE == "constant"
                               crossborder_inj = crossborder_inj_for(date_str, hour),
                               crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                               da_dispatch = rd_sched_for(date_str, hour),
+                              frozen_fuels = RD_FROZEN_FUELS,
                               nuclear_availability = nuclear_avail_for(date_str),
                               coal_availability = coal_avail_for(date_str),
                               chp_blocks = chp_blocks_for(date_str),
@@ -1527,8 +1538,8 @@ elseif RD_WATER_VALUE == "piecewise"
 
         @printf "\n[Piecewise] %s  stage=%d  V_ES_start=%.0f MWh\n" date_str bv.stage bv.v_es
 
-        # Build 24 networks anchored to the CID schedule: Nuclear/run-of-river/
-        # biomass/coal are frozen at their CID set-point, every other unit is free.
+        # Build 24 networks anchored to the CID schedule: [redispatch].frozen_fuels
+        # are frozen at their CID set-point, every other unit is free.
         # Reservoir hydro carries no separate linear adder here because the
         # Bellman cost-to-go term below supplies its opportunity cost.
         nets = [prepare_network(ts.load_mw - xb_export_offset(date_str, ts.hour),
@@ -1537,6 +1548,7 @@ elseif RD_WATER_VALUE == "piecewise"
                                 crossborder_inj = crossborder_inj_for(date_str, ts.hour),
                                 crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
                                 da_dispatch = rd_sched_for(date_str, ts.hour),
+                                frozen_fuels = RD_FROZEN_FUELS,
                                 nuclear_availability = nuclear_avail_for(date_str),
                                 coal_availability = coal_avail_for(date_str),
                                 chp_blocks = chp_blocks_for(date_str),
