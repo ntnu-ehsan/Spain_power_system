@@ -103,28 +103,44 @@ const UNIT_SCALE_ID = NODAL_ACTIVE ? NODAL.unit_scale : nothing
 const EXTRA_UNITS   = NODAL_ACTIVE ? NODAL.new_units  : nothing
 const EXTRA_LINES   = NODAL_ACTIVE ? NODAL.new_lines  : nothing
 # [redispatch].extra_line_scale_file: a manual, scenario-independent line
-# reinforcement list — CSV columns line_id,factor — merged into LINE_SCALE by
-# taking the MAX against whatever EMPIRE's own nodal corridor investment
-# (NODAL.line_scale) already put there. Lets a targeted post-hoc fix (e.g. from
-# docs/method_grid_reinforcement_identification.md) sit on top of the
-# scenario's own reinforcement without touching empire_nodal.jl or EMPIRE's
-# corridor data. "" (default) = no manual override, unchanged behaviour.
+# reinforcement list — CSV columns line_id,factor, where `factor` is the
+# desired ABSOLUTE minimum rating as a fraction of NOMINAL (e.g. 1.4 = needs
+# 140% of nameplate), exactly the req_factor produced by the workflow in
+# docs/method_grid_reinforcement_identification.md. The branch rating is built
+# as nominal × line_rating_factor × nc (data_preparation.jl), so to hit that
+# absolute target regardless of the current operating derate, the merged nc
+# has to be factor / line_rating_factor, NOT factor itself — merging the raw
+# factor in silently under-reinforced every line by the derate (e.g. at the
+# usual 0.80 operating derate, a requested 1.40× only ever delivered 1.12×,
+# and anything requested below 1.0× was skipped entirely by the max-vs-1.0
+# guard, even though it was already a bar above the derated 0.80× limit).
+# Merged into LINE_SCALE by taking the MAX against whatever EMPIRE's own
+# nodal corridor investment (NODAL.line_scale) already put there, so the two
+# sources compose. "" (default) = no manual override, unchanged behaviour.
 const EXTRA_LINE_SCALE_FILE = String(strip(get(get(cfg, "redispatch", Dict()), "extra_line_scale_file", "")))
-const LINE_SCALE = let
-    base = NODAL_ACTIVE ? copy(NODAL.line_scale) : Dict{String,Float64}()
+const LINE_SCALE = NODAL_ACTIVE ? NODAL.line_scale : nothing
+# The manual list is applied as a pure THERMAL uprate (rating_scale), NOT as
+# extra parallel circuits like EMPIRE's own corridor investment (line_scale).
+# Parallel circuits also multiply a line's shunt charging and divide its
+# reactance, so a large factor injects a lot of extra reactive power and
+# redraws the flow pattern — which is why simply scaling these factors up did
+# nothing to relieve the AC infeasibility. `factor` here is the desired
+# ABSOLUTE rating as a fraction of NOMINAL (the req_factor of the workflow in
+# docs/method_grid_reinforcement_identification.md); the branch rating is
+# nominal × line_rating_factor × rating_scale, so the stored multiplier is
+# factor / line_rating_factor.
+const RATING_SCALE = let
+    rs = Dict{String,Float64}()
     if EXTRA_LINE_SCALE_FILE != ""
+        lrf   = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
         extra = CSV.read(joinpath(@__DIR__, EXTRA_LINE_SCALE_FILE), DataFrame)
-        n_raised = 0
         for row in eachrow(extra)
-            lid, f = String(row.line_id), Float64(row.factor)
-            if f > get(base, lid, 1.0)
-                base[lid] = f
-                n_raised += 1
-            end
+            mult = Float64(row.factor) / lrf
+            mult > 1.0 && (rs[String(row.line_id)] = mult)
         end
-        @printf "                 extra line reinforcement : %s -> %d/%d lines raised (max vs. EMPIRE nodal scale)\n" EXTRA_LINE_SCALE_FILE n_raised nrow(extra)
+        @printf "                 thermal uprate   : %s -> %d/%d branches (rating only; impedance and charging unchanged), targets an absolute fraction of nominal at line_rating_factor=%.2f\n" EXTRA_LINE_SCALE_FILE length(rs) nrow(extra) lrf
     end
-    isempty(base) ? nothing : base
+    isempty(rs) ? nothing : rs
 end
 const BESS_UNITS    = NODAL_ACTIVE ? NODAL.bess :
                       SCEN_ACTIVE  ? empire_bess_units(EMP) : nothing
@@ -856,6 +872,7 @@ if NTC_HOURLY_ENABLED && RUN_MARKET
                         unit_scale_by_id = UNIT_SCALE_ID,
                         extra_units = EXTRA_UNITS,
                         line_scale = LINE_SCALE,
+                        rating_scale = RATING_SCALE,
                         extra_lines = EXTRA_LINES)
     end
     println("\nHourly coordinated directional NTC preprocessing:")
@@ -997,6 +1014,7 @@ function build_da_nets(date_str, day_ts; nuclear_sched = nothing)
                      unit_scale_by_id = UNIT_SCALE_ID,
                      extra_units = EXTRA_UNITS,
                      line_scale = LINE_SCALE,
+                     rating_scale = RATING_SCALE,
                      extra_lines = EXTRA_LINES)
      for ts in eachrow(day_ts)]
 end
@@ -1540,6 +1558,7 @@ if RD_WATER_VALUE == "constant"
                               unit_scale_by_id = UNIT_SCALE_ID,
                               extra_units = EXTRA_UNITS,
                               line_scale = LINE_SCALE,
+                              rating_scale = RATING_SCALE,
                               extra_lines = EXTRA_LINES)
         (; network, gens, branches, dclines, loads) = net
 
@@ -1609,6 +1628,7 @@ elseif RD_WATER_VALUE == "piecewise"
                                 unit_scale_by_id = UNIT_SCALE_ID,
                                 extra_units = EXTRA_UNITS,
                                 line_scale = LINE_SCALE,
+                                rating_scale = RATING_SCALE,
                                 extra_lines = EXTRA_LINES)
                 for ts in eachrow(day_ts)]
 

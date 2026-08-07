@@ -560,14 +560,25 @@ enabled = true
 frozen_fuels = ["Nuclear", "Biomass", "Coal"]
 
 # ── Manual, targeted line reinforcement ─────────────────────────────────────
-# A CSV (columns: line_id,factor) applied on TOP of line_rating_factor and
-# whatever EMPIRE's own nodal corridor investment already scaled (merged by
-# taking the max per line, so the two sources compose rather than overwrite).
+# A CSV (columns: line_id,factor) naming individual branches — AC lines,
+# transformers ("TR_…") or HVDC links — to uprate, so a study can relieve a few
+# corridors without moving the blanket `line_rating_factor` for the other ~2 300.
 # Produced by the workflow in docs/method_grid_reinforcement_identification.md:
 # probe at a high, uncongested line_rating_factor, back out each branch's
-# req_factor from its peak loading, then list only the branches that actually
-# need it here. line_rating_factor itself stays at the blanket operating
-# derate (e.g. 0.80) for every other branch.
+# req_factor from its peak loading, keep the ones above the target operating
+# factor.
+#
+# `factor` is the branch's required ABSOLUTE rating as a fraction of NOMINAL
+# (i.e. the req_factor itself: 1.4 = needs 140 % of nameplate), independent of
+# the current derate — run_opf.jl divides by line_rating_factor to get the
+# multiplier the model applies.
+#
+# Modelled as a THERMAL UPRATE (reconductoring): only rate_a moves. This is
+# deliberately NOT the parallel-circuit model EMPIRE's own corridor investment
+# uses, which would also multiply the branch's shunt charging and divide its
+# reactance — on an AC solve that injects a large amount of extra reactive
+# power and redraws the flow pattern, so raising the factors made the reactive
+# balance worse instead of relieving the overload.
 #   "" (default) — no manual override.
 extra_line_scale_file = ""
 

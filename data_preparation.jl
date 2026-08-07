@@ -247,6 +247,21 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          unit_scale_by_id::Union{Dict{String,Float64},Nothing} = nothing,
                          extra_units = nothing,
                          line_scale::Union{Dict{String,Float64},Nothing} = nothing,
+                         #   rating_scale     : line/transformer id ⇒ THERMAL
+                         #                      uprate factor.  Unlike line_scale
+                         #                      this touches ONLY rate_a/b/c —
+                         #                      series impedance and shunt
+                         #                      charging are left alone, i.e. a
+                         #                      reconductoring rather than a new
+                         #                      parallel circuit.  Adding parallel
+                         #                      circuits would also multiply the
+                         #                      line's charging Mvar and cut its
+                         #                      reactance, perturbing the reactive
+                         #                      balance and the flow pattern —
+                         #                      the opposite of what a targeted
+                         #                      "this branch needs more MVA"
+                         #                      reinforcement study wants.
+                         rating_scale::Union{Dict{String,Float64},Nothing} = nothing,
                          extra_lines = nothing,
                          # Industrial cogeneration / waste / mini-hydro fleet
                          # ([chp]; see the build block below).  Each entry is a
@@ -317,6 +332,9 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
     # the line — series impedance /f, shunt charging and thermal rating ×f.
     lscale(line_id) = line_scale === nothing ? 1.0 :
                       get(line_scale, String(line_id), 1.0)
+    # Pure thermal uprate (see `rating_scale` above): multiplies rate_a only.
+    rscale(branch_id) = rating_scale === nothing ? 1.0 :
+                        get(rating_scale, String(branch_id), 1.0)
     total_solar_mw = sum(Float64(row.capacity_mw) * uscale(row) for row in eachrow(gen_df)
                          if row.primary_fuel == "Solar" && haskey(bus_idx, row.bus_id);
                          init = 0.0)
@@ -368,7 +386,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         x_pu   = max((Float64(row.x_per_length) * L) / z_base / nc, 1e-4)
         c_F    = Float64(row.c_per_length) * 1e-9 * L
         b_C_pu = 2π * FREQ_HZ * c_F * vn^2 / BASEMVA * nc
-        rate   = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc
+        rate   = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc *
+                 rscale(row.line_id)
         br_count += 1
         branches[string(br_count)] = Dict{String,Any}(
             "index"     => br_count,
@@ -390,8 +409,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         haskey(bus_idx, row.bus0) || continue
         haskey(bus_idx, row.bus1) || continue
         imva   = Float64(row.installed_MVA)
-        x_pu   = max(Float64(row.X_pu_on_installed_base) * (BASEMVA / imva), 1e-4)
-        rate   = imva / BASEMVA * line_rating_factor
+        # `lscale` (nodal corridor expansion + [redispatch].extra_line_scale_file)
+        # was applied to AC lines/HVDC above but NOT here, so a transformer named
+        # in a manual/EMPIRE reinforcement list was silently ignored — its rating
+        # never changed no matter how large the requested factor. Treated the same
+        # as parallel AC circuits: nc extra transformer capacity multiplies the
+        # thermal rating and divides the reactance.
+        nc     = lscale(row.transformer_id)
+        x_pu   = max(Float64(row.X_pu_on_installed_base) * (BASEMVA / imva), 1e-4) / nc
+        rate   = imva / BASEMVA * line_rating_factor * nc * rscale(row.transformer_id)
         br_count += 1
         branches[string(br_count)] = Dict{String,Any}(
             "index"     => br_count,
@@ -427,7 +453,8 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
         # Parallel circuits — and the nodal corridor expansion factor — scale
         # the converter power rating (no series R/X here).
         nc   = max(Float64(row.circuits), 1.0) * lscale(row.line_id)
-        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc
+        rate = sqrt(3) * vn * Float64(row.Imax) / BASEMVA * line_rating_factor * nc *
+               rscale(row.line_id)
         dc_count += 1
         dclines[string(dc_count)] = Dict{String,Any}(
             "index"     => dc_count,
