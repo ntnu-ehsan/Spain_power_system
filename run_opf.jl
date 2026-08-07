@@ -101,8 +101,31 @@ const NODAL_ACTIVE  = SCEN_ACTIVE &&
 const NODAL         = NODAL_ACTIVE ? build_nodal_disaggregation(cfg, EMP) : nothing
 const UNIT_SCALE_ID = NODAL_ACTIVE ? NODAL.unit_scale : nothing
 const EXTRA_UNITS   = NODAL_ACTIVE ? NODAL.new_units  : nothing
-const LINE_SCALE    = NODAL_ACTIVE ? NODAL.line_scale : nothing
 const EXTRA_LINES   = NODAL_ACTIVE ? NODAL.new_lines  : nothing
+# [redispatch].extra_line_scale_file: a manual, scenario-independent line
+# reinforcement list — CSV columns line_id,factor — merged into LINE_SCALE by
+# taking the MAX against whatever EMPIRE's own nodal corridor investment
+# (NODAL.line_scale) already put there. Lets a targeted post-hoc fix (e.g. from
+# docs/method_grid_reinforcement_identification.md) sit on top of the
+# scenario's own reinforcement without touching empire_nodal.jl or EMPIRE's
+# corridor data. "" (default) = no manual override, unchanged behaviour.
+const EXTRA_LINE_SCALE_FILE = String(strip(get(get(cfg, "redispatch", Dict()), "extra_line_scale_file", "")))
+const LINE_SCALE = let
+    base = NODAL_ACTIVE ? copy(NODAL.line_scale) : Dict{String,Float64}()
+    if EXTRA_LINE_SCALE_FILE != ""
+        extra = CSV.read(joinpath(@__DIR__, EXTRA_LINE_SCALE_FILE), DataFrame)
+        n_raised = 0
+        for row in eachrow(extra)
+            lid, f = String(row.line_id), Float64(row.factor)
+            if f > get(base, lid, 1.0)
+                base[lid] = f
+                n_raised += 1
+            end
+        end
+        @printf "                 extra line reinforcement : %s -> %d/%d lines raised (max vs. EMPIRE nodal scale)\n" EXTRA_LINE_SCALE_FILE n_raised nrow(extra)
+    end
+    isempty(base) ? nothing : base
+end
 const BESS_UNITS    = NODAL_ACTIVE ? NODAL.bess :
                       SCEN_ACTIVE  ? empire_bess_units(EMP) : nothing
 const ES_LOAD_SCALE  = SCEN_ACTIVE ? EMP.load_scale_es                    : 1.0

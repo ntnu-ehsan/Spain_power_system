@@ -559,6 +559,18 @@ enabled = true
 # to restore the old fully-frozen behaviour once the grid can actually carry it.
 frozen_fuels = ["Nuclear", "Biomass", "Coal"]
 
+# ── Manual, targeted line reinforcement ─────────────────────────────────────
+# A CSV (columns: line_id,factor) applied on TOP of line_rating_factor and
+# whatever EMPIRE's own nodal corridor investment already scaled (merged by
+# taking the max per line, so the two sources compose rather than overwrite).
+# Produced by the workflow in docs/method_grid_reinforcement_identification.md:
+# probe at a high, uncongested line_rating_factor, back out each branch's
+# req_factor from its peak loading, then list only the branches that actually
+# need it here. line_rating_factor itself stays at the blanket operating
+# derate (e.g. 0.80) for every other branch.
+#   "" (default) — no manual override.
+extra_line_scale_file = ""
+
 # Network model used to make the anchored schedule feasible:
 #   "AC" — full nonlinear AC OPF (Ipopt): bus voltages, reactive power and the
 #          apparent-power (MVA) thermal / generator-capability limits are all
