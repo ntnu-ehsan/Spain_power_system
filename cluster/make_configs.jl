@@ -48,6 +48,10 @@ for scen in SCENARIOS
     m["solver"]      = solver
 
     cfg["weeks"]["enabled"] = weeks_on
+    # [crossborder] supplies fixed border injections for the 2024 study days.
+    # The sampled horizon clears ES-FR/ES-PT itself in the 4-zone day-ahead, and
+    # run_opf.jl errors out if both are on, so the two must move together.
+    weeks_on && (cfg["crossborder"]["enabled"] = false)
 
     rd = cfg["redispatch"]
     rd["from_saved"] = ""                      # full chain, not a redispatch-only replay
