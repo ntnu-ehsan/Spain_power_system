@@ -1,2 +1,7 @@
 Data/smspp_out/
 results/power_flow_map.html
+
+# generated per-run cluster configs and logs
+cluster/config_*.toml
+cluster/logs/
+cluster/*.log
