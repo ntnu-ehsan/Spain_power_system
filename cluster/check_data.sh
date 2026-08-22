@@ -56,8 +56,12 @@ LIST
       echo "Data/2035/$s/Input/Xlsx/ScenarioData/$f.csv"
     done
   done
-  # market-chain forecast columns — NOT tracked by git, must be copied by hand
+  # market-chain profiles.  The chain builds the filename from the study day
+  # (es_filename in run_opf.jl), so with [weeks] off only the TARGET_DAYS files
+  # are read — but list the lot, since a stale copy of any of them is a silent
+  # wrong answer once the target days or [weeks] change.
   find Data/ES -type f 2>/dev/null | sort
+  find Data/ES_old -type f 2>/dev/null | sort
 }
 
 files | while IFS= read -r f; do

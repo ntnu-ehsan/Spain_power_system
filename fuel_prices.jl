@@ -24,9 +24,12 @@
 # textbook fuel emission factor for every fuel in the table (gas 0.0545, coal
 # 0.0913, lignite 0.1077, oil 0.0740 tCO2/GJ_fuel), which is how we know.  The
 # adder is therefore 3.6*content*price and must NOT be divided by eta again.
-# (empire_scenario.jl uses (3.6/eta)*content*price, which double-counts the
-# efficiency; it is dormant only because EMPIRE's General_CO2Price.tab is all
-# zeros — that run used an emission cap instead of a price.)
+# (empire_scenario.jl and build_smspp_2035.py use the same 3.6*content*price
+# convention, so the 2024 path, the scenario path and the SMS++ export all price
+# carbon alike.  Both once divided by eta as well, which double-counted the
+# efficiency and inflated coal ~1.3x more than gas; the bug was invisible while
+# EMPIRE's General_CO2Price.tab was all zeros — those runs used an emission cap
+# instead of a price.)
 #
 # Delivery-day convention: the MIBGAS product is GDAES_D+1, quoted on trading
 # day D for delivery on D+1.  A generator burning gas on delivery day D bought
