@@ -37,6 +37,7 @@ include("crossborder.jl")
 include("da.jl")
 include("empire_scenario.jl")
 include("empire_nodal.jl")
+include("reinforcement_scope.jl")
 include("week_sampling.jl")
 include("week_profiles.jl")
 include("foreign_zones.jl")
@@ -102,6 +103,16 @@ const NODAL         = NODAL_ACTIVE ? build_nodal_disaggregation(cfg, EMP) : noth
 const UNIT_SCALE_ID = NODAL_ACTIVE ? NODAL.unit_scale : nothing
 const EXTRA_UNITS   = NODAL_ACTIVE ? NODAL.new_units  : nothing
 const EXTRA_LINES   = NODAL_ACTIVE ? NODAL.new_lines  : nothing
+const REDISPATCH_CFG = get(cfg, "redispatch", Dict())
+const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
+# Keep the normal security derate and relax only same-NUTS3 Spanish branches.
+# EMPIRE-owned inter-NUTS3/international corridors remain fixed.
+const DIAGNOSTIC_OUTPUT = get(REDISPATCH_CFG, "diagnostic_output", false)
+const DIAGNOSTIC_INTRA_NUTS_MULTIPLIER = Float64(
+    get(REDISPATCH_CFG, "diagnostic_intra_nuts_multiplier", 1.0))
+DIAGNOSTIC_INTRA_NUTS_MULTIPLIER >= 1.0 ||
+    error("config.toml: [redispatch].diagnostic_intra_nuts_multiplier must be >= 1.0")
+const REINFORCEMENT_SCOPE = reinforcement_branch_scope(extra_lines = EXTRA_LINES)
 # [redispatch].extra_line_scale_file: a manual, scenario-independent line
 # reinforcement list — CSV columns line_id,factor, where `factor` is the
 # desired ABSOLUTE minimum rating as a fraction of NOMINAL (e.g. 1.4 = needs
@@ -132,13 +143,22 @@ const LINE_SCALE = NODAL_ACTIVE ? NODAL.line_scale : nothing
 const RATING_SCALE = let
     rs = Dict{String,Float64}()
     if EXTRA_LINE_SCALE_FILE != ""
-        lrf   = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
+        lrf   = LINE_RATING_FACTOR
         extra = CSV.read(joinpath(@__DIR__, EXTRA_LINE_SCALE_FILE), DataFrame)
         for row in eachrow(extra)
             mult = Float64(row.factor) / lrf
             mult > 1.0 && (rs[String(row.line_id)] = mult)
         end
         @printf "                 thermal uprate   : %s -> %d/%d branches (rating only; impedance and charging unchanged), targets an absolute fraction of nominal at line_rating_factor=%.2f\n" EXTRA_LINE_SCALE_FILE length(rs) nrow(extra) lrf
+    end
+    if DIAGNOSTIC_OUTPUT && DIAGNOSTIC_INTRA_NUTS_MULTIPLIER > 1.0
+        eligible = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.reinforcement_eligible]
+        for id in eligible
+            rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTRA_NUTS_MULTIPLIER)
+        end
+        synthetic = [id for id in eligible if startswith(id, "NEWES_") || startswith(id, "NEWXB_")]
+        isempty(synthetic) || error("Synthetic EMPIRE corridors classified as intrazonal: $(join(synthetic, ", "))")
+        @printf "                 diagnostic uprate: %.3gx on %d same-NUTS3 Spanish branches only; inter-NUTS3 and international limits fixed\n" DIAGNOSTIC_INTRA_NUTS_MULTIPLIER length(eligible)
     end
     isempty(rs) ? nothing : rs
 end
@@ -173,8 +193,6 @@ HYDRO_BUDGET_BASIS ∈ (:week, :day) ||
     error("config.toml: [bellman].hydro_budget_basis must be \"week\" or \"day\"")
 
 const VOLTAGE_BAND       = Float64(get(get(cfg, "network", Dict()), "voltage_band", 0.05))
-const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
-
 const GEN_BUS_VCTRL = get(get(cfg, "network", Dict()), "gen_bus_voltage_control", false)
 const GEN_BUS_VMIN  = Float64(get(get(cfg, "network", Dict()), "gen_bus_vmin", 0.98))
 const GEN_BUS_VMAX  = Float64(get(get(cfg, "network", Dict()), "gen_bus_vmax", 1.03))
@@ -321,7 +339,6 @@ const ANCHOR_WEIGHT  = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weigh
 # schedules are still retained only as long as the next gate needs them, but
 # per-unit/per-bus/per-hour CSV rows are not accumulated.  Redispatch keeps one
 # peak-loading record per branch plus the small hourly summary instead.
-const DIAGNOSTIC_OUTPUT = get(get(cfg, "redispatch", Dict()), "diagnostic_output", false)
 # [redispatch].power_flow: "AC" → full nonlinear ACPPowerModel (voltages, reactive
 # power, MVA limits); "DC" → linear DCPPowerModel (active power + angles only, the
 # reactive/voltage knobs become inert).  Selects the PowerModels formulation used
@@ -637,6 +654,17 @@ end
 # and loading_pct figure and silently hides MW overloads.
 reactive_or_zero(d, key) = (q = get(d, key, 0.0); isnan(q) ? 0.0 : q)
 
+function reinforcement_result_metadata(branch_name, network, from_bus, to_bus)
+    fallback = (from_bus_id = String(network["bus"][string(from_bus)]["name"]),
+                to_bus_id = String(network["bus"][string(to_bus)]["name"]),
+                from_nuts3 = "", to_nuts3 = "", asset_class = "unmapped",
+                reinforcement_eligible = false)
+    meta = get(REINFORCEMENT_SCOPE, String(branch_name), fallback)
+    mult = meta.reinforcement_eligible ? DIAGNOSTIC_INTRA_NUTS_MULTIPLIER : 1.0
+    return merge(meta, (diagnostic_multiplier = mult,
+                        base_line_rating_factor = LINE_RATING_FACTOR))
+end
+
 # Accepts one hour's solution dict and pushes rows into the accumulators.
 # Returns true on success, false on failure.
 function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
@@ -727,6 +755,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
         n_cong = 0
         for (k, v) in sol_branch
             br      = branches[k]
+            meta    = reinforcement_result_metadata(br["name"], network, br["f_bus"], br["t_bus"])
             pf_mw   = v["pf"] * BASEMVA
             qf_mvar = reactive_or_zero(v, "qf") * BASEMVA
             sf_mva  = hypot(pf_mw, qf_mvar)
@@ -739,6 +768,14 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 branch_name = br["name"],
                 from_bus    = br["f_bus"],
                 to_bus      = br["t_bus"],
+                from_bus_id = meta.from_bus_id,
+                to_bus_id   = meta.to_bus_id,
+                from_nuts3  = meta.from_nuts3,
+                to_nuts3    = meta.to_nuts3,
+                asset_class = meta.asset_class,
+                reinforcement_eligible = meta.reinforcement_eligible,
+                diagnostic_multiplier = meta.diagnostic_multiplier,
+                base_line_rating_factor = meta.base_line_rating_factor,
                 flow_mw     = round(pf_mw;   digits=2),
                 flow_mvar   = round(qf_mvar; digits=2),
                 limit_mw    = round(rate_mw; digits=2),
@@ -750,6 +787,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
 
         for (k, v) in get(sol_hour, "dcline", Dict())
             dc      = dclines[k]
+            meta    = reinforcement_result_metadata(dc["name"], network, dc["f_bus"], dc["t_bus"])
             pf_mw   = v["pf"] * BASEMVA
             qf_mvar = reactive_or_zero(v, "qf") * BASEMVA
             # Loading of an HVDC cable is set by the active-power transfer only.
@@ -765,6 +803,14 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 branch_name = dc["name"],
                 from_bus    = dc["f_bus"],
                 to_bus      = dc["t_bus"],
+                from_bus_id = meta.from_bus_id,
+                to_bus_id   = meta.to_bus_id,
+                from_nuts3  = meta.from_nuts3,
+                to_nuts3    = meta.to_nuts3,
+                asset_class = meta.asset_class,
+                reinforcement_eligible = meta.reinforcement_eligible,
+                diagnostic_multiplier = meta.diagnostic_multiplier,
+                base_line_rating_factor = meta.base_line_rating_factor,
                 flow_mw     = round(pf_mw;   digits=2),
                 flow_mvar   = round(qf_mvar; digits=2),
                 limit_mw    = round(rate_mw; digits=2),

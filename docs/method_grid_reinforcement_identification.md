@@ -29,24 +29,27 @@ Relax only the voltage side (e.g. `gen_bus_vmax` 1.03 → 1.08, or `gen_bus_volt
 Also read *which* hours fail: clustering at **low-load hours** with **low congestion counts** points to
 a few long-distance export corridors (e.g. remote hydro/wind to load centres), not broad overload.
 
-### 3. Solve fully feasible and UNCONGESTED to get the natural flow pattern
-Raise `line_rating_factor` high enough that every hour solves with **no binding lines** (e.g. 4× gave
-48/48, congestion 0). This over-rated solve reveals where power *wants* to flow, unconstrained.
+### 3. Solve with only intrazonal candidates uncongested
+Keep the normal `line_rating_factor` and EMPIRE-derived capacities on every inter-NUTS3 and
+international corridor. Apply `diagnostic_intra_nuts_multiplier` only to branches whose terminal
+buses are in the same Spanish NUTS3 region. Raise that multiplier until no eligible intrazonal
+branch binds. Fixed EMPIRE corridors may bind; that is intentional.
 
 ### 4. Back out each line's required rating factor
-In the solver output, `limit_mw = line_rating_factor × nominal_rating`, and
+For an eligible branch, `limit_mw = base_line_rating_factor × diagnostic_multiplier × nominal_rating`, and
 `loading_pct = 100 · |flow| / limit_mw`. Therefore the minimum rating factor a line needs is:
 
 ```
-req_factor(line) = max_over_hours( loading_pct ) × LRF_used / 100
+req_factor(line) = max_over_hours( loading_pct ) × base_LRF × diagnostic_multiplier / 100
 ```
 
-(`LRF_used` = the high factor from step 3, e.g. 4.0.) Equivalently `req_factor = peak(|flow|)/nominal`.
+Equivalently `req_factor = peak(|flow|)/nominal`. Only rows marked
+`reinforcement_eligible=true` enter the reinforcement list.
 
 ### 5. Rank and size
-- **System-minimum feasible `line_rating_factor` = max over all lines of `req_factor`** — set by the
-  single worst corridor. (Sanity-check against the sweep: it must lie between the last infeasible and
-  first feasible factor tested.)
+- **Minimum uncongested intrazonal diagnostic multiplier = max over eligible lines of
+  `req_factor / base_LRF`** — set by the single worst intrazonal asset. Fixed EMPIRE corridors are
+  excluded from this maximum.
 - Reinforcement candidates = lines with `req_factor` above the current operating factor; rank
   descending. Count how many exceed 1.0× (nominal), 1.5×, 2.0× to show whether the need is targeted or
   systemic.
@@ -58,25 +61,27 @@ validation run is what confirms the sized list.
 
 ## Reference implementation (pandas)
 ```python
-LRF_USED = 4.0                                   # the over-rated, uncongested solve
-b = pd.read_csv('results/<scenario>/branch_flows.csv')   # date,hour,branch_id,branch_name,...,loading_pct
-req = (b.groupby(['branch_id', 'branch_name'])
-         .agg(peak_load_pct=('loading_pct', 'max')).reset_index())
-req['req_factor'] = req['peak_load_pct'] * LRF_USED / 100.0
+b = pd.read_csv('results/<scenario>/branch_peaks.csv')
+req = b[b.reinforcement_eligible].copy()
+req['req_factor'] = (req.loading_pct * req.base_line_rating_factor
+                     * req.diagnostic_multiplier / 100.0)
+req['factor'] = req.req_factor / req.base_line_rating_factor  # normal security margin
 req = req.sort_values('req_factor', ascending=False)
-system_min = req['req_factor'].max()             # min line_rating_factor for full feasibility
+minimum_multiplier = req['factor'].max()
 for t in (0.8, 1.0, 1.5, 2.0, 3.0):
     print(f'branches needing > {t}x:', int((req.req_factor > t).sum()))
 ```
 Map it: draw branches (endpoints are 1-based bus indices into `Data/Bus_Data.csv`, x=lon/y=lat) colored
 by `req_factor` — see the reinforcement-map cell in `results_plots_2035.ipynb`.
 
-For a full-year diagnostic, use `cluster/run_reinforcement_diag.sh`. It enables
+For a short or full-year diagnostic, use `cluster/run_reinforcement_diag.sh`, for example
+`bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2` for 336 hours. It enables
 the memory-bounded `diagnostic_output` path: `run_opf.jl` writes one maximum row
 per branch to `branch_peaks.csv` instead of materialising the full
 hours-by-branches table. `cluster/derive_reinforcement.py` accepts either this
 compact file or the legacy `branch_flows.csv` and refuses to size a list unless
-every row in `summary.csv` solved successfully.
+every row in `summary.csv` solved successfully. The runner keeps the base rating factor at 0.8;
+its second argument is the selective intrazonal multiplier, not a global LRF.
 
 ## Caveats
 - First-order: uncongested flows differ from constrained flows; always validate (step 6).

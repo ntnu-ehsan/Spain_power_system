@@ -76,21 +76,23 @@ Every differing line is a file to re-copy; `MISSING` means the run will fail
 there rather than merely use stale input. `QUICK=1` compares size instead of
 md5 — seconds instead of minutes.
 
-## 52-week DC reinforcement diagnostic
+## Selective DC reinforcement diagnostic
 
 This is separate from `run_all.sh`. Run it inside an allocated cluster node
 (or call it from the site's sbatch wrapper):
 
 ```bash
-bash cluster/run_reinforcement_diag.sh NECPEssentials 8.0 52
+bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2
 ```
 
 The runner generates its ignored per-run config on the cluster, writes to a
-separate directory such as `results/NECPEssentials_diag_dc52_lrf8p0/`, and then
+separate directory such as `results/NECPEssentials_diag_dc2_intra10/`, and then
 runs `derive_reinforcement.py`. The generated config uses DC redispatch,
 `diagnostic_output = true`, the static EMPIRE commercial border caps, and no
-manual reinforcement list. EMPIRE's own nodal corridor expansion remains part
-of the scenario.
+manual reinforcement list. The normal 0.8 rating derate and EMPIRE's nodal
+corridor capacities remain fixed. The multiplier applies only to Spanish
+branches whose endpoints are in the same NUTS3 region; `NEWES_*`, other
+inter-NUTS3 corridors, and international links are never candidates.
 
 The memory-bounded output path retains only `summary.csv` and one peak-loading
 row per branch in `branch_peaks.csv`; it does not materialise the full
@@ -99,4 +101,6 @@ because an intentionally uncongested high-LRF grid only rediscovers the EMPIRE
 commercial caps while adding several DC solves per delivery hour.
 
 Required SDDP outputs are checked before the run starts. If any branch still
-peaks at 99.9-100%, the derivation script aborts; repeat with a larger LRF.
+eligible intrazonal branch still peaks at 99.9-100%, the derivation script
+aborts; repeat with a larger intrazonal multiplier. Fixed EMPIRE corridors are
+allowed to bind.
