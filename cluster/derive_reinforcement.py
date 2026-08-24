@@ -36,6 +36,7 @@ The whole method rests on the diagnostic being UNCONGESTED.  A branch pinned at
 used, not the rating needed.  The script refuses to write a list in that case.
 """
 import sys
+from pathlib import Path
 import pandas as pd
 
 DERATE = 0.80          # [network].line_rating_factor in normal operation
@@ -46,12 +47,51 @@ def main():
     rdir, lrf = sys.argv[1], float(sys.argv[2])
     out = sys.argv[3] if len(sys.argv) > 3 else None
 
-    b = pd.read_csv(f"{rdir}/branch_flows.csv")
-    hours = b.groupby(["date", "hour"]).ngroups
-    peak = b.groupby("branch_name").loading_pct.max()
+    rdir = Path(rdir)
+    summary_file = rdir / "summary.csv"
+    if not summary_file.is_file():
+        sys.exit(f"ABORT: missing {summary_file}; cannot verify that every diagnostic hour solved")
+    summary = pd.read_csv(summary_file)
+    required_summary = {"date", "hour", "status"}
+    missing = required_summary.difference(summary.columns)
+    if missing:
+        sys.exit(f"ABORT: {summary_file} is missing columns: {', '.join(sorted(missing))}")
+    if summary.empty:
+        sys.exit(f"ABORT: {summary_file} contains no diagnostic hours")
+    hours = len(summary)
+    good_status = summary.status.isin(["OPTIMAL", "LOCALLY_SOLVED"])
+    if not good_status.all():
+        bad = summary.loc[~good_status, ["date", "hour", "status"]]
+        print(f"ABORT: {len(bad)}/{hours} diagnostic hours did not solve successfully")
+        print(bad.head(20).to_string(index=False))
+        sys.exit(1)
+
+    peaks_file = rdir / "branch_peaks.csv"
+    flows_file = rdir / "branch_flows.csv"
+    if peaks_file.is_file():
+        b = pd.read_csv(peaks_file)
+        source = peaks_file.name
+    elif flows_file.is_file():
+        b = pd.read_csv(flows_file)
+        source = flows_file.name
+    else:
+        sys.exit(f"ABORT: neither {peaks_file} nor {flows_file} exists")
+
+    required_branches = {"branch_name", "loading_pct"}
+    missing = required_branches.difference(b.columns)
+    if missing:
+        sys.exit(f"ABORT: {source} is missing columns: {', '.join(sorted(missing))}")
+    if b.empty:
+        sys.exit(f"ABORT: {source} contains no branch results")
+    if source == peaks_file.name:
+        if b.branch_name.duplicated().any():
+            sys.exit(f"ABORT: duplicate branch_name rows in {peaks_file}")
+        peak = b.set_index("branch_name").loading_pct.sort_values(ascending=False)
+    else:
+        peak = b.groupby("branch_name").loading_pct.max().sort_values(ascending=False)
 
     pinned = peak[peak >= 99.9]
-    print(f"diagnostic: {rdir}")
+    print(f"diagnostic: {rdir} ({source})")
     print(f"  {hours} hours, {len(peak)} branches, line_rating_factor used = {lrf}")
     if len(pinned):
         print(f"\n  ABORT: {len(pinned)} branches are still at their limit "

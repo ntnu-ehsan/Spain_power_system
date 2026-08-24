@@ -71,6 +71,13 @@ for t in (0.8, 1.0, 1.5, 2.0, 3.0):
 Map it: draw branches (endpoints are 1-based bus indices into `Data/Bus_Data.csv`, x=lon/y=lat) colored
 by `req_factor` — see the reinforcement-map cell in `results_plots_2035.ipynb`.
 
+For a full-year diagnostic, use `cluster/run_reinforcement_diag.sh`. It enables
+the memory-bounded `diagnostic_output` path: `run_opf.jl` writes one maximum row
+per branch to `branch_peaks.csv` instead of materialising the full
+hours-by-branches table. `cluster/derive_reinforcement.py` accepts either this
+compact file or the legacy `branch_flows.csv` and refuses to size a list unless
+every row in `summary.csv` solved successfully.
+
 ## Caveats
 - First-order: uncongested flows differ from constrained flows; always validate (step 6).
 - Assumes symmetric thermal limits and that curtailment/redispatch freedom is the same across the sweep.

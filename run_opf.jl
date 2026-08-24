@@ -317,6 +317,11 @@ const RD_ENABLED  = get(get(cfg, "redispatch", Dict()), "enabled", true)
 const RD_WATER_VALUE = lowercase(get(get(cfg, "redispatch", Dict()), "water_value", "constant"))
 const RD_OBJECTIVE   = lowercase(get(get(cfg, "redispatch", Dict()), "objective", "quadratic"))
 const ANCHOR_WEIGHT  = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weight", 0.0))
+# Memory-bounded output path for long reinforcement diagnostics.  Market
+# schedules are still retained only as long as the next gate needs them, but
+# per-unit/per-bus/per-hour CSV rows are not accumulated.  Redispatch keeps one
+# peak-loading record per branch plus the small hourly summary instead.
+const DIAGNOSTIC_OUTPUT = get(get(cfg, "redispatch", Dict()), "diagnostic_output", false)
 # [redispatch].power_flow: "AC" → full nonlinear ACPPowerModel (voltages, reactive
 # power, MVA limits); "DC" → linear DCPPowerModel (active power + angles only, the
 # reactive/voltage knobs become inert).  Selects the PowerModels formulation used
@@ -376,6 +381,12 @@ RD_OBJECTIVE ∈ ("quadratic", "cost_weighted") ||
     error("config.toml: [redispatch].objective must be \"quadratic\" or \"cost_weighted\"")
 RD_PF_MODEL ∈ ("AC", "DC") ||
     error("config.toml: [redispatch].power_flow must be \"AC\" or \"DC\"")
+DIAGNOSTIC_OUTPUT && !RUN_MARKET &&
+    error("config.toml: diagnostic_output requires from_saved=\"\" so schedules can be released gate by gate")
+DIAGNOSTIC_OUTPUT && !RD_ENABLED &&
+    error("config.toml: diagnostic_output requires [redispatch].enabled=true")
+DIAGNOSTIC_OUTPUT && RD_WATER_VALUE != "constant" &&
+    error("config.toml: diagnostic_output currently requires water_value=\"constant\"")
 
 rd_anchor_label() = RD_FROM_SAVED_ACTIVE ? "$(RD_FROM_SAVED) (saved)" :
                     BAL_ENABLED  ? "BAL"  :
@@ -390,6 +401,8 @@ rd_anchor_label() = RD_FROM_SAVED_ACTIVE ? "$(RD_FROM_SAVED) (saved)" :
 @printf "Redispatch     : %s\n" (RD_ENABLED  ?
     @sprintf("ON  anchor=%s  power_flow=%s  water_value=%s  objective=%s  w=%.4g",
              rd_anchor_label(), RD_PF_MODEL, RD_WATER_VALUE, RD_OBJECTIVE, ANCHOR_WEIGHT) : "OFF")
+DIAGNOSTIC_OUTPUT &&
+    println("                 diagnostic output: hourly summary + one peak row per branch (bulk dispatch/bus CSVs disabled)")
 RD_FROM_SAVED_ACTIVE &&
     @printf "                 standalone load flow: market stages skipped, anchor read from %s_dispatch.csv in the results folder\n" lowercase(RD_FROM_SAVED)
 RD_ONLY != "" &&
@@ -605,6 +618,17 @@ gen_rows_all    = []
 fuel_rows_all   = []
 branch_rows_all = []
 bus_rows_all    = []
+branch_peak_rows = Dict{String,Any}()
+
+function record_branch_result!(branch_rows_all, branch_peak_rows, row)
+    if DIAGNOSTIC_OUTPUT
+        prev = get(branch_peak_rows, row.branch_name, nothing)
+        (prev === nothing || row.loading_pct > prev.loading_pct) &&
+            (branch_peak_rows[row.branch_name] = row)
+    else
+        push!(branch_rows_all, row)
+    end
+end
 
 # ── 5. Result processing helper ──────────────────────────────
 # Reactive power getter that coalesces a missing OR NaN value to 0.  DC OPF
@@ -616,7 +640,7 @@ reactive_or_zero(d, key) = (q = get(d, key, 0.0); isnan(q) ? 0.0 : q)
 # Accepts one hour's solution dict and pushes rows into the accumulators.
 # Returns true on success, false on failure.
 function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
-                                branch_rows_all, bus_rows_all,
+                                branch_rows_all, branch_peak_rows, bus_rows_all,
                                 sol_hour, network, gens, branches, dclines, loads,
                                 date_str, hour, load_mw, status)
     if status ∈ ("OPTIMAL", "LOCALLY_SOLVED")
@@ -624,14 +648,16 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
         sol_branch = sol_hour["branch"]
         sol_bus    = sol_hour["bus"]
 
-        for (k, v) in sol_bus
-            push!(bus_rows_all, (
-                date   = date_str,
-                hour   = hour,
-                bus_id = network["bus"][k]["name"],
-                vm_pu  = round(get(v, "vm", 1.0);      digits=4),   # DC has no vm ⇒ nominal 1.0
-                va_deg = round(rad2deg(v["va"]);       digits=3),
-            ))
+        if !DIAGNOSTIC_OUTPUT
+            for (k, v) in sol_bus
+                push!(bus_rows_all, (
+                    date   = date_str,
+                    hour   = hour,
+                    bus_id = network["bus"][k]["name"],
+                    vm_pu  = round(get(v, "vm", 1.0); digits=4),   # DC has no vm ⇒ nominal 1.0
+                    va_deg = round(rad2deg(v["va"]);  digits=3),
+                ))
+            end
         end
 
         load_shed_mw      = sum(v["pg"] * BASEMVA for (k, v) in sol_gen
@@ -653,49 +679,52 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
             mismatch_mw     = round(total_gen_mw + load_shed_mw - total_load_mw_out; digits=2),
         ))
 
-        for (k, v) in sol_gen
-            g        = gens[k]
-            pg_mw    = v["pg"] * BASEMVA
-            qg_mvar  = reactive_or_zero(v, "qg") * BASEMVA
-            inst_mw  = g["installed_mw"]
-            avail_mw = g["pmax"] * BASEMVA
-            util     = avail_mw > 0 ? 100 * pg_mw / avail_mw : 0.0
-            push!(gen_rows_all, (
-                date             = date_str,
-                hour             = hour,
-                gen_id           = k,
-                unit_name        = g["name"],
-                fuel             = g["fuel"],
-                technology       = g["technology"],
-                bus_i            = g["gen_bus"],
-                capacity_mw      = round(inst_mw;  digits=2),
-                dispatch_mw      = round(pg_mw;    digits=2),
-                dispatch_mvar    = round(qg_mvar;  digits=2),
-                utilization_pct  = round(util;     digits=1),
-                cost_eur_per_mwh = round(inst_mw > 0 ? g["cost"][1] / BASEMVA : 0.0; digits=2),
-            ))
+        if !DIAGNOSTIC_OUTPUT
+            for (k, v) in sol_gen
+                g        = gens[k]
+                pg_mw    = v["pg"] * BASEMVA
+                qg_mvar  = reactive_or_zero(v, "qg") * BASEMVA
+                inst_mw  = g["installed_mw"]
+                avail_mw = g["pmax"] * BASEMVA
+                util     = avail_mw > 0 ? 100 * pg_mw / avail_mw : 0.0
+                push!(gen_rows_all, (
+                    date             = date_str,
+                    hour             = hour,
+                    gen_id           = k,
+                    unit_name        = g["name"],
+                    fuel             = g["fuel"],
+                    technology       = g["technology"],
+                    bus_i            = g["gen_bus"],
+                    capacity_mw      = round(inst_mw;  digits=2),
+                    dispatch_mw      = round(pg_mw;    digits=2),
+                    dispatch_mvar    = round(qg_mvar;  digits=2),
+                    utilization_pct  = round(util;     digits=1),
+                    cost_eur_per_mwh = round(inst_mw > 0 ? g["cost"][1] / BASEMVA : 0.0; digits=2),
+                ))
+            end
+
+            fuel_disp = Dict{String,Float64}()
+            fuel_cap  = Dict{String,Float64}()
+            for (k, v) in sol_gen
+                g    = gens[k]
+                fuel = g["fuel"]
+                fuel_disp[fuel] = get(fuel_disp, fuel, 0.0) + v["pg"] * BASEMVA
+                fuel_cap[fuel]  = get(fuel_cap,  fuel, 0.0) + g["installed_mw"]
+            end
+            for (fuel, disp) in fuel_disp
+                cap = fuel_cap[fuel]
+                push!(fuel_rows_all, (
+                    date            = date_str,
+                    hour            = hour,
+                    fuel            = fuel,
+                    dispatch_mw     = round(disp; digits=1),
+                    capacity_mw     = round(cap;  digits=1),
+                    utilization_pct = round(100 * disp / max(cap, 1e-6); digits=1),
+                ))
+            end
         end
 
-        fuel_disp = Dict{String,Float64}()
-        fuel_cap  = Dict{String,Float64}()
-        for (k, v) in sol_gen
-            g    = gens[k]
-            fuel = g["fuel"]
-            fuel_disp[fuel] = get(fuel_disp, fuel, 0.0) + v["pg"] * BASEMVA
-            fuel_cap[fuel]  = get(fuel_cap,  fuel, 0.0) + g["installed_mw"]
-        end
-        for (fuel, disp) in fuel_disp
-            cap = fuel_cap[fuel]
-            push!(fuel_rows_all, (
-                date            = date_str,
-                hour            = hour,
-                fuel            = fuel,
-                dispatch_mw     = round(disp; digits=1),
-                capacity_mw     = round(cap;  digits=1),
-                utilization_pct = round(100 * disp / max(cap, 1e-6); digits=1),
-            ))
-        end
-
+        n_cong = 0
         for (k, v) in sol_branch
             br      = branches[k]
             pf_mw   = v["pf"] * BASEMVA
@@ -703,7 +732,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
             sf_mva  = hypot(pf_mw, qf_mvar)
             rate_mw = br["rate_a"] * BASEMVA
             loading = rate_mw > 0 ? 100 * sf_mva / rate_mw : 0.0
-            push!(branch_rows_all, (
+            row = (
                 date        = date_str,
                 hour        = hour,
                 branch_id   = k,
@@ -714,7 +743,9 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 flow_mvar   = round(qf_mvar; digits=2),
                 limit_mw    = round(rate_mw; digits=2),
                 loading_pct = round(loading; digits=1),
-            ))
+            )
+            record_branch_result!(branch_rows_all, branch_peak_rows, row)
+            loading > 90.0 && (n_cong += 1)
         end
 
         for (k, v) in get(sol_hour, "dcline", Dict())
@@ -727,7 +758,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
             # AC branches, where apparent power is the right measure).
             rate_mw = dc["pmaxf"] * BASEMVA
             loading = rate_mw > 0 ? 100 * abs(pf_mw) / rate_mw : 0.0
-            push!(branch_rows_all, (
+            row = (
                 date        = date_str,
                 hour        = hour,
                 branch_id   = "dc" * k,
@@ -738,11 +769,11 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 flow_mvar   = round(qf_mvar; digits=2),
                 limit_mw    = round(rate_mw; digits=2),
                 loading_pct = round(loading; digits=1),
-            ))
+            )
+            record_branch_result!(branch_rows_all, branch_peak_rows, row)
+            loading > 90.0 && (n_cong += 1)
         end
 
-        n_br   = length(sol_branch) + length(get(sol_hour, "dcline", Dict()))
-        n_cong = count(r -> r.loading_pct > 90.0, branch_rows_all[end-n_br+1:end])
         shed_str = load_shed_mw > 0.05 ? @sprintf("  shed=%.0f MW", load_shed_mw) : ""
         @printf "  h%02d  load=%.0f MW  cost=%.0f EUR/h  congested=%d%s\n" hour load_mw op_cost n_cong shed_str
         return true
@@ -975,10 +1006,21 @@ bal_rows_all = []
 # the single hour it commits.
 price_rows_all = []
 da_schedule  = Dict{Tuple{String,Int},Dict{String,Float64}}()
+# In diagnostic mode later gates need only DA nuclear set-points.  Keeping this
+# compact view lets the full DA schedule be released after ID2.
+da_nuclear_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 id2_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 id3_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 cid_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
 bal_schedule = Dict{Tuple{String,Int},Dict{String,Float64}}()
+
+function clear_stage_schedules!(schedules...)
+    DIAGNOSTIC_OUTPUT || return
+    foreach(empty!, schedules)
+    # Stage schedules contain millions of per-unit dictionary entries over a
+    # 52-week run.  Drop those objects before the next gate allocates its view.
+    GC.gc(false)
+end
 
 # Helper: build 24 energy-only networks for one day using the given hourly profile.
 # nuclear_sched: the full da_schedule dict — when provided, Nuclear units are frozen
@@ -1026,19 +1068,27 @@ reservoir_ids_of(nets) = sort([parse(Int, k) for (k, g) in nets[1].gens
 
 # Store a cleared schedule (sched :: Dict net-idx ⇒ unit ⇒ MW) into the
 # (date,hour) schedule dict and append the per-unit rows for CSV export.
-function store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, sched)
+function store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, sched;
+                             nuclear_schedule = nothing)
     for (h_idx, ts) in enumerate(eachrow(day_ts))
         hour = ts.hour
         schedule[(date_str, hour)] = sched[h_idx]
-        for (k, g) in nets[h_idx].gens
-            push!(rows_acc, (
-                date        = date_str,
-                hour        = hour,
-                gen_id      = g["name"],
-                fuel        = g["fuel"],
-                technology  = g["technology"],
-                dispatch_mw = round(sched[h_idx][g["name"]]; digits = 2),
-            ))
+        if nuclear_schedule !== nothing
+            nuclear_schedule[(date_str, hour)] = Dict(
+                g["name"] => sched[h_idx][g["name"]]
+                for (_, g) in nets[h_idx].gens if g["fuel"] == "Nuclear")
+        end
+        if !DIAGNOSTIC_OUTPUT
+            for (_, g) in nets[h_idx].gens
+                push!(rows_acc, (
+                    date        = date_str,
+                    hour        = hour,
+                    gen_id      = g["name"],
+                    fuel        = g["fuel"],
+                    technology  = g["technology"],
+                    dispatch_mw = round(sched[h_idx][g["name"]]; digits = 2),
+                ))
+            end
         end
     end
 end
@@ -1061,6 +1111,7 @@ end
 #                     schedule).  `nothing` ⇒ all 24 hours tradable.
 function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_tag;
                             nuclear_sched = nothing,
+                            nuclear_schedule_acc = nothing,
                             free_hours_actual = nothing,
                             prev_schedule = nothing,
                             foreign = nothing)
@@ -1091,7 +1142,7 @@ function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_
         end
     end
 
-    log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_$(log_tag).log")
+    log_file = DIAGNOSTIC_OUTPUT ? nothing : joinpath(IPOPT_LOG_DIR, "$(date_str)_$(log_tag).log")
     t_start  = time()
     result   = solve_da(nets, reservoir_gen_ids, bv.cuts, bv.v_es,
                         gurobi_da(log_file = log_file);
@@ -1101,7 +1152,8 @@ function run_copper_plate!(schedule, rows_acc, label, date_str, day_ts, bv, log_
     @printf "  %s %s : status=%s  cost=%.0f EUR  (%.1f s)\n" label date_str result.status result.objective (time() - t_start)
     result.status ∈ ("OPTIMAL", "LOCALLY_SOLVED") ||
         error("$label dispatch failed for $date_str: $(result.status)")
-    store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, result.sched)
+    store_stage_result!(schedule, rows_acc, date_str, day_ts, nets, result.sched;
+                        nuclear_schedule = nuclear_schedule_acc)
     record_prices!(label, date_str, day_ts, result.es_price)
     return result
 end
@@ -1162,7 +1214,8 @@ if DA_ENABLED && RUN_MARKET
                         border_mw = BORDER_MW,
                         ntc_override = NTC_HOURLY_ENABLED ? NTC_HOURLY : nothing) : nothing
         result  = run_copper_plate!(da_schedule, da_rows_all, "DA", date_str, day_ts, bv, "da";
-                                    foreign = foreign)
+                                    foreign = foreign,
+                                    nuclear_schedule_acc = DIAGNOSTIC_OUTPUT ? da_nuclear_schedule : nothing)
         if result.xb !== nothing
             store_xb_da!(date_str, result.xb)
             for h in 1:24
@@ -1205,6 +1258,7 @@ if ID2_ENABLED && RUN_MARKET
                           prev_schedule = da_schedule)
     end
 end
+ID2_ENABLED && clear_stage_schedules!(da_schedule)
 
 id2_sched_for(date_str, hour) = get(id2_schedule, (date_str, hour), nothing)
 
@@ -1216,11 +1270,12 @@ if ID3_ENABLED && RUN_MARKET
         # ID3 closes 10:00 D and trades only the last 12 delivery hours (12–23);
         # hours 0–11 are not retradeable here and stay at their ID2 schedule.
         run_copper_plate!(id3_schedule, id3_rows_all, "ID3", date_str, day_ts, bv, "id3";
-                          nuclear_sched = da_schedule,
+                          nuclear_sched = DIAGNOSTIC_OUTPUT ? da_nuclear_schedule : da_schedule,
                           free_hours_actual = Set(12:23),
                           prev_schedule = id2_schedule)
     end
 end
+ID3_ENABLED && clear_stage_schedules!(id2_schedule)
 
 id3_sched_for(date_str, hour) = get(id3_schedule, (date_str, hour), nothing)
 
@@ -1235,9 +1290,11 @@ if CID_ENABLED && RUN_MARKET
                                                ID2_ENABLED ? id2_sched_for(d, h) : da_sched_for(d, h)) :
                                 ID2_ENABLED ? id2_sched_for(d, h) : da_sched_for(d, h)
         run_cid_rolling!(cid_schedule, cid_rows_all, date_str, day_ts, bv;
-                         nuclear_sched = da_schedule, anchor_base = cid_anchor_base)
+                         nuclear_sched = DIAGNOSTIC_OUTPUT ? da_nuclear_schedule : da_schedule,
+                         anchor_base = cid_anchor_base)
     end
 end
+CID_ENABLED && clear_stage_schedules!(id2_schedule, id3_schedule)
 
 cid_sched_for(date_str, hour) = get(cid_schedule, (date_str, hour), nothing)
 
@@ -1253,10 +1310,12 @@ if BAL_ENABLED && RUN_MARKET
         bv     = day_bellman[date_str]
         day_ts = filter(r -> r.date == date_str, hourly_bal)
         run_copper_plate!(bal_schedule, bal_rows_all, "BAL", date_str, day_ts, bv, "bal";
-                          nuclear_sched = da_schedule,
+                          nuclear_sched = DIAGNOSTIC_OUTPUT ? da_nuclear_schedule : da_schedule,
                           prev_schedule = pre_bal_schedule)
     end
 end
+BAL_ENABLED && clear_stage_schedules!(da_schedule, da_nuclear_schedule,
+                                      id2_schedule, id3_schedule, cid_schedule)
 
 bal_sched_for(date_str, hour) = get(bal_schedule, (date_str, hour), nothing)
 
@@ -1300,6 +1359,16 @@ rd_sched_for(date_str, hour) =
                                 ID3_ENABLED  ? id3_sched_for(date_str, hour)  :
                                 ID2_ENABLED  ? id2_sched_for(date_str, hour)  :
                                                da_sched_for(date_str, hour)
+
+function release_rd_schedule!(date_str, hour)
+    DIAGNOSTIC_OUTPUT || return
+    schedule = BAL_ENABLED ? bal_schedule :
+               CID_ENABLED ? cid_schedule :
+               ID3_ENABLED ? id3_schedule :
+               ID2_ENABLED ? id2_schedule : da_schedule
+    delete!(schedule, (date_str, hour))
+    delete!(xb_da_inj, (date_str, hour))
+end
 
 # Solve one hour's AC OPF anchored to the day-ahead schedule `sched`
 # (Dict unit ⇒ MW).  Two objective forms, selected by RD_OBJECTIVE:
@@ -1529,13 +1598,14 @@ if RD_WATER_VALUE == "constant"
         hour     = ts.hour
         bv       = day_bellman[date_str]
         label    = "$date_str h$(lpad(hour, 2, '0'))"
+        sched_hour = rd_sched_for(date_str, hour)
 
         net = prepare_network(ts.load_mw - xb_export_offset(date_str, hour),
                               ts.solar_mw, ts.wind_mw;
                               hydro_reservoir_cost = bv.water_value,
                               crossborder_inj = crossborder_inj_for(date_str, hour),
                               crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
-                              da_dispatch = rd_sched_for(date_str, hour),
+                              da_dispatch = sched_hour,
                               frozen_fuels = RD_FROZEN_FUELS,
                               nuclear_availability = nuclear_avail_for(date_str),
                               coal_availability = coal_avail_for(date_str),
@@ -1562,9 +1632,10 @@ if RD_WATER_VALUE == "constant"
                               extra_lines = EXTRA_LINES)
         (; network, gens, branches, dclines, loads) = net
 
-        log_file = joinpath(IPOPT_LOG_DIR, "$(date_str)_h$(lpad(hour, 2, '0')).log")
+        log_file = DIAGNOSTIC_OUTPUT ? nothing :
+                   joinpath(IPOPT_LOG_DIR, "$(date_str)_h$(lpad(hour, 2, '0')).log")
         result = solve_anchored_opf(network, gens, rd_optimizer_single(log_file = log_file),
-                                    rd_sched_for(date_str, hour); iis_label = label)
+                                    sched_hour; iis_label = label)
         status = string(result["termination_status"])
 
         @printf "[%2d/%d] %s\n" (n_solved + 1) n_total label
@@ -1576,10 +1647,11 @@ if RD_WATER_VALUE == "constant"
             "dcline" => get(result["solution"], "dcline", Dict()),
         )
         ok = process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
-                                    branch_rows_all, bus_rows_all,
+                                    branch_rows_all, branch_peak_rows, bus_rows_all,
                                     sol_hour, network, gens, branches, dclines, loads,
                                     date_str, hour, ts.load_mw, status)
         ok && (global n_solved += 1)
+        release_rd_schedule!(date_str, hour)
     end
 
 # ────────────────────────────────────────────────────────────
@@ -1790,7 +1862,7 @@ elseif RD_WATER_VALUE == "piecewise"
                 "dcline" => get(sol_h, "dcline", Dict()),
             )
             ok = process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
-                                        branch_rows_all, bus_rows_all,
+                                        branch_rows_all, branch_peak_rows, bus_rows_all,
                                         sol_hour, net.network, net.gens,
                                         net.branches, net.dclines, net.loads,
                                         date_str, hour, ts.load_mw, status)
@@ -1806,11 +1878,13 @@ println("\nResults saved to results/")
 
 # Stage 1 — day-ahead cleared schedule + load profile
 if DA_ENABLED && RUN_MARKET
-    da_df = DataFrame(da_rows_all)
-    isempty(da_rows_all) || sort!(da_df, [:date, :hour, order(:dispatch_mw, rev=true)])
-    CSV.write(joinpath(RESULTS, "da_dispatch.csv"), da_df)
-    CSV.write(joinpath(RESULTS, "da_profiles.csv"),  hourly_da)
-    @printf "  da_dispatch.csv  : %d rows\n" nrow(da_df)
+    if !DIAGNOSTIC_OUTPUT
+        da_df = DataFrame(da_rows_all)
+        isempty(da_rows_all) || sort!(da_df, [:date, :hour, order(:dispatch_mw, rev=true)])
+        CSV.write(joinpath(RESULTS, "da_dispatch.csv"), da_df)
+        CSV.write(joinpath(RESULTS, "da_profiles.csv"),  hourly_da)
+        @printf "  da_dispatch.csv  : %d rows\n" nrow(da_df)
+    end
     if !isempty(xb_rows_all)
         CSV.write(joinpath(RESULTS, "xb_flows.csv"), DataFrame(xb_rows_all))
         @printf "  xb_flows.csv     : %d rows (4-zone DA exchange + zonal prices)\n" length(xb_rows_all)
@@ -1827,7 +1901,7 @@ if RUN_MARKET && !isempty(price_rows_all)
 end
 
 # Stage 2 — ID2 cleared schedule + load profile
-if ID2_ENABLED && RUN_MARKET
+if ID2_ENABLED && RUN_MARKET && !DIAGNOSTIC_OUTPUT
     id2_df = DataFrame(id2_rows_all)
     isempty(id2_rows_all) || sort!(id2_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "id2_dispatch.csv"), id2_df)
@@ -1836,7 +1910,7 @@ if ID2_ENABLED && RUN_MARKET
 end
 
 # Stage 3 — ID3 cleared schedule + load profile
-if ID3_ENABLED && RUN_MARKET
+if ID3_ENABLED && RUN_MARKET && !DIAGNOSTIC_OUTPUT
     id3_df = DataFrame(id3_rows_all)
     isempty(id3_rows_all) || sort!(id3_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "id3_dispatch.csv"), id3_df)
@@ -1845,7 +1919,7 @@ if ID3_ENABLED && RUN_MARKET
 end
 
 # Stage 4 — CID cleared schedule + load profile
-if CID_ENABLED && RUN_MARKET
+if CID_ENABLED && RUN_MARKET && !DIAGNOSTIC_OUTPUT
     cid_df = DataFrame(cid_rows_all)
     isempty(cid_rows_all) || sort!(cid_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "cid_dispatch.csv"), cid_df)
@@ -1854,7 +1928,7 @@ if CID_ENABLED && RUN_MARKET
 end
 
 # Stage 5 — Balancing cleared schedule + load profile
-if BAL_ENABLED && RUN_MARKET
+if BAL_ENABLED && RUN_MARKET && !DIAGNOSTIC_OUTPUT
     bal_df = DataFrame(bal_rows_all)
     isempty(bal_rows_all) || sort!(bal_df, [:date, :hour, order(:dispatch_mw, rev=true)])
     CSV.write(joinpath(RESULTS, "bal_dispatch.csv"), bal_df)
@@ -1865,18 +1939,27 @@ end
 # Stage 5 — redispatch (AC-feasible) solution
 if RD_ENABLED
     CSV.write(joinpath(RESULTS, "summary.csv"),      DataFrame(summary_rows))
-    CSV.write(joinpath(RESULTS, "gen_dispatch.csv"), DataFrame(gen_rows_all))
-    CSV.write(joinpath(RESULTS, "branch_flows.csv"), DataFrame(branch_rows_all))
-
-    fuel_df = DataFrame(fuel_rows_all)
-    isempty(fuel_rows_all) || sort!(fuel_df, [:date, :hour, order(:dispatch_mw, rev=true)])
-    CSV.write(joinpath(RESULTS, "fuel_mix.csv"), fuel_df)
-    CSV.write(joinpath(RESULTS, "bus_voltages.csv"), DataFrame(bus_rows_all))
-
     @printf "  summary.csv      : %d rows\n" length(summary_rows)
-    @printf "  gen_dispatch.csv : %d rows\n" length(gen_rows_all)
-    @printf "  fuel_mix.csv     : %d rows\n" nrow(fuel_df)
-    @printf "  branch_flows.csv : %d rows\n" length(branch_rows_all)
+    if DIAGNOSTIC_OUTPUT
+        isempty(branch_peak_rows) &&
+            error("diagnostic_output produced no successful branch results; inspect summary.csv")
+        peak_df = DataFrame(collect(values(branch_peak_rows)))
+        sort!(peak_df, :loading_pct, rev = true)
+        CSV.write(joinpath(RESULTS, "branch_peaks.csv"), peak_df)
+        @printf "  branch_peaks.csv : %d rows (one peak-loading hour per branch)\n" nrow(peak_df)
+    else
+        CSV.write(joinpath(RESULTS, "gen_dispatch.csv"), DataFrame(gen_rows_all))
+        CSV.write(joinpath(RESULTS, "branch_flows.csv"), DataFrame(branch_rows_all))
+
+        fuel_df = DataFrame(fuel_rows_all)
+        isempty(fuel_rows_all) || sort!(fuel_df, [:date, :hour, order(:dispatch_mw, rev=true)])
+        CSV.write(joinpath(RESULTS, "fuel_mix.csv"), fuel_df)
+        CSV.write(joinpath(RESULTS, "bus_voltages.csv"), DataFrame(bus_rows_all))
+
+        @printf "  gen_dispatch.csv : %d rows\n" length(gen_rows_all)
+        @printf "  fuel_mix.csv     : %d rows\n" nrow(fuel_df)
+        @printf "  branch_flows.csv : %d rows\n" length(branch_rows_all)
+    end
     @printf "  Solved %d / %d hours successfully\n" n_solved n_total
     if WEEKS_ACTIVE
         shed_total = sum(max(Float64(r.load_shed_mw), 0.0)

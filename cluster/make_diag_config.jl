@@ -3,7 +3,7 @@
 # thermal limit binds.  req_factor is then read off each branch's peak loading.
 #
 #   julia --project=. cluster/make_diag_config.jl <label> [lrf] [n_weeks] [AC|DC]
-#   defaults:                                              4.0   52        DC
+#   defaults:                                              8.0   52        DC
 #
 # Why DC.  req_factor sizes a THERMAL rating against active power, and step 2 of
 # the method already ruled voltage out for this scenario, so the reactive/voltage
@@ -19,7 +19,7 @@
 # and confirm it with the AC validation run in step 6.
 using TOML
 scen  = length(ARGS) >= 1 ? ARGS[1] : error("usage: make_diag_config.jl <label> [lrf] [n_weeks] [AC|DC]")
-lrf   = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 4.0
+lrf   = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 8.0
 nwk   = length(ARGS) >= 3 ? parse(Int, ARGS[3])     : 52
 pf    = length(ARGS) >= 4 ? uppercase(ARGS[4])      : "DC"
 
@@ -40,6 +40,12 @@ w["seed"]       = 20260822
 # A private key file — resampling the shared Data/sample_weeks.csv would silently
 # move the two weeks every other scenario run is compared on.
 w["key_file"]   = "Data/sample_weeks_diag_$(nwk)w.csv"
+# With an intentionally uncongested high-LRF grid, the hourly NTC preprocessor
+# only rediscovers EMPIRE's commercial caps, at the cost of several DC solves
+# per delivery hour.  Use those caps directly through the static fallback.
+ntc = get!(w, "ntc", Dict{String,Any}())
+ntc["enabled"] = false
+w["xb_ntc_margin"] = 1.0
 
 # [crossborder] carries fixed injections for the 2024 study days only; the
 # sampled horizon clears its own ES-FR/ES-PT exchange inside the 4-zone DA, and
@@ -52,6 +58,7 @@ cfg["network"]["voltage_band"] = 0.10
 rd = cfg["redispatch"]
 rd["power_flow"] = pf
 rd["from_saved"] = ""
+rd["diagnostic_output"] = true
 # The manual list is what we are deriving, so it must not be in the baseline.
 # EMPIRE's own nodal corridor investment stays -- that is part of the scenario.
 rd["extra_line_scale_file"] = ""
@@ -60,4 +67,5 @@ p = joinpath(@__DIR__, "config_diag_$(scen).toml")
 open(p, "w") do io; TOML.print(io, cfg); end
 println("wrote cluster/config_diag_$(scen).toml")
 println("  power_flow=$pf  lrf=$lrf  n_weeks=$nwk (non-contiguous, seed 20260822)")
-println("  key_file=$(w["key_file"])  crossborder=off  extra_line_scale_file=none")
+println("  key_file=$(w["key_file"])  hourly_ntc=off  diagnostic_output=on")
+println("  crossborder=off  extra_line_scale_file=none")

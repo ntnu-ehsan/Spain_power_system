@@ -75,3 +75,28 @@ diff local.txt cluster.txt
 Every differing line is a file to re-copy; `MISSING` means the run will fail
 there rather than merely use stale input. `QUICK=1` compares size instead of
 md5 — seconds instead of minutes.
+
+## 52-week DC reinforcement diagnostic
+
+This is separate from `run_all.sh`. Run it inside an allocated cluster node
+(or call it from the site's sbatch wrapper):
+
+```bash
+bash cluster/run_reinforcement_diag.sh NECPEssentials 8.0 52
+```
+
+The runner generates its ignored per-run config on the cluster, writes to a
+separate directory such as `results/NECPEssentials_diag_dc52_lrf8p0/`, and then
+runs `derive_reinforcement.py`. The generated config uses DC redispatch,
+`diagnostic_output = true`, the static EMPIRE commercial border caps, and no
+manual reinforcement list. EMPIRE's own nodal corridor expansion remains part
+of the scenario.
+
+The memory-bounded output path retains only `summary.csv` and one peak-loading
+row per branch in `branch_peaks.csv`; it does not materialise the full
+hours-by-branches/units/buses tables. Hourly NTC preprocessing is disabled
+because an intentionally uncongested high-LRF grid only rediscovers the EMPIRE
+commercial caps while adding several DC solves per delivery hour.
+
+Required SDDP outputs are checked before the run starts. If any branch still
+peaks at 99.9-100%, the derivation script aborts; repeat with a larger LRF.
