@@ -48,6 +48,8 @@ percentage to every interzonal asset.
 
 - `summary.csv`: all 336 hourly statuses and adequacy outcomes.
 - `branch_peaks.csv`: solved-hour peak loading and capacity policy per branch.
+- `binding_branches.csv`: the five inter-NUTS3 and two international assets
+  that reached 100% in this sensitivity.
 - `sample_weeks.csv`: exact temporal sample, identical to the baseline.
 - `run_config.toml`: exact run configuration.
 - `metrics.csv`: direct baseline-versus-sensitivity comparison.

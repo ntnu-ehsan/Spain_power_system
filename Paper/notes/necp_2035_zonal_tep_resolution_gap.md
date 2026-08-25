@@ -5,6 +5,9 @@ Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
 50% inter-NUTS3 sensitivity:
 `Paper/evidence/necp_2035_interzonal_50pct_2w/`.
 
+100% inter-NUTS3 sensitivity:
+`Paper/evidence/necp_2035_interzonal_100pct_2w/`.
+
 ## Paper-ready wording
 
 To distinguish missing within-zone capacity from the corridor investments
@@ -50,3 +53,10 @@ inter-NUTS3 corridors and two fixed international links still reached 100%.
 Thus, a uniform 50% corridor uplift is not sufficient; the next analysis should
 identify targeted corridor requirements and separate them from international
 transfer limits and redispatch-flexibility assumptions.
+
+Doubling every Spanish inter-NUTS3 limit produced the same 115 successful hours
+as the 50% case and increased no-shedding success by only one hour (106 to 107).
+Four inter-NUTS3 corridors still reached their doubled limits, and the same two
+fixed international links remained saturated. This plateau strengthens the
+case for targeted corridor analysis and for separating international-transfer
+and operational-flexibility constraints from domestic expansion needs.

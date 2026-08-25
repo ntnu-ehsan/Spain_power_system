@@ -1,0 +1,8 @@
+branch_name,asset_class,capacity_policy,from_nuts3,to_nuts3,loading_pct,limit_mw,date,hour
+LTGES0193,inter_nuts3,inter_allowance,ES414,ES412,100.0,589.87,2025-06-27,19
+LTGES0254,inter_nuts3,inter_allowance,ES522,ES532,100.0,609.75,2025-06-25,15
+LTGES0589,inter_nuts3,inter_allowance,ES220,ES243,100.0,589.87,2024-08-21,8
+LTGES0668,inter_nuts3,inter_allowance,ES423,ES300,100.0,589.87,2024-08-22,10
+NEWES_ES412_ES416,inter_nuts3,inter_allowance,ES412,ES416,100.0,226.26,2024-08-20,0
+LTGES1027,international,fixed,FR,ES212,100.0,1429.98,2024-08-20,0
+NEWXB_ES220_FR,international,fixed,ES220,FR,100.0,1600.0,2025-06-25,15
