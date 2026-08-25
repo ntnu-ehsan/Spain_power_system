@@ -30,10 +30,12 @@ Also read *which* hours fail: clustering at **low-load hours** with **low conges
 a few long-distance export corridors (e.g. remote hydro/wind to load centres), not broad overload.
 
 ### 3. Solve with only intrazonal candidates uncongested
-Keep the normal `line_rating_factor` and EMPIRE-derived capacities on every inter-NUTS3 and
-international corridor. Apply `diagnostic_intra_nuts_multiplier` only to branches whose terminal
-buses are in the same Spanish NUTS3 region. Raise that multiplier until no eligible intrazonal
-branch binds. Fixed EMPIRE corridors may bind; that is intentional.
+Keep the normal `line_rating_factor`. Apply `diagnostic_intra_nuts_multiplier` to branches whose
+terminal buses are in the same Spanish NUTS3 region. By default, EMPIRE-derived inter-NUTS3 and
+international capacity remains fixed. A bounded sensitivity can be run with
+`diagnostic_inter_nuts_multiplier` (for example, 1.5 for 50% additional inter-NUTS3 capacity);
+international links remain fixed. Raise the intrazonal multiplier until no eligible intrazonal
+branch binds.
 
 ### 4. Back out each line's required rating factor
 For an eligible branch, `limit_mw = base_line_rating_factor × diagnostic_multiplier × nominal_rating`, and
@@ -75,7 +77,8 @@ Map it: draw branches (endpoints are 1-based bus indices into `Data/Bus_Data.csv
 by `req_factor` — see the reinforcement-map cell in `results_plots_2035.ipynb`.
 
 For a short or full-year diagnostic, use `cluster/run_reinforcement_diag.sh`, for example
-`bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2` for 336 hours. It enables
+`bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2 1.5` for 336 hours with a 50%
+inter-NUTS3 allowance. It enables
 the memory-bounded `diagnostic_output` path: `run_opf.jl` writes one maximum row
 per branch to `branch_peaks.csv` instead of materialising the full
 hours-by-branches table. `cluster/derive_reinforcement.py` accepts either this

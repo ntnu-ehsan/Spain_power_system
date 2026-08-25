@@ -82,17 +82,21 @@ This is separate from `run_all.sh`. Run it inside an allocated cluster node
 (or call it from the site's sbatch wrapper):
 
 ```bash
-bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2
+bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2 1.5
 ```
 
 The runner generates its ignored per-run config on the cluster, writes to a
-separate directory such as `results/NECPEssentials_diag_dc2_intra10/`, and then
+separate directory such as
+`results/NECPEssentials_diag_dc2_intra10_inter1p5/`, and then
 runs `derive_reinforcement.py`. The generated config uses DC redispatch,
 `diagnostic_output = true`, the static EMPIRE commercial border caps, and no
 manual reinforcement list. The normal 0.8 rating derate and EMPIRE's nodal
 corridor capacities remain fixed. The multiplier applies only to Spanish
-branches whose endpoints are in the same NUTS3 region; `NEWES_*`, other
-inter-NUTS3 corridors, and international links are never candidates.
+branches whose endpoints are in the same NUTS3 region. The optional fourth
+argument gives Spanish inter-NUTS3 corridors (including `NEWES_*`) a bounded
+diagnostic allowance; `1.0` keeps the original EMPIRE-derived limits and `1.5`
+allows 50% more capacity. International links, including `NEWXB_*`, remain
+fixed.
 
 The memory-bounded output path retains only `summary.csv` and one peak-loading
 row per branch in `branch_peaks.csv`; it does not materialise the full

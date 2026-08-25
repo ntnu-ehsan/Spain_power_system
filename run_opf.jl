@@ -105,13 +105,18 @@ const EXTRA_UNITS   = NODAL_ACTIVE ? NODAL.new_units  : nothing
 const EXTRA_LINES   = NODAL_ACTIVE ? NODAL.new_lines  : nothing
 const REDISPATCH_CFG = get(cfg, "redispatch", Dict())
 const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
-# Keep the normal security derate and relax only same-NUTS3 Spanish branches.
-# EMPIRE-owned inter-NUTS3/international corridors remain fixed.
+# Keep the normal security derate. The intrazonal diagnostic multiplier and an
+# optional, separately bounded inter-NUTS3 allowance never affect international
+# links.
 const DIAGNOSTIC_OUTPUT = get(REDISPATCH_CFG, "diagnostic_output", false)
 const DIAGNOSTIC_INTRA_NUTS_MULTIPLIER = Float64(
     get(REDISPATCH_CFG, "diagnostic_intra_nuts_multiplier", 1.0))
+const DIAGNOSTIC_INTER_NUTS_MULTIPLIER = Float64(
+    get(REDISPATCH_CFG, "diagnostic_inter_nuts_multiplier", 1.0))
 DIAGNOSTIC_INTRA_NUTS_MULTIPLIER >= 1.0 ||
     error("config.toml: [redispatch].diagnostic_intra_nuts_multiplier must be >= 1.0")
+DIAGNOSTIC_INTER_NUTS_MULTIPLIER >= 1.0 ||
+    error("config.toml: [redispatch].diagnostic_inter_nuts_multiplier must be >= 1.0")
 const REINFORCEMENT_SCOPE = reinforcement_branch_scope(extra_lines = EXTRA_LINES)
 # [redispatch].extra_line_scale_file: a manual, scenario-independent line
 # reinforcement list — CSV columns line_id,factor, where `factor` is the
@@ -151,14 +156,22 @@ const RATING_SCALE = let
         end
         @printf "                 thermal uprate   : %s -> %d/%d branches (rating only; impedance and charging unchanged), targets an absolute fraction of nominal at line_rating_factor=%.2f\n" EXTRA_LINE_SCALE_FILE length(rs) nrow(extra) lrf
     end
-    if DIAGNOSTIC_OUTPUT && DIAGNOSTIC_INTRA_NUTS_MULTIPLIER > 1.0
-        eligible = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.reinforcement_eligible]
-        for id in eligible
-            rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTRA_NUTS_MULTIPLIER)
+    if DIAGNOSTIC_OUTPUT
+        intra = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.asset_class == "intra_nuts3"]
+        inter = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.asset_class == "inter_nuts3"]
+        if DIAGNOSTIC_INTRA_NUTS_MULTIPLIER > 1.0
+            for id in intra
+                rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTRA_NUTS_MULTIPLIER)
+            end
         end
-        synthetic = [id for id in eligible if startswith(id, "NEWES_") || startswith(id, "NEWXB_")]
+        if DIAGNOSTIC_INTER_NUTS_MULTIPLIER > 1.0
+            for id in inter
+                rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTER_NUTS_MULTIPLIER)
+            end
+        end
+        synthetic = [id for id in intra if startswith(id, "NEWES_") || startswith(id, "NEWXB_")]
         isempty(synthetic) || error("Synthetic EMPIRE corridors classified as intrazonal: $(join(synthetic, ", "))")
-        @printf "                 diagnostic uprate: %.3gx on %d same-NUTS3 Spanish branches only; inter-NUTS3 and international limits fixed\n" DIAGNOSTIC_INTRA_NUTS_MULTIPLIER length(eligible)
+        @printf "                 diagnostic uprate: intra-NUTS3 %.3gx (%d branches) | inter-NUTS3 %.3gx (%d branches) | international fixed\n" DIAGNOSTIC_INTRA_NUTS_MULTIPLIER length(intra) DIAGNOSTIC_INTER_NUTS_MULTIPLIER length(inter)
     end
     isempty(rs) ? nothing : rs
 end
@@ -660,8 +673,12 @@ function reinforcement_result_metadata(branch_name, network, from_bus, to_bus)
                 from_nuts3 = "", to_nuts3 = "", asset_class = "unmapped",
                 reinforcement_eligible = false)
     meta = get(REINFORCEMENT_SCOPE, String(branch_name), fallback)
-    mult = meta.reinforcement_eligible ? DIAGNOSTIC_INTRA_NUTS_MULTIPLIER : 1.0
+    mult = meta.asset_class == "intra_nuts3" ? DIAGNOSTIC_INTRA_NUTS_MULTIPLIER :
+           meta.asset_class == "inter_nuts3" ? DIAGNOSTIC_INTER_NUTS_MULTIPLIER : 1.0
+    policy = meta.asset_class == "intra_nuts3" ? "intra_diagnostic" :
+             meta.asset_class == "inter_nuts3" && mult > 1.0 ? "inter_allowance" : "fixed"
     return merge(meta, (diagnostic_multiplier = mult,
+                        capacity_policy = policy,
                         base_line_rating_factor = LINE_RATING_FACTOR))
 end
 
@@ -775,6 +792,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 asset_class = meta.asset_class,
                 reinforcement_eligible = meta.reinforcement_eligible,
                 diagnostic_multiplier = meta.diagnostic_multiplier,
+                capacity_policy = meta.capacity_policy,
                 base_line_rating_factor = meta.base_line_rating_factor,
                 flow_mw     = round(pf_mw;   digits=2),
                 flow_mvar   = round(qf_mvar; digits=2),
@@ -810,6 +828,7 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
                 asset_class = meta.asset_class,
                 reinforcement_eligible = meta.reinforcement_eligible,
                 diagnostic_multiplier = meta.diagnostic_multiplier,
+                capacity_policy = meta.capacity_policy,
                 base_line_rating_factor = meta.base_line_rating_factor,
                 flow_mw     = round(pf_mw;   digits=2),
                 flow_mvar   = round(qf_mvar; digits=2),

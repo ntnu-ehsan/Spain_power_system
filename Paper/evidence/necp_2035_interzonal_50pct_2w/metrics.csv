@@ -1,0 +1,16 @@
+metric,fixed_interzonal_baseline,interzonal_plus_50pct,unit_or_definition
+sampled_hours,336,336,hours; identical sample
+intra_nuts3_diagnostic_multiplier,10,10,multiplier
+inter_nuts3_multiplier,1.0,1.5,multiplier on EMPIRE-mapped operational limit
+international_multiplier,1.0,1.0,fixed
+solver_success_hours,112,115,OPTIMAL plus LOCALLY_SOLVED
+solver_success_without_shedding,105,106,hours with load shedding at or below 0.1 MW
+solver_success_with_shedding,7,9,hours
+failed_hours,224,221,INFEASIBLE plus NUMERICAL_ERROR
+infeasible_hours,147,206,hours
+numerical_error_hours,77,15,hours
+load_shedding_energy,5368.6,6455.5,MWh in successfully solved hours
+inter_nuts3_branches_at_limit,16,5,loading at or above 99.9 percent
+international_branches_at_limit,2,2,loading at or above 99.9 percent
+intra_nuts3_branches_at_limit,0,0,loading at or above 99.9 percent of 10x limit
+intra_nuts3_max_loading,24.8,24.8,percent of 10x diagnostic limit

@@ -2,6 +2,9 @@
 
 Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
 
+50% inter-NUTS3 sensitivity:
+`Paper/evidence/necp_2035_interzonal_50pct_2w/`.
+
 ## Paper-ready wording
 
 To distinguish missing within-zone capacity from the corridor investments
@@ -36,3 +39,14 @@ stage where necessary.
 > sufficient to guarantee nodal DC feasibility after disaggregation to the
 > physical Spanish grid. This demonstrates the need for a nodal validation and
 > feedback step in a zonal transmission-expansion workflow.
+
+## Follow-up sensitivity: 50% inter-NUTS3 allowance
+
+Giving every Spanish inter-NUTS3 branch 50% additional capacity improved
+solver success only from 112 to 115 of 336 hours. Because the three newly
+solved hours all required 1.15--1.56 GW of load shedding, successful hours
+without material shedding increased only from 105 to 106. Five enlarged
+inter-NUTS3 corridors and two fixed international links still reached 100%.
+Thus, a uniform 50% corridor uplift is not sufficient; the next analysis should
+identify targeted corridor requirements and separate them from international
+transfer limits and redispatch-flexibility assumptions.

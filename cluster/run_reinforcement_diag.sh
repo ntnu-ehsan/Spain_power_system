@@ -2,20 +2,22 @@
 # Run the memory-bounded grid-reinforcement diagnostic inside an allocated
 # cluster node (or from an sbatch wrapper).
 #
-#   bash cluster/run_reinforcement_diag.sh [scenario] [intra_multiplier] [n_weeks]
-#   defaults:                                  NECPEssentials  10.0              2
+#   bash cluster/run_reinforcement_diag.sh [scenario] [intra_multiplier] [n_weeks] [inter_multiplier]
+#   defaults:                                  NECPEssentials  10.0              2         1.0
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
 scenario=${1:-NECPEssentials}
 mult=${2:-10.0}
 n_weeks=${3:-2}
+inter_mult=${4:-1.0}
 mult_tag=${mult//./p}
+inter_tag=${inter_mult//./p}
 python_cmd=${PYTHON:-python3}
 
 cfg="cluster/config_diag_${scenario}.toml"
-out="results/${scenario}_diag_dc${n_weeks}_intra${mult_tag}"
-log="cluster/logs/${scenario}_diag_dc${n_weeks}_intra${mult_tag}.log"
+out="results/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}"
+log="cluster/logs/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}.log"
 
 mkdir -p cluster/logs "$out"
 
@@ -29,7 +31,7 @@ for f in \
     fi
 done
 
-julia --project=. cluster/make_diag_config.jl "$scenario" "$mult" "$n_weeks" DC
+julia --project=. cluster/make_diag_config.jl "$scenario" "$mult" "$n_weeks" DC "$inter_mult"
 
 echo "diagnostic config : $cfg"
 echo "results           : $out"

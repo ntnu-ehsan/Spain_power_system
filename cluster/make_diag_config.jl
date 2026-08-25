@@ -2,8 +2,8 @@
 # an over-rated, UNCONGESTED solve for same-NUTS3 Spanish branches. EMPIRE's
 # inter-NUTS3 and international corridor capacities remain fixed.
 #
-#   julia --project=. cluster/make_diag_config.jl <label> [multiplier] [n_weeks] [AC|DC]
-#   defaults:                                              10.0         2         DC
+#   julia --project=. cluster/make_diag_config.jl <label> [intra_mult] [n_weeks] [AC|DC] [inter_mult]
+#   defaults:                                              10.0         2         DC      1.0
 #
 # Why DC.  req_factor sizes a THERMAL rating against active power, and step 2 of
 # the method already ruled voltage out for this scenario, so the reactive/voltage
@@ -18,10 +18,11 @@
 # reactive-dominated (90th pct 4.2) far more.  Treat the DC list as a LOWER bound
 # and confirm it with the AC validation run in step 6.
 using TOML
-scen  = length(ARGS) >= 1 ? ARGS[1] : error("usage: make_diag_config.jl <label> [multiplier] [n_weeks] [AC|DC]")
+scen  = length(ARGS) >= 1 ? ARGS[1] : error("usage: make_diag_config.jl <label> [intra_mult] [n_weeks] [AC|DC] [inter_mult]")
 mult  = length(ARGS) >= 2 ? parse(Float64, ARGS[2]) : 10.0
 nwk   = length(ARGS) >= 3 ? parse(Int, ARGS[3])     : 2
 pf    = length(ARGS) >= 4 ? uppercase(ARGS[4])      : "DC"
+imult = length(ARGS) >= 5 ? parse(Float64, ARGS[5]) : 1.0
 
 cfg = TOML.parsefile(joinpath(@__DIR__, "..", "config.toml"))
 cfg["scenario"]["label"]      = scen
@@ -62,6 +63,7 @@ rd["power_flow"] = pf
 rd["from_saved"] = ""
 rd["diagnostic_output"] = true
 rd["diagnostic_intra_nuts_multiplier"] = mult
+rd["diagnostic_inter_nuts_multiplier"] = imult
 # The manual list is what we are deriving, so it must not be in the baseline.
 # EMPIRE's own nodal corridor investment stays -- that is part of the scenario.
 rd["extra_line_scale_file"] = ""
@@ -69,6 +71,7 @@ rd["extra_line_scale_file"] = ""
 p = joinpath(@__DIR__, "config_diag_$(scen).toml")
 open(p, "w") do io; TOML.print(io, cfg); end
 println("wrote cluster/config_diag_$(scen).toml")
-println("  power_flow=$pf  base_lrf=0.80  intra_nuts_multiplier=$mult  n_weeks=$nwk (non-contiguous, seed 20260822)")
+println("  power_flow=$pf  base_lrf=0.80  intra_nuts_multiplier=$mult  inter_nuts_multiplier=$imult")
+println("  n_weeks=$nwk (non-contiguous, seed 20260822)")
 println("  key_file=$(w["key_file"])  hourly_ntc=off  diagnostic_output=on")
 println("  crossborder=off  extra_line_scale_file=none")
