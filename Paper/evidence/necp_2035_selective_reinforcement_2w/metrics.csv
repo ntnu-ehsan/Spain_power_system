@@ -1,0 +1,25 @@
+metric,value,unit_or_definition
+scenario,NECPEssentials,EMPIRE period 2 (2035)
+power_flow,DC,linear active-power redispatch
+sampled_weeks,2,non-contiguous weeks
+horizon_hours,336,hours
+base_line_rating_factor,0.8,fraction of nameplate
+intra_nuts3_diagnostic_multiplier,10,multiplier on eligible branches only
+solved_hours,112,OPTIMAL plus LOCALLY_SOLVED
+failed_hours,224,INFEASIBLE plus NUMERICAL_ERROR
+optimal_hours,108,hours
+locally_solved_hours,4,hours
+infeasible_hours,147,hours
+numerical_error_hours,77,hours
+load_shedding_solved_hours,7,hours with load_shed_mw above 0.1
+load_shedding_energy,5368.6,MWh in successfully solved hours
+branches_total,2350,branches with a recorded solved-hour peak
+intra_nuts3_eligible_branches,1997,diagnostically relaxed
+intra_nuts3_max_loading,24.8,percent of the deliberately 10x diagnostic limit
+intra_nuts3_branches_at_limit,0,loading at or above 99.9 percent
+inter_nuts3_fixed_branches,338,EMPIRE-derived limits retained
+inter_nuts3_max_loading,100.0,percent
+inter_nuts3_branches_at_limit,16,loading at or above 99.9 percent
+international_fixed_branches,15,EMPIRE-derived limits retained
+international_max_loading,100.0,percent
+international_branches_at_limit,2,loading at or above 99.9 percent

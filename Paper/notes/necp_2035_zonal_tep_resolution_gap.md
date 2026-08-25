@@ -1,0 +1,38 @@
+# Candidate paper finding: zonal TEP versus nodal feasibility
+
+Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
+
+## Paper-ready wording
+
+To distinguish missing within-zone capacity from the corridor investments
+selected by EMPIRE, we retained the EMPIRE-derived limits of all inter-NUTS3
+and international branches and applied a factor-ten diagnostic relaxation only
+to branches within each Spanish NUTS3 region. In a DC redispatch over two
+non-contiguous sampled weeks (336 hours), only 112 hours were feasible. None of
+the 1,997 relaxed intrazonal branches reached its diagnostic limit in the
+solved hours, whereas 16 inter-NUTS3 and two international branches reached
+their fixed limits. This result shows that aggregate corridor investment
+decisions do not necessarily translate into a feasible nodal network once the
+capacities are mapped to physical branches and Kirchhoff power flows are
+enforced. Zonal transmission expansion should therefore be followed by nodal
+validation, with nodal congestion information fed back into the investment
+stage where necessary.
+
+## Do not overstate
+
+- The intrazonal maximum was 24.8% **of a 10x diagnostic limit**, not 24.8% of
+  the original rating.
+- Branch peaks cover only the 112 solved hours; the 224 failed hours have no
+  valid flow solution.
+- The experiment establishes a failure of this coupled implementation for this
+  sample, not a universal proof that every zonal TEP model is inaccurate.
+- Before publication, test the effects of the 0.8 derate, corridor-to-branch
+  mapping, copper-plate market clearing, redispatch flexibility, alternative
+  temporal samples, and AC validation.
+
+## Strongest currently supportable claim
+
+> In the NECP 2035 case, EMPIRE's aggregate transmission expansion was not
+> sufficient to guarantee nodal DC feasibility after disaggregation to the
+> physical Spanish grid. This demonstrates the need for a nodal validation and
+> feedback step in a zonal transmission-expansion workflow.
