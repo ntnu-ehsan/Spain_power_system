@@ -169,10 +169,10 @@ function _ntc_transfer_scale(network, pg0, xb_fracs,
            clamp(JuMP.value(ntc_lambda), 0.0, 1.0) : 0.0
 end
 
-function _ntc_cache_valid(df::DataFrame, hourly_da::DataFrame,
-                          lrf::Float64, reliability::Float64,
-                          physical_caps::Dict{String,Float64},
-                          crossborder_split::String)::Bool
+function _ntc_cache_prefix_valid(df::DataFrame, hourly_da::DataFrame,
+                                 lrf::Float64, reliability::Float64,
+                                 physical_caps::Dict{String,Float64},
+                                 crossborder_split::String)::Bool
     required = Set(["date", "hour", "load_mw", "solar_mw", "wind_mw",
                     "line_rating_factor", "reliability_margin",
                     "cache_version", "crossborder_split",
@@ -181,10 +181,7 @@ function _ntc_cache_valid(df::DataFrame, hourly_da::DataFrame,
                     "fr_import_mw", "fr_export_mw",
                     "pt_import_mw", "pt_export_mw", "joint_scale"])
     required ⊆ Set(names(df)) || return false
-    nrow(df) == nrow(hourly_da) || return false
-    keys_df = Set((string(r.date), Int(r.hour)) for r in eachrow(df))
-    keys_da = Set((string(r.date), Int(r.hour)) for r in eachrow(hourly_da))
-    keys_df == keys_da || return false
+    0 < nrow(df) <= nrow(hourly_da) || return false
     all(abs.(Float64.(df.line_rating_factor) .- lrf) .< 1e-9) || return false
     all(abs.(Float64.(df.reliability_margin) .- reliability) .< 1e-9) || return false
     all(Int.(df.cache_version) .== NTC_CACHE_VERSION) || return false
@@ -194,16 +191,24 @@ function _ntc_cache_valid(df::DataFrame, hourly_da::DataFrame,
     all(abs.(Float64.(df.pt_commercial_cap_mw) .- physical_caps["PT"]) .< 0.1) ||
         return false
     cached_profiles = select(df, :date, :hour, :load_mw, :solar_mw, :wind_mw)
-    current_profiles = select(hourly_da, :date, :hour, :load_mw, :solar_mw, :wind_mw)
+    current_profiles = select(hourly_da[1:nrow(df), :],
+                              :date, :hour, :load_mw, :solar_mw, :wind_mw)
     cached_profiles.date = string.(cached_profiles.date)
     current_profiles.date = string.(current_profiles.date)
-    joined = innerjoin(
-        cached_profiles,
-        current_profiles,
-        on = [:date, :hour], makeunique = true)
-    return all(abs.(joined.load_mw .- joined.load_mw_1) .< 0.1) &&
-           all(abs.(joined.solar_mw .- joined.solar_mw_1) .< 0.1) &&
-           all(abs.(joined.wind_mw .- joined.wind_mw_1) .< 0.1)
+    return all(cached_profiles.date .== current_profiles.date) &&
+           all(Int.(cached_profiles.hour) .== Int.(current_profiles.hour)) &&
+           all(abs.(cached_profiles.load_mw .- current_profiles.load_mw) .< 0.1) &&
+           all(abs.(cached_profiles.solar_mw .- current_profiles.solar_mw) .< 0.1) &&
+           all(abs.(cached_profiles.wind_mw .- current_profiles.wind_mw) .< 0.1)
+end
+
+function _ntc_cache_valid(df::DataFrame, hourly_da::DataFrame,
+                          lrf::Float64, reliability::Float64,
+                          physical_caps::Dict{String,Float64},
+                          crossborder_split::String)::Bool
+    return nrow(df) == nrow(hourly_da) &&
+           _ntc_cache_prefix_valid(df, hourly_da, lrf, reliability,
+                                   physical_caps, crossborder_split)
 end
 
 """
@@ -223,6 +228,8 @@ function derive_hourly_ntcs(hourly_da::DataFrame, network_builder,
                             cache_file::Union{Nothing,String} = nothing,
                             reuse::Bool = true,
                             optimizer = _ntc_quiet_optimizer())
+    rows = NamedTuple[]
+    start_idx = 1
     if reuse && cache_file !== nothing && isfile(cache_file)
         cached = CSV.read(cache_file, DataFrame)
         if _ntc_cache_valid(cached, hourly_da, line_rating_factor,
@@ -237,17 +244,24 @@ function derive_hourly_ntcs(hourly_da::DataFrame, network_builder,
                  joint_scale  = Float64(r.joint_scale))
                 for r in eachrow(cached))
             return lookup, cached
+        elseif _ntc_cache_prefix_valid(cached, hourly_da, line_rating_factor,
+                                       reliability_margin, physical_caps,
+                                       crossborder_split)
+            append!(rows, NamedTuple.(eachrow(cached)))
+            start_idx = nrow(cached) + 1
+            println("  Hourly directional NTCs: resuming after $(nrow(cached))/$(nrow(hourly_da)) cached rows")
+        else
+            println("  Hourly directional NTC cache is stale; recomputing")
         end
-        println("  Hourly directional NTC cache is stale; recomputing")
     end
 
     # These are commercial upper bounds.  The DC calculation can only reduce
     # them; it can never create more capacity than EMPIRE or the physical border.
     cap_fr = physical_caps["FR"] / BASEMVA
     cap_pt = physical_caps["PT"] / BASEMVA
-    rows = NamedTuple[]
     n = nrow(hourly_da)
-    for (idx, ts) in enumerate(eachrow(hourly_da))
+    for idx in start_idx:n
+        ts = hourly_da[idx, :]
         date_str, hour = string(ts.date), Int(ts.hour)
         assembled = network_builder(ts)
         network = _ntc_disable_emergency_resources!(deepcopy(assembled.network))

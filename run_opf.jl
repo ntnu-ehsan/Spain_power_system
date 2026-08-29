@@ -969,6 +969,9 @@ WEEKS_ACTIVE && @printf "  physical border nameplate: FR %.0f MW | PT %.0f MW\n"
 # used only here; solve_da receives ordinary scalar border bounds.
 NTC_CFG = get(get(cfg, "weeks", Dict()), "ntc", Dict())
 NTC_HOURLY_ENABLED = WEEKS_ACTIVE && get(NTC_CFG, "enabled", true)
+NTC_ONLY = WEEKS_ACTIVE && get(NTC_CFG, "only", false)
+NTC_ONLY && !NTC_HOURLY_ENABLED &&
+    error("config.toml: [weeks.ntc].only=true requires [weeks.ntc].enabled=true")
 NTC_HOURLY = Dict{Tuple{String,Int},Any}()
 if NTC_HOURLY_ENABLED && RUN_MARKET
     ntc_reliability = Float64(get(NTC_CFG, "reliability_margin", 0.90))
@@ -1018,6 +1021,11 @@ if NTC_HOURLY_ENABLED && RUN_MARKET
         crossborder_split = RD_XB_SPLIT,
         cache_file = ntc_cache,
         reuse = ntc_reuse)
+    if NTC_ONLY
+        println("\nNTC-only run complete: hourly NTC cache is complete; " *
+                "day-ahead and redispatch were skipped.")
+        exit(0)
+    end
 elseif WEEKS_ACTIVE
     static_margin = Float64(get(cfg["weeks"], "xb_ntc_margin", 0.65))
     @printf "  Hourly NTC preprocessing OFF; using symmetric static margin %.2f\n" static_margin
