@@ -87,11 +87,13 @@ bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2 1.5
 
 The runner generates its ignored per-run config on the cluster, writes to a
 separate directory such as
-`results/NECPEssentials_diag_dc2_intra10_inter1p5/`, and then
-runs `derive_reinforcement.py`. The generated config uses DC redispatch,
-`diagnostic_output = true`, the static EMPIRE commercial border caps, and no
-manual reinforcement list. The normal 0.8 rating derate and EMPIRE's nodal
-corridor capacities remain fixed. The multiplier applies only to Spanish
+`results/NECPEssentials_diag_dc2_intra10_inter1p5_xbcountry_total_hourlyntc0p7_da_rd/`,
+and then runs `derive_reinforcement.py`. The generated config uses DC
+redispatch, `diagnostic_output = true`, hourly coordinated NTC with a 0.70
+reliability margin, and no manual reinforcement list. ID2, ID3, CID, and
+balancing are bypassed: the DA schedule and profiles feed redispatch directly.
+The normal 0.8 rating derate and EMPIRE's nodal corridor capacities remain
+fixed. The multiplier applies only to Spanish
 branches whose endpoints are in the same NUTS3 region. The optional fourth
 argument gives Spanish inter-NUTS3 corridors (including `NEWES_*`) a bounded
 diagnostic allowance; `1.0` keeps the original EMPIRE-derived limits and `1.5`
@@ -100,9 +102,10 @@ fixed.
 
 The memory-bounded output path retains only `summary.csv` and one peak-loading
 row per branch in `branch_peaks.csv`; it does not materialise the full
-hours-by-branches/units/buses tables. Hourly NTC preprocessing is disabled
-because an intentionally uncongested high-LRF grid only rediscovers the EMPIRE
-commercial caps while adding several DC solves per delivery hour.
+hours-by-branches/units/buses tables. The hourly NTC calculation uses the same
+sign-consistent country-total boundary allocation as redispatch by default. Its
+cache is reused only when the profiles, physical/commercial caps, reliability
+margin, split mode, and cache schema all match.
 
 Required SDDP outputs are checked before the run starts. If any branch still
 eligible intrazonal branch still peaks at 99.9-100%, the derivation script

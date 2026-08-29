@@ -3,7 +3,7 @@
 # cluster node (or from an sbatch wrapper).
 #
 #   bash cluster/run_reinforcement_diag.sh [scenario] [intra_multiplier] [n_weeks] [inter_multiplier] [international_multiplier] [xb_split]
-#   defaults:                                  NECPEssentials  10.0              2         1.0               1.0                       fixed
+#   defaults:                                  NECPEssentials  10.0              2         1.0               1.0                       country_total
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -12,7 +12,7 @@ mult=${2:-10.0}
 n_weeks=${3:-2}
 inter_mult=${4:-1.0}
 international_mult=${5:-1.0}
-xb_split=${6:-fixed}
+xb_split=${6:-country_total}
 mult_tag=${mult//./p}
 inter_tag=${inter_mult//./p}
 international_tag=${international_mult//./p}
@@ -32,8 +32,8 @@ case "$xb_split" in
 esac
 
 cfg="cluster/config_diag_${scenario}.toml"
-out="results/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}${international_suffix}${xb_suffix}"
-log="cluster/logs/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}${international_suffix}${xb_suffix}.log"
+out="results/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}${international_suffix}${xb_suffix}_hourlyntc0p7_da_rd"
+log="cluster/logs/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}${international_suffix}${xb_suffix}_hourlyntc0p7_da_rd.log"
 
 mkdir -p cluster/logs "$out"
 

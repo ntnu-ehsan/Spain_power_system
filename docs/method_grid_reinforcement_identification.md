@@ -38,6 +38,14 @@ International links remain fixed in the reinforcement workflow. The separate
 `diagnostic_international_multiplier` is reserved for controlled sensitivity tests and defaults
 to 1.0. Raise the intrazonal multiplier until no eligible intrazonal branch binds.
 
+Before interpreting a failed redispatch as a reinforcement need, derive hourly
+network-consistent directional NTCs and use them in DA. The diagnostic runner
+now does this with a 0.70 reliability margin and bypasses ID2/ID3/CID/BAL, so DA
+feeds redispatch directly. This separates an infeasible static commercial
+exchange schedule from a genuine internal reinforcement requirement. The NTC
+calculation and redispatch both preserve each country's DA total while allowing
+a sign-consistent allocation among its physical boundary buses.
+
 ### 4. Back out each line's required rating factor
 For an eligible branch, `limit_mw = base_line_rating_factor × diagnostic_multiplier × nominal_rating`, and
 `loading_pct = 100 · |flow| / limit_mw`. Therefore the minimum rating factor a line needs is:
@@ -91,9 +99,10 @@ an optional fifth argument applies a diagnostic international multiplier (for ex
 for +100%) while leaving the default international-fixed behavior unchanged. The emitted
 `reinforcement.csv` stores `factor=req_factor`, the absolute required rating as a fraction of
 nameplate; `run_opf.jl` applies the 0.8 security-margin conversion exactly once when loading it.
-An optional sixth argument, `country_total`, keeps each country's DA exchange exact during
-redispatch while allowing a sign-consistent reallocation among its boundary buses. The default
-`fixed` mode retains every DA bus share exactly.
+An optional sixth argument selects the boundary split. The default,
+`country_total`, keeps each country's DA exchange exact during both hourly NTC
+calculation and redispatch while allowing a sign-consistent reallocation among
+its boundary buses. Pass `fixed` to retain every rating-proportional bus share.
 
 ## Caveats
 - First-order: uncongested flows differ from constrained flows; always validate (step 6).

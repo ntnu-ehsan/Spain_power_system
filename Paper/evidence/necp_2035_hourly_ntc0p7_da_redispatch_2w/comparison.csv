@@ -1,0 +1,3 @@
+case,hours,total_success,optimal,locally_solved,infeasible,numerical_error,load_shed_mwh,hourly_ntc,reliability_margin,crossborder_split
+static_ntc_country_total,336,125,124,1,206,5,4049.4,false,1.0,country_total
+hourly_ntc_0p7_da_redispatch,336,336,335,1,0,0,0.0,true,0.7,country_total

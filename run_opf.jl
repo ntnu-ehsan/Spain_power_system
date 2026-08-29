@@ -1015,6 +1015,7 @@ if NTC_HOURLY_ENABLED && RUN_MARKET
         hourly_da, ntc_network_builder, xb_fracs, commercial_caps;
         line_rating_factor = LINE_RATING_FACTOR,
         reliability_margin = ntc_reliability,
+        crossborder_split = RD_XB_SPLIT,
         cache_file = ntc_cache,
         reuse = ntc_reuse)
 elseif WEEKS_ACTIVE
@@ -1680,7 +1681,10 @@ hourly_rd = RD_FROM_SAVED_ACTIVE ?
      RD_FROM_SAVED == "CID" ? hourly_cid :
      RD_FROM_SAVED == "ID3" ? hourly_id3 :
      RD_FROM_SAVED == "ID2" ? hourly_id2 : hourly_da) :
-    (BAL_ENABLED ? hourly_bal : hourly_cid)
+    (BAL_ENABLED ? hourly_bal :
+     CID_ENABLED ? hourly_cid :
+     ID3_ENABLED ? hourly_id3 :
+     ID2_ENABLED ? hourly_id2 : hourly_da)
 # [redispatch].only may pin the load flow to a single delivery hour (constant
 # water_value only; the day is already restricted via TARGET_DAYS).
 RD_ONLY_HOUR !== nothing && (hourly_rd = filter(r -> r.hour == RD_ONLY_HOUR, hourly_rd))

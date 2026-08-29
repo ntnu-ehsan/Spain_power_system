@@ -1,0 +1,3 @@
+date,hour,branch_name,from_bus_id,to_bus_id,asset_class,loading_pct
+2024-08-22,9,LTGES0177,ES00742,ES00744,international,100.0
+2024-08-20,0,LTGES1027,ES00859,ES00860,international,100.0

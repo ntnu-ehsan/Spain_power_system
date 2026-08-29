@@ -16,8 +16,9 @@
 #      every corner is DC-feasible;
 #   5. apply an additional reliability margin.
 #
-# Cross-border injections use fixed rating-proportional boundary shares in all
-# capacity tests.  Any load shedding or fictitious slack needed by the domestic
+# Cross-border injections use either fixed rating-proportional boundary shares
+# or the same sign-consistent free country-total split used by redispatch.  Any
+# load shedding or fictitious slack needed by the domestic
 # zero-exchange reference is frozen in every incremental transfer test, so it
 # cannot manufacture NTC and remains visible in `base_emergency_mw`.  Real
 # batteries stay available: their charging headroom is needed for a valid
@@ -29,7 +30,7 @@ const NTC_DIRECTIONS = (
     (:pt_import_mw,  0.0,  1.0),
     (:pt_export_mw,  0.0, -1.0),
 )
-const NTC_CACHE_VERSION = 5
+const NTC_CACHE_VERSION = 6
 
 _ntc_ok(status) = string(status) in ("OPTIMAL", "LOCALLY_SOLVED")
 
@@ -80,7 +81,8 @@ opposite-direction transit patterns use an optimised corrective-redispatch GSK.
 """
 function _ntc_transfer_scale(network, pg0, xb_fracs,
                              pattern_fr::Float64, pattern_pt::Float64,
-                             optimizer)::Float64
+                             optimizer;
+                             crossborder_split::String = "fixed")::Float64
     pm = PowerModels.instantiate_model(
         network, PowerModels.DCPPowerModel, PowerModels.build_opf)
     JuMP.@variable(pm.model, 0.0 <= ntc_lambda <= 1.0)
@@ -129,17 +131,36 @@ function _ntc_transfer_scale(network, pg0, xb_fracs,
         # offline TTC/NTC calculation; no network constraint enters DA.
     end
 
-    # Fixed boundary distribution factors.  No border bus is allowed to reverse
-    # independently or act as a free redispatch resource.
-    for (_, g) in network["gen"]
-        startswith(g["name"], "XB_") || continue
-        bus = g["name"][4:end]
-        country = g["country"]
-        pattern = country == "FR" ? pattern_fr :
-                  country == "PT" ? pattern_pt : 0.0
-        share = get(get(xb_fracs, country, Dict{String,Float64}()), bus, 0.0)
-        JuMP.@constraint(pm.model,
-            PowerModels.var(pm, :pg, g["index"]) == share * pattern * ntc_lambda)
+    xb_gens = [g for (_, g) in network["gen"] if startswith(g["name"], "XB_")]
+    if crossborder_split == "country_total"
+        # Let the physical grid choose the boundary-bus distribution, while
+        # preserving the requested country total and forbidding counterflow.
+        # The generator pmin/pmax values already carry each bus's derated
+        # physical border capacity.
+        for (country, pattern) in (("FR", pattern_fr), ("PT", pattern_pt))
+            country_gens = [g for g in xb_gens if g["country"] == country]
+            JuMP.@constraint(pm.model,
+                sum(PowerModels.var(pm, :pg, g["index"]) for g in country_gens) ==
+                pattern * ntc_lambda)
+            for g in country_gens
+                pg = PowerModels.var(pm, :pg, g["index"])
+                pattern > 1e-10 ? JuMP.@constraint(pm.model, pg >= 0.0) :
+                pattern < -1e-10 ? JuMP.@constraint(pm.model, pg <= 0.0) :
+                                  JuMP.@constraint(pm.model, pg == 0.0)
+            end
+        end
+    else
+        # Fixed boundary distribution factors.  No border bus is allowed to
+        # reverse independently or act as a free redispatch resource.
+        for g in xb_gens
+            bus = g["name"][4:end]
+            country = g["country"]
+            pattern = country == "FR" ? pattern_fr :
+                      country == "PT" ? pattern_pt : 0.0
+            share = get(get(xb_fracs, country, Dict{String,Float64}()), bus, 0.0)
+            JuMP.@constraint(pm.model,
+                PowerModels.var(pm, :pg, g["index"]) == share * pattern * ntc_lambda)
+        end
     end
 
     JuMP.@objective(pm.model, Max, ntc_lambda)
@@ -150,10 +171,12 @@ end
 
 function _ntc_cache_valid(df::DataFrame, hourly_da::DataFrame,
                           lrf::Float64, reliability::Float64,
-                          physical_caps::Dict{String,Float64})::Bool
+                          physical_caps::Dict{String,Float64},
+                          crossborder_split::String)::Bool
     required = Set(["date", "hour", "load_mw", "solar_mw", "wind_mw",
                     "line_rating_factor", "reliability_margin",
-                    "cache_version", "fr_commercial_cap_mw",
+                    "cache_version", "crossborder_split",
+                    "fr_commercial_cap_mw",
                     "pt_commercial_cap_mw", "base_emergency_mw",
                     "fr_import_mw", "fr_export_mw",
                     "pt_import_mw", "pt_export_mw", "joint_scale"])
@@ -165,6 +188,7 @@ function _ntc_cache_valid(df::DataFrame, hourly_da::DataFrame,
     all(abs.(Float64.(df.line_rating_factor) .- lrf) .< 1e-9) || return false
     all(abs.(Float64.(df.reliability_margin) .- reliability) .< 1e-9) || return false
     all(Int.(df.cache_version) .== NTC_CACHE_VERSION) || return false
+    all(String.(df.crossborder_split) .== crossborder_split) || return false
     all(abs.(Float64.(df.fr_commercial_cap_mw) .- physical_caps["FR"]) .< 0.1) ||
         return false
     all(abs.(Float64.(df.pt_commercial_cap_mw) .- physical_caps["PT"]) .< 0.1) ||
@@ -195,13 +219,15 @@ function derive_hourly_ntcs(hourly_da::DataFrame, network_builder,
                             physical_caps::Dict{String,Float64};
                             line_rating_factor::Float64,
                             reliability_margin::Float64 = 0.90,
+                            crossborder_split::String = "fixed",
                             cache_file::Union{Nothing,String} = nothing,
                             reuse::Bool = true,
                             optimizer = _ntc_quiet_optimizer())
     if reuse && cache_file !== nothing && isfile(cache_file)
         cached = CSV.read(cache_file, DataFrame)
         if _ntc_cache_valid(cached, hourly_da, line_rating_factor,
-                            reliability_margin, physical_caps)
+                            reliability_margin, physical_caps,
+                            crossborder_split)
             println("  Hourly directional NTCs: reused $(nrow(cached)) rows from $(basename(cache_file))")
             lookup = Dict((string(r.date), Int(r.hour)) =>
                 (fr_import_mw = Float64(r.fr_import_mw),
@@ -240,7 +266,8 @@ function derive_hourly_ntcs(hourly_da::DataFrame, network_builder,
                 pattern_fr = sfr * cap_fr
                 pattern_pt = spt * cap_pt
                 scale = _ntc_transfer_scale(
-                    network, pg0, xb_fracs, pattern_fr, pattern_pt, optimizer)
+                    network, pg0, xb_fracs, pattern_fr, pattern_pt, optimizer;
+                    crossborder_split = crossborder_split)
                 cap = name in (:fr_import_mw, :fr_export_mw) ? cap_fr : cap_pt
                 vals[name] = cap * scale * BASEMVA
             end
@@ -262,7 +289,8 @@ function derive_hourly_ntcs(hourly_da::DataFrame, network_builder,
                     scale = _ntc_transfer_scale(
                         network, pg0, xb_fracs,
                         sfr * vals[fr_key] / BASEMVA,
-                        spt * vals[pt_key] / BASEMVA, optimizer)
+                        spt * vals[pt_key] / BASEMVA, optimizer;
+                        crossborder_split = crossborder_split)
                     if scale < 1.0 - 1e-6
                         vals[fr_key] *= scale
                         vals[pt_key] *= scale
@@ -290,6 +318,7 @@ function derive_hourly_ntcs(hourly_da::DataFrame, network_builder,
             line_rating_factor = line_rating_factor,
             reliability_margin = reliability_margin,
             cache_version = NTC_CACHE_VERSION,
+            crossborder_split = crossborder_split,
             fr_commercial_cap_mw = physical_caps["FR"],
             pt_commercial_cap_mw = physical_caps["PT"],
             base_emergency_mw = base_emergency_mw,
