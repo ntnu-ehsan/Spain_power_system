@@ -17,6 +17,9 @@ Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
 +100% international sensitivity at +400% inter-NUTS3:
 `Paper/evidence/necp_2035_international_100pct_interzonal_400pct_2w/`.
 
+Country-total border redistribution at +400% inter-NUTS3:
+`Paper/evidence/necp_2035_country_total_border_split_interzonal_400pct_2w/`.
+
 ## Paper-ready wording
 
 To distinguish missing within-zone capacity from the corridor investments
@@ -94,12 +97,12 @@ representation of the border interface rather than additional market exchange.
 One doubled international branch (`LTGES1027`) and one 5.0x Spanish
 inter-NUTS3 corridor (`NEWES_ES412_ES416`) still reached 100%.
 
-This demonstrates that the fixed physical international interface was decisive
-for the feasibility plateau in this configuration, but it does **not** justify
-doubling international investment. The minimum allowance should be bracketed,
-and the mapping of EMPIRE's aggregate international transfer capacity onto the
-physical border circuits should be audited before drawing an investment
-conclusion.
+Under fixed proportional boundary-bus shares, this demonstrates that relaxing
+the physical international interface removes the feasibility plateau, but it
+does **not** justify doubling international investment. The boundary allocation,
+network-derived NTC, and mapping of EMPIRE's aggregate international transfer
+capacity onto the physical border circuits must be audited before drawing an
+investment conclusion.
 
 With all hours feasible and no shedding, the run also yields a conditional
 first-order intrazonal list: 80 branches require more than the normal 0.8
@@ -107,3 +110,22 @@ usable fraction of nameplate, 46 require more than nameplate, and the maximum
 absolute requirement is 2.784 times nameplate. These values are conditional on
 the deliberately generous 5.0x domestic interzonal and 2.0x international
 allowances and require a targeted validation run.
+
+## Follow-up sensitivity: fixed country totals with free boundary-bus shares
+
+Keeping international physical ratings at 1.0x while allowing a bounded,
+same-direction redistribution of each country's exact DA exchange among its
+boundary buses improved success from 116/336 to 125/336. All 116 formerly
+successful hours remained feasible and nine additional hours were recovered,
+but seven of those nine required load shedding. The country totals were exact
+(maximum 0.003 MW difference only after CSV rounding), no counterflow occurred,
+and the DA exchange file was byte-identical to the fixed-share case.
+
+The redistribution therefore removes only a small part of the feasibility gap:
+211 hours still failed, while ten of 15 fixed international branches and one
+5.0x Spanish inter-NUTS3 corridor reached 100% in solved hours. No intrazonal
+reinforcement list can be inferred from this incomplete flow sample. The next
+test should retain the country-total redistribution and 1.0x international
+ratings but enable hourly network-based NTCs in the DA market. If that restores
+feasibility, the required correction is an exchange-capacity handoff rather
+than international reinforcement.

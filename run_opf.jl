@@ -358,6 +358,8 @@ const RD_ENABLED  = get(get(cfg, "redispatch", Dict()), "enabled", true)
 const RD_WATER_VALUE = lowercase(get(get(cfg, "redispatch", Dict()), "water_value", "constant"))
 const RD_OBJECTIVE   = lowercase(get(get(cfg, "redispatch", Dict()), "objective", "quadratic"))
 const ANCHOR_WEIGHT  = Float64(get(get(cfg, "redispatch", Dict()), "anchor_weight", 0.0))
+const RD_XB_SPLIT = lowercase(String(get(get(cfg, "redispatch", Dict()),
+                                         "crossborder_split", "fixed")))
 # Memory-bounded output path for long reinforcement diagnostics.  Market
 # schedules are still retained only as long as the next gate needs them, but
 # per-unit/per-bus/per-hour CSV rows are not accumulated.  Redispatch keeps one
@@ -419,6 +421,8 @@ RD_WATER_VALUE ∈ ("constant", "piecewise") ||
     error("config.toml: [redispatch].water_value must be \"constant\" or \"piecewise\"")
 RD_OBJECTIVE ∈ ("quadratic", "cost_weighted") ||
     error("config.toml: [redispatch].objective must be \"quadratic\" or \"cost_weighted\"")
+RD_XB_SPLIT ∈ ("fixed", "country_total") ||
+    error("config.toml: [redispatch].crossborder_split must be \"fixed\" or \"country_total\"")
 RD_PF_MODEL ∈ ("AC", "DC") ||
     error("config.toml: [redispatch].power_flow must be \"AC\" or \"DC\"")
 DIAGNOSTIC_OUTPUT && !RUN_MARKET &&
@@ -439,8 +443,9 @@ rd_anchor_label() = RD_FROM_SAVED_ACTIVE ? "$(RD_FROM_SAVED) (saved)" :
 @printf "Intraday (CID) : %s\n" (CID_ENABLED ? "ON (copper-plate, Nuclear fixed at DA)" : "OFF")
 @printf "Balancing      : %s\n" (BAL_ENABLED ? "ON (copper-plate, Nuclear fixed at DA)" : "OFF")
 @printf "Redispatch     : %s\n" (RD_ENABLED  ?
-    @sprintf("ON  anchor=%s  power_flow=%s  water_value=%s  objective=%s  w=%.4g",
-             rd_anchor_label(), RD_PF_MODEL, RD_WATER_VALUE, RD_OBJECTIVE, ANCHOR_WEIGHT) : "OFF")
+    @sprintf("ON  anchor=%s  power_flow=%s  water_value=%s  objective=%s  w=%.4g  border_split=%s",
+             rd_anchor_label(), RD_PF_MODEL, RD_WATER_VALUE, RD_OBJECTIVE,
+             ANCHOR_WEIGHT, RD_XB_SPLIT) : "OFF")
 DIAGNOSTIC_OUTPUT &&
     println("                 diagnostic output: hourly summary + one peak row per branch (bulk dispatch/bus CSVs disabled)")
 RD_FROM_SAVED_ACTIVE &&
@@ -460,6 +465,8 @@ TARGET_DAYS = ["2024-07-08", "2024-12-02"]
 # study days; each sampled week is 7 SDDP-calendar days, so the Bellman
 # stage/cut/volume lookups below work unchanged.
 const WEEKS_ACTIVE = get(get(cfg, "weeks", Dict()), "enabled", false)
+RD_XB_SPLIT == "country_total" && !WEEKS_ACTIVE &&
+    error("config.toml: redispatch crossborder_split=\"country_total\" currently requires [weeks].enabled=true")
 const WEEK_KEY     = WEEKS_ACTIVE ? load_or_sample_weeks(cfg) : nothing
 if WEEKS_ACTIVE
     SCEN_ACTIVE || error("config.toml: [weeks] needs an EMPIRE scenario " *
@@ -658,6 +665,7 @@ gen_rows_all    = []
 fuel_rows_all   = []
 branch_rows_all = []
 bus_rows_all    = []
+xb_redispatch_rows = []
 branch_peak_rows = Dict{String,Any}()
 
 function record_branch_result!(branch_rows_all, branch_peak_rows, row)
@@ -735,6 +743,25 @@ function process_hour_solution!(summary_rows, gen_rows_all, fuel_rows_all,
             load_shed_mw    = round(load_shed_mw;         digits=1),
             mismatch_mw     = round(total_gen_mw + load_shed_mw - total_load_mw_out; digits=2),
         ))
+
+        # Compact audit trail for the border split. The DA bus shares are stored
+        # in g["pg"]; country-total mode may move individual buses but the exact
+        # country sum is constrained in solve_anchored_opf.
+        for (k, v) in sol_gen
+            g = gens[k]
+            startswith(g["name"], "XB_") || continue
+            push!(xb_redispatch_rows, (
+                date = date_str,
+                hour = hour,
+                country = g["country"],
+                bus_id = g["name"][4:end],
+                da_share_mw = round(g["pg"] * BASEMVA; digits = 3),
+                redispatch_mw = round(v["pg"] * BASEMVA; digits = 3),
+                delta_mw = round((v["pg"] - g["pg"]) * BASEMVA; digits = 3),
+                lower_bound_mw = round(g["pmin"] * BASEMVA; digits = 3),
+                upper_bound_mw = round(g["pmax"] * BASEMVA; digits = 3),
+            ))
+        end
 
         if !DIAGNOSTIC_OUTPUT
             for (k, v) in sol_gen
@@ -1549,10 +1576,10 @@ function rd_dump_iis(pm, network; label::Union{Nothing,String} = nothing)
     println("  IIS: $n_conflict conflicting constraints written to $out")
 end
 
-# Any future bounded border-share adjustment must retain an exact country total.
-# The normal weeks path now fixes every boundary injection to its DA share, so
-# this helper is normally a no-op.  There is deliberately no countertrade slack:
-# an infeasible fixed exchange must be exposed as an NTC-capacity problem.
+# A bounded border-share adjustment must retain an exact country total. In
+# `fixed` mode every boundary injection is already pinned and this is a no-op;
+# in `country_total` mode it fixes the FR and PT sums while the individual bus
+# shares move within sign-consistent limits. There is no exchange-volume slack.
 const XB_SPLIT_WEIGHT = 1e-3
 function add_xb_group_constraints!(pm, gen_dict; nw = PowerModels.nw_id_default)
     by_c  = Dict{String,Vector{Int}}()
@@ -1578,8 +1605,8 @@ end
 # OCGT in preference to moving anchored 61 EUR/MWh CCGT, because only the
 # latter pays the anchor penalty.  Excluded here are the modelling pseudo-units
 # that have no market schedule to be held to: load shedding, the slack machine
-# and the fixed cross-border injections (XB_ is pinned by its own group
-# constraint).  Batteries are handled separately by the callers.
+# and cross-border injections (XB_ is fixed directly or pinned by its country
+# group constraint). Batteries are handled separately by the callers.
 rd_is_market_unit(name::AbstractString) =
     !startswith(name, "LS_")   && !startswith(name, "SLACK") &&
     !startswith(name, "XB_")   && !startswith(name, "BESS_")
@@ -1682,6 +1709,8 @@ if RD_WATER_VALUE == "constant"
                               hydro_reservoir_cost = bv.water_value,
                               crossborder_inj = crossborder_inj_for(date_str, hour),
                               crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
+                              crossborder_bus_caps = RD_XB_SPLIT == "country_total" ? XB_BUS_CAPS : nothing,
+                              crossborder_same_direction = RD_XB_SPLIT == "country_total",
                               da_dispatch = sched_hour,
                               frozen_fuels = RD_FROZEN_FUELS,
                               nuclear_availability = nuclear_avail_for(date_str),
@@ -1754,6 +1783,8 @@ elseif RD_WATER_VALUE == "piecewise"
                                 hydro_reservoir_cost = 0.0,
                                 crossborder_inj = crossborder_inj_for(date_str, ts.hour),
                                 crossborder_exports = WEEKS_ACTIVE || XB_EXPORT_AT_BORDER,
+                                crossborder_bus_caps = RD_XB_SPLIT == "country_total" ? XB_BUS_CAPS : nothing,
+                                crossborder_same_direction = RD_XB_SPLIT == "country_total",
                                 da_dispatch = rd_sched_for(date_str, ts.hour),
                                 frozen_fuels = RD_FROZEN_FUELS,
                                 nuclear_availability = nuclear_avail_for(date_str),
@@ -2017,6 +2048,10 @@ end
 if RD_ENABLED
     CSV.write(joinpath(RESULTS, "summary.csv"),      DataFrame(summary_rows))
     @printf "  summary.csv      : %d rows\n" length(summary_rows)
+    if !isempty(xb_redispatch_rows)
+        CSV.write(joinpath(RESULTS, "xb_redispatch.csv"), DataFrame(xb_redispatch_rows))
+        @printf "  xb_redispatch.csv: %d rows (DA shares versus physical redispatch split)\n" length(xb_redispatch_rows)
+    end
     if DIAGNOSTIC_OUTPUT
         isempty(branch_peak_rows) &&
             error("diagnostic_output produced no successful branch results; inspect summary.csv")
@@ -2042,10 +2077,11 @@ if RD_ENABLED
         shed_total = sum(max(Float64(r.load_shed_mw), 0.0)
                          for r in summary_rows if isfinite(Float64(r.load_shed_mw));
                          init = 0.0)
+        exchange_label = RD_XB_SPLIT == "country_total" ? "fixed-country-total" : "fixed-bus-share"
         if n_solved == n_total
-            @printf "  Fixed-exchange %s validation: PASS (%d/%d hours solved; DA border totals remained hard-fixed)\n" RD_PF_MODEL n_solved n_total
+            @printf "  %s %s validation: PASS (%d/%d hours solved; DA border totals remained exact)\n" exchange_label RD_PF_MODEL n_solved n_total
         else
-            @printf "  Fixed-exchange %s validation: FAIL (%d/%d hours solved)\n" RD_PF_MODEL n_solved n_total
+            @printf "  %s %s validation: INCOMPLETE (%d/%d hours solved; exchange totals remained hard constraints)\n" exchange_label RD_PF_MODEL n_solved n_total
         end
         @printf "  Domestic adequacy diagnostic: %.1f MWh load shedding (not an exchange-relaxation variable)\n" shed_total
     end

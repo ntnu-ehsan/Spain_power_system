@@ -91,6 +91,9 @@ an optional fifth argument applies a diagnostic international multiplier (for ex
 for +100%) while leaving the default international-fixed behavior unchanged. The emitted
 `reinforcement.csv` stores `factor=req_factor`, the absolute required rating as a fraction of
 nameplate; `run_opf.jl` applies the 0.8 security-margin conversion exactly once when loading it.
+An optional sixth argument, `country_total`, keeps each country's DA exchange exact during
+redispatch while allowing a sign-consistent reallocation among its boundary buses. The default
+`fixed` mode retains every DA bus share exactly.
 
 ## Caveats
 - First-order: uncongested flows differ from constrained flows; always validate (step 6).

@@ -1,0 +1,12 @@
+branch_name,asset_class,from_nuts3,to_nuts3,diagnostic_multiplier,capacity_policy,flow_mw,limit_mw,loading_pct,date,hour
+LTGES0177,international,FR,ES212,1.0,fixed,402.18,402.18,100.0,2024-08-20,0
+NEWXB_ES220_FR,international,ES220,FR,1.0,fixed,-1600.0,1600.0,100.0,2024-08-23,20
+LTGES1225,international,PT,ES415,1.0,fixed,-393.24,393.24,100.0,2024-08-24,4
+LTGES1027,international,FR,ES212,1.0,fixed,1429.98,1429.98,100.0,2024-08-20,0
+LTGES0363,international,PT,ES432,1.0,fixed,-1429.98,1429.98,100.0,2024-08-24,4
+LTGES1029,international,PT,ES615,1.0,fixed,-1429.98,1429.98,100.0,2024-08-22,2
+LTGES1219,international,ES241,FR,1.0,fixed,-402.18,402.18,100.0,2024-08-20,0
+NEWES_ES412_ES416,inter_nuts3,ES412,ES416,5.0,inter_allowance,754.19,754.19,100.0,2024-08-24,4
+LTGES0364,international,PT,ES431,1.0,fixed,-1429.98,1429.98,100.0,2024-08-24,4
+LTGES1173a,international,FR,ES512,1.0,fixed,1143.98,1143.98,100.0,2024-08-20,0
+LTGES1174b,international,FR,ES512,1.0,fixed,1143.98,1143.98,100.0,2024-08-20,0

@@ -194,9 +194,15 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
                          # bus ⇒ nameplate MW of its border lines.  When given,
                          # XB units are free within ±rating×line_rating_factor.
                          # This is used by the OFFLINE hourly NTC capacity
-                         # calculation.  Redispatch omits it and therefore keeps
-                         # every DA boundary-bus injection strictly fixed.
+                         # calculation and, optionally, by country-total
+                         # redispatch of fixed DA exchange.
                          crossborder_bus_caps::Union{Dict{String,Float64},Nothing} = nothing,
+                         # With bus caps enabled, restrict every bus to the sign
+                         # of its DA country exchange. This permits spatial
+                         # redistribution without artificial simultaneous import
+                         # and export. The offline NTC probe leaves this false so
+                         # it can test either transfer direction from zero.
+                         crossborder_same_direction::Bool = false,
                          da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          nuclear_da_dispatch::Union{Dict{String,Float64},Nothing} = nothing,
                          nuclear_min_frac::Float64   = 0.0,
@@ -771,8 +777,17 @@ function prepare_network(total_load_mw::Float64 = TOTAL_LOAD_MW,
             # reactive box follows the active bound.
             cap_pu = crossborder_bus_caps === nothing ? nothing :
                      get(crossborder_bus_caps, bus_id, 0.0) * line_rating_factor / BASEMVA
-            lo = cap_pu === nothing ? p_pu : -cap_pu
-            hi = cap_pu === nothing ? p_pu :  cap_pu
+            lo, hi = if cap_pu === nothing
+                (p_pu, p_pu)
+            elseif crossborder_same_direction && p_pu > 1e-9
+                (0.0, cap_pu)
+            elseif crossborder_same_direction && p_pu < -1e-9
+                (-cap_pu, 0.0)
+            elseif crossborder_same_direction
+                (0.0, 0.0)
+            else
+                (-cap_pu, cap_pu)
+            end
             qb = cap_pu === nothing ? abs(p_pu) : cap_pu
             gen_count += 1
             gens[string(gen_count)] = Dict{String,Any}(

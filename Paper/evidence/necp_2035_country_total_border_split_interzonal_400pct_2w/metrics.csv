@@ -1,0 +1,24 @@
+metric,fixed_bus_shares_intl_1x,country_total_split_intl_1x,fixed_bus_shares_intl_2x,unit_or_definition
+sampled_hours,336,336,336,hours; identical sample
+intra_nuts3_diagnostic_multiplier,10.0,10.0,10.0,multiplier
+inter_nuts3_multiplier,5.0,5.0,5.0,multiplier on physical operational limit
+international_multiplier,1.0,1.0,2.0,multiplier on physical operational limit
+border_split,fixed,country_total,fixed,redispatch allocation policy
+solver_success_hours,116,125,336,OPTIMAL plus LOCALLY_SOLVED
+solver_success_without_shedding,108,118,336,hours with load shedding at or below 0.1 MW
+solver_success_with_shedding,8,7,0,hours
+failed_hours,220,211,0,INFEASIBLE plus NUMERICAL_ERROR
+infeasible_hours,212,206,0,hours
+numerical_error_hours,8,5,0,hours
+load_shedding_energy,4341.5,4049.4,0.0,MWh in successfully solved hours
+maximum_load_shedding,1027.5,1086.9,0.0,MW
+newly_recovered_vs_fixed,,9,,hours
+newly_lost_vs_fixed,,0,,hours
+inter_nuts3_branches_at_limit,0,1,1,loading at or above 99.9 percent
+international_branches_at_limit,2,10,1,loading at or above 99.9 percent
+intra_nuts3_branches_at_limit,0,0,0,loading at or above 99.9 percent of 10x limit
+intra_nuts3_max_loading,25.1,25.1,34.8,percent of 10x diagnostic limit
+rounded_country_total_max_error,,0.003,,MW; exact equality in model
+bus_hour_allocations_moved,,287,,absolute movement above 0.01 MW
+maximum_bus_reallocation,,3235.44,,MW
+counterflow_sign_violations,,0,,rows
