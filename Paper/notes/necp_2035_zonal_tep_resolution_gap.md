@@ -11,6 +11,9 @@ Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
 200% inter-NUTS3 sensitivity:
 `Paper/evidence/necp_2035_interzonal_200pct_2w/`.
 
+400% inter-NUTS3 sensitivity:
+`Paper/evidence/necp_2035_interzonal_400pct_2w/`.
+
 ## Paper-ready wording
 
 To distinguish missing within-zone capacity from the corridor investments
@@ -69,3 +72,10 @@ At +200%, solver success increased by one hour to 116, but that hour shed
 `NEWES_ES412_ES416` still reached its tripled inter-NUTS3 limit, while the same
 two fixed international links remained saturated. The response has thus
 plateaued with respect to uniform domestic inter-NUTS3 expansion.
+
+At +400%, no domestic inter-NUTS3 branch reached its enlarged limit (maximum
+95.5%), but solver success remained at 116 and covered exactly the same hours
+as the +200% case. Only the two fixed international links reached 100%.
+Domestic inter-NUTS3 thermal capacity is therefore no longer an explanation
+for the remaining feasibility plateau, although the failed hours still require
+a controlled international-link and operational-flexibility diagnosis.

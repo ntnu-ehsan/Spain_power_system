@@ -1,0 +1,18 @@
+metric,fixed,plus_50pct,plus_100pct,plus_200pct,plus_400pct,unit_or_definition
+sampled_hours,336,336,336,336,336,hours; identical sample
+intra_nuts3_diagnostic_multiplier,10,10,10,10,10,multiplier
+inter_nuts3_multiplier,1.0,1.5,2.0,3.0,5.0,multiplier on EMPIRE-mapped operational limit
+international_multiplier,1.0,1.0,1.0,1.0,1.0,fixed
+solver_success_hours,112,115,115,116,116,OPTIMAL plus LOCALLY_SOLVED
+solver_success_without_shedding,105,106,107,107,108,hours with load shedding at or below 0.1 MW
+solver_success_with_shedding,7,9,8,9,8,hours
+failed_hours,224,221,221,220,220,INFEASIBLE plus NUMERICAL_ERROR
+infeasible_hours,147,206,186,216,212,hours
+numerical_error_hours,77,15,35,4,8,hours
+load_shedding_energy,5368.6,6455.5,5485.6,5475.5,4341.5,MWh in successfully solved hours
+maximum_load_shedding,1978.2,1560.1,1382.7,1181.5,1027.5,MW
+inter_nuts3_branches_at_limit,16,5,4,1,0,loading at or above 99.9 percent
+inter_nuts3_max_loading,100.0,100.0,100.0,100.0,95.5,percent
+international_branches_at_limit,2,2,2,2,2,loading at or above 99.9 percent
+intra_nuts3_branches_at_limit,0,0,0,0,0,loading at or above 99.9 percent of 10x limit
+intra_nuts3_max_loading,24.8,24.8,25.0,25.1,25.1,percent of 10x diagnostic limit
