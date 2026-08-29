@@ -1,0 +1,20 @@
+metric,international_fixed_plus400,international_plus100_plus400,unit_or_definition
+sampled_hours,336,336,hours; identical sample
+intra_nuts3_diagnostic_multiplier,10.0,10.0,multiplier
+inter_nuts3_multiplier,5.0,5.0,multiplier on physical operational limit
+international_multiplier,1.0,2.0,multiplier on physical operational limit
+solver_success_hours,116,336,OPTIMAL plus LOCALLY_SOLVED
+solver_success_without_shedding,108,336,hours with load shedding at or below 0.1 MW
+solver_success_with_shedding,8,0,hours
+failed_hours,220,0,INFEASIBLE plus NUMERICAL_ERROR
+load_shedding_energy,4341.5,0.0,MWh in successfully solved hours
+maximum_load_shedding,1027.5,0.0,MW
+inter_nuts3_branches_at_limit,0,1,loading at or above 99.9 percent
+inter_nuts3_max_loading,95.5,100.0,percent
+international_branches_at_limit,2,1,loading at or above 99.9 percent
+international_max_loading,100.0,100.0,percent
+intra_nuts3_branches_at_limit,0,0,loading at or above 99.9 percent of 10x limit
+intra_nuts3_max_loading,25.1,34.8,percent of 10x diagnostic limit
+conditional_intrazonal_candidates_above_0p8,,80,absolute required factor above normal usable limit
+conditional_intrazonal_candidates_above_1p0,,46,absolute required factor above nameplate
+conditional_intrazonal_max_required_factor,,2.784,absolute rating divided by nameplate

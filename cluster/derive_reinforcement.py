@@ -4,7 +4,9 @@ Usage:
     python cluster/derive_reinforcement.py <results_dir> [out.csv]
 
 Only same-NUTS3 Spanish branches marked ``reinforcement_eligible`` are sized.
-Inter-NUTS3 and international branches retain EMPIRE capacity and may bind.
+Inter-NUTS3 and international branches are reported but never emitted as
+reinforcement candidates. Their capacities may be fixed or selectively relaxed
+by a controlled diagnostic sensitivity.
 """
 import sys
 from pathlib import Path
@@ -74,7 +76,7 @@ def main():
     branches = branches.set_index("branch_name")
     mask = _as_bool(branches.reinforcement_eligible)
     eligible = branches.loc[mask].copy()
-    fixed = branches.loc[~mask].copy()
+    noncandidate = branches.loc[~mask].copy()
     if eligible.empty:
         sys.exit("ABORT: no same-NUTS3 Spanish reinforcement candidates were found")
     bad_class = eligible[eligible.asset_class != "intra_nuts3"]
@@ -92,11 +94,15 @@ def main():
 
     print(f"diagnostic: {rdir} ({source})")
     print(f"  {hours} hours, {len(branches)} branches: {len(eligible)} eligible "
-          f"intrazonal, {len(fixed)} fixed EMPIRE/international")
-    if len(fixed):
-        fixed_loading = pd.to_numeric(fixed.loading_pct, errors="coerce")
-        print(f"  fixed-corridor peak loading = {fixed_loading.max():.1f} % "
-              f"({(fixed_loading >= 99.9).sum()} at >= 99.9 %; allowed)")
+          f"intrazonal, {len(noncandidate)} protected non-candidates")
+    if len(noncandidate):
+        corridor_loading = pd.to_numeric(noncandidate.loading_pct, errors="coerce")
+        print(f"  non-candidate corridor peak loading = {corridor_loading.max():.1f} % "
+              f"({(corridor_loading >= 99.9).sum()} at >= 99.9 %; allowed)")
+        if "capacity_policy" in noncandidate.columns:
+            policy_counts = noncandidate.capacity_policy.value_counts().to_dict()
+            print("  non-candidate capacity policies: " +
+                  ", ".join(f"{key}={value}" for key, value in policy_counts.items()))
 
     pinned = peak[peak >= 99.9]
     if len(pinned):
@@ -114,19 +120,23 @@ def main():
     if len(derates) != 1:
         sys.exit(f"ABORT: eligible branches contain multiple base rating factors: {derates}")
     derate = float(derates[0])
-    factor = (req / derate).rename("factor")
+    minimum_multiplier = (req / derate).rename("minimum_diagnostic_multiplier")
 
-    print(f"\n  minimum uncongested diagnostic multiplier = {factor.iloc[0]:.2f} "
-          f"(set by {factor.index[0]})")
+    print(f"\n  minimum uncongested diagnostic multiplier = {minimum_multiplier.iloc[0]:.2f} "
+          f"(set by {minimum_multiplier.index[0]})")
     for threshold in (0.64, 0.80, 1.0, 1.5, 2.0, 3.0):
         print(f"    branches with req_factor > {threshold:4.2f}: "
               f"{(req > threshold).sum():4d}")
 
-    keep = factor[factor > derate].round(3)
+    # The consumer defines `factor` as the absolute required rating divided by
+    # nominal. It performs the / base_LRF conversion internally, so writing
+    # req/base_LRF here would apply the security-margin correction twice.
+    keep = req[req > derate].round(3).rename("factor")
     print(f"\n  writing {len(keep)} intrazonal lines "
-          f"(factor > normal usable limit {derate:.2f})")
+          f"(absolute factor > normal usable limit {derate:.2f})")
     print(pd.DataFrame({"req_factor": req.loc[keep.index].round(3),
-                        "factor": keep}).head(20).to_string())
+                        "minimum_diagnostic_multiplier":
+                            minimum_multiplier.loc[keep.index].round(3)}).head(20).to_string())
 
     if out:
         keep.rename_axis("line_id").reset_index().to_csv(out, index=False)

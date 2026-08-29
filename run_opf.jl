@@ -105,18 +105,22 @@ const EXTRA_UNITS   = NODAL_ACTIVE ? NODAL.new_units  : nothing
 const EXTRA_LINES   = NODAL_ACTIVE ? NODAL.new_lines  : nothing
 const REDISPATCH_CFG = get(cfg, "redispatch", Dict())
 const LINE_RATING_FACTOR = Float64(get(get(cfg, "network", Dict()), "line_rating_factor", 0.70))
-# Keep the normal security derate. The intrazonal diagnostic multiplier and an
-# optional, separately bounded inter-NUTS3 allowance never affect international
-# links.
+# Keep the normal security derate. The intrazonal, inter-NUTS3, and international
+# diagnostic multipliers are independent. International defaults to 1.0 so the
+# normal reinforcement workflow continues to hold EMPIRE border capacity fixed.
 const DIAGNOSTIC_OUTPUT = get(REDISPATCH_CFG, "diagnostic_output", false)
 const DIAGNOSTIC_INTRA_NUTS_MULTIPLIER = Float64(
     get(REDISPATCH_CFG, "diagnostic_intra_nuts_multiplier", 1.0))
 const DIAGNOSTIC_INTER_NUTS_MULTIPLIER = Float64(
     get(REDISPATCH_CFG, "diagnostic_inter_nuts_multiplier", 1.0))
+const DIAGNOSTIC_INTERNATIONAL_MULTIPLIER = Float64(
+    get(REDISPATCH_CFG, "diagnostic_international_multiplier", 1.0))
 DIAGNOSTIC_INTRA_NUTS_MULTIPLIER >= 1.0 ||
     error("config.toml: [redispatch].diagnostic_intra_nuts_multiplier must be >= 1.0")
 DIAGNOSTIC_INTER_NUTS_MULTIPLIER >= 1.0 ||
     error("config.toml: [redispatch].diagnostic_inter_nuts_multiplier must be >= 1.0")
+DIAGNOSTIC_INTERNATIONAL_MULTIPLIER >= 1.0 ||
+    error("config.toml: [redispatch].diagnostic_international_multiplier must be >= 1.0")
 const REINFORCEMENT_SCOPE = reinforcement_branch_scope(extra_lines = EXTRA_LINES)
 # [redispatch].extra_line_scale_file: a manual, scenario-independent line
 # reinforcement list — CSV columns line_id,factor, where `factor` is the
@@ -159,6 +163,7 @@ const RATING_SCALE = let
     if DIAGNOSTIC_OUTPUT
         intra = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.asset_class == "intra_nuts3"]
         inter = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.asset_class == "inter_nuts3"]
+        international = [id for (id, meta) in REINFORCEMENT_SCOPE if meta.asset_class == "international"]
         if DIAGNOSTIC_INTRA_NUTS_MULTIPLIER > 1.0
             for id in intra
                 rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTRA_NUTS_MULTIPLIER)
@@ -169,9 +174,14 @@ const RATING_SCALE = let
                 rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTER_NUTS_MULTIPLIER)
             end
         end
+        if DIAGNOSTIC_INTERNATIONAL_MULTIPLIER > 1.0
+            for id in international
+                rs[id] = max(get(rs, id, 1.0), DIAGNOSTIC_INTERNATIONAL_MULTIPLIER)
+            end
+        end
         synthetic = [id for id in intra if startswith(id, "NEWES_") || startswith(id, "NEWXB_")]
         isempty(synthetic) || error("Synthetic EMPIRE corridors classified as intrazonal: $(join(synthetic, ", "))")
-        @printf "                 diagnostic uprate: intra-NUTS3 %.3gx (%d branches) | inter-NUTS3 %.3gx (%d branches) | international fixed\n" DIAGNOSTIC_INTRA_NUTS_MULTIPLIER length(intra) DIAGNOSTIC_INTER_NUTS_MULTIPLIER length(inter)
+        @printf "                 diagnostic uprate: intra-NUTS3 %.3gx (%d branches) | inter-NUTS3 %.3gx (%d branches) | international %.3gx (%d branches)\n" DIAGNOSTIC_INTRA_NUTS_MULTIPLIER length(intra) DIAGNOSTIC_INTER_NUTS_MULTIPLIER length(inter) DIAGNOSTIC_INTERNATIONAL_MULTIPLIER length(international)
     end
     isempty(rs) ? nothing : rs
 end
@@ -674,9 +684,11 @@ function reinforcement_result_metadata(branch_name, network, from_bus, to_bus)
                 reinforcement_eligible = false)
     meta = get(REINFORCEMENT_SCOPE, String(branch_name), fallback)
     mult = meta.asset_class == "intra_nuts3" ? DIAGNOSTIC_INTRA_NUTS_MULTIPLIER :
-           meta.asset_class == "inter_nuts3" ? DIAGNOSTIC_INTER_NUTS_MULTIPLIER : 1.0
+           meta.asset_class == "inter_nuts3" ? DIAGNOSTIC_INTER_NUTS_MULTIPLIER :
+           meta.asset_class == "international" ? DIAGNOSTIC_INTERNATIONAL_MULTIPLIER : 1.0
     policy = meta.asset_class == "intra_nuts3" ? "intra_diagnostic" :
-             meta.asset_class == "inter_nuts3" && mult > 1.0 ? "inter_allowance" : "fixed"
+             meta.asset_class == "inter_nuts3" && mult > 1.0 ? "inter_allowance" :
+             meta.asset_class == "international" && mult > 1.0 ? "international_diagnostic" : "fixed"
     return merge(meta, (diagnostic_multiplier = mult,
                         capacity_policy = policy,
                         base_line_rating_factor = LINE_RATING_FACTOR))

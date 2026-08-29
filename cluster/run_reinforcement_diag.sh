@@ -2,8 +2,8 @@
 # Run the memory-bounded grid-reinforcement diagnostic inside an allocated
 # cluster node (or from an sbatch wrapper).
 #
-#   bash cluster/run_reinforcement_diag.sh [scenario] [intra_multiplier] [n_weeks] [inter_multiplier]
-#   defaults:                                  NECPEssentials  10.0              2         1.0
+#   bash cluster/run_reinforcement_diag.sh [scenario] [intra_multiplier] [n_weeks] [inter_multiplier] [international_multiplier]
+#   defaults:                                  NECPEssentials  10.0              2         1.0               1.0
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -11,13 +11,23 @@ scenario=${1:-NECPEssentials}
 mult=${2:-10.0}
 n_weeks=${3:-2}
 inter_mult=${4:-1.0}
+international_mult=${5:-1.0}
 mult_tag=${mult//./p}
 inter_tag=${inter_mult//./p}
+international_tag=${international_mult//./p}
 python_cmd=${PYTHON:-python3}
 
+# Preserve the established result path when the international diagnostic is
+# not requested; add a suffix only for the explicit sensitivity.
+international_suffix=""
+case "$international_mult" in
+    1|1.0|1.00) ;;
+    *) international_suffix="_international${international_tag}" ;;
+esac
+
 cfg="cluster/config_diag_${scenario}.toml"
-out="results/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}"
-log="cluster/logs/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}.log"
+out="results/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}${international_suffix}"
+log="cluster/logs/${scenario}_diag_dc${n_weeks}_intra${mult_tag}_inter${inter_tag}${international_suffix}.log"
 
 mkdir -p cluster/logs "$out"
 
@@ -31,7 +41,7 @@ for f in \
     fi
 done
 
-julia --project=. cluster/make_diag_config.jl "$scenario" "$mult" "$n_weeks" DC "$inter_mult"
+julia --project=. cluster/make_diag_config.jl "$scenario" "$mult" "$n_weeks" DC "$inter_mult" "$international_mult"
 
 echo "diagnostic config : $cfg"
 echo "results           : $out"

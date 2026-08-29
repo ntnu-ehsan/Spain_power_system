@@ -14,6 +14,9 @@ Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
 400% inter-NUTS3 sensitivity:
 `Paper/evidence/necp_2035_interzonal_400pct_2w/`.
 
++100% international sensitivity at +400% inter-NUTS3:
+`Paper/evidence/necp_2035_international_100pct_interzonal_400pct_2w/`.
+
 ## Paper-ready wording
 
 To distinguish missing within-zone capacity from the corridor investments
@@ -79,3 +82,28 @@ as the +200% case. Only the two fixed international links reached 100%.
 Domestic inter-NUTS3 thermal capacity is therefore no longer an explanation
 for the remaining feasibility plateau, although the failed hours still require
 a controlled international-link and operational-flexibility diagnosis.
+
+## Follow-up sensitivity: +100% physical international capacity
+
+Keeping the Spanish inter-NUTS3 allowance at +400% and doubling only the
+physical international branch ratings recovered all 220 previously failed
+hours: success rose from 116/336 to 336/336 and load shedding fell from
+4,341.5 MWh to zero. The commercial exchange targets did not change and passed
+the model's fixed-exchange validation, so this isolates the physical nodal
+representation of the border interface rather than additional market exchange.
+One doubled international branch (`LTGES1027`) and one 5.0x Spanish
+inter-NUTS3 corridor (`NEWES_ES412_ES416`) still reached 100%.
+
+This demonstrates that the fixed physical international interface was decisive
+for the feasibility plateau in this configuration, but it does **not** justify
+doubling international investment. The minimum allowance should be bracketed,
+and the mapping of EMPIRE's aggregate international transfer capacity onto the
+physical border circuits should be audited before drawing an investment
+conclusion.
+
+With all hours feasible and no shedding, the run also yields a conditional
+first-order intrazonal list: 80 branches require more than the normal 0.8
+usable fraction of nameplate, 46 require more than nameplate, and the maximum
+absolute requirement is 2.784 times nameplate. These values are conditional on
+the deliberately generous 5.0x domestic interzonal and 2.0x international
+allowances and require a targeted validation run.

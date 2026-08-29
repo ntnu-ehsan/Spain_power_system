@@ -33,9 +33,10 @@ a few long-distance export corridors (e.g. remote hydro/wind to load centres), n
 Keep the normal `line_rating_factor`. Apply `diagnostic_intra_nuts_multiplier` to branches whose
 terminal buses are in the same Spanish NUTS3 region. By default, EMPIRE-derived inter-NUTS3 and
 international capacity remains fixed. A bounded sensitivity can be run with
-`diagnostic_inter_nuts_multiplier` (for example, 1.5 for 50% additional inter-NUTS3 capacity);
-international links remain fixed. Raise the intrazonal multiplier until no eligible intrazonal
-branch binds.
+`diagnostic_inter_nuts_multiplier` (for example, 1.5 for 50% additional inter-NUTS3 capacity).
+International links remain fixed in the reinforcement workflow. The separate
+`diagnostic_international_multiplier` is reserved for controlled sensitivity tests and defaults
+to 1.0. Raise the intrazonal multiplier until no eligible intrazonal branch binds.
 
 ### 4. Back out each line's required rating factor
 For an eligible branch, `limit_mw = base_line_rating_factor × diagnostic_multiplier × nominal_rating`, and
@@ -67,9 +68,10 @@ b = pd.read_csv('results/<scenario>/branch_peaks.csv')
 req = b[b.reinforcement_eligible].copy()
 req['req_factor'] = (req.loading_pct * req.base_line_rating_factor
                      * req.diagnostic_multiplier / 100.0)
-req['factor'] = req.req_factor / req.base_line_rating_factor  # normal security margin
+req['minimum_diagnostic_multiplier'] = (req.req_factor /
+                                        req.base_line_rating_factor)
 req = req.sort_values('req_factor', ascending=False)
-minimum_multiplier = req['factor'].max()
+minimum_multiplier = req['minimum_diagnostic_multiplier'].max()
 for t in (0.8, 1.0, 1.5, 2.0, 3.0):
     print(f'branches needing > {t}x:', int((req.req_factor > t).sum()))
 ```
@@ -83,8 +85,12 @@ the memory-bounded `diagnostic_output` path: `run_opf.jl` writes one maximum row
 per branch to `branch_peaks.csv` instead of materialising the full
 hours-by-branches table. `cluster/derive_reinforcement.py` accepts either this
 compact file or the legacy `branch_flows.csv` and refuses to size a list unless
-every row in `summary.csv` solved successfully. The runner keeps the base rating factor at 0.8;
-its second argument is the selective intrazonal multiplier, not a global LRF.
+every row in `summary.csv` solved successfully. Its second argument is the selective intrazonal
+multiplier, not a global LRF. The runner keeps the base rating factor at 0.8;
+an optional fifth argument applies a diagnostic international multiplier (for example, `2.0`
+for +100%) while leaving the default international-fixed behavior unchanged. The emitted
+`reinforcement.csv` stores `factor=req_factor`, the absolute required rating as a fraction of
+nameplate; `run_opf.jl` applies the 0.8 security-margin conversion exactly once when loading it.
 
 ## Caveats
 - First-order: uncongested flows differ from constrained flows; always validate (step 6).

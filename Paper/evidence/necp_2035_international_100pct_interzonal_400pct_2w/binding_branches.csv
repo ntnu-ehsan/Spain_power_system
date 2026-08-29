@@ -1,0 +1,3 @@
+branch_name,asset_class,from_nuts3,to_nuts3,diagnostic_multiplier,capacity_policy,flow_mw,limit_mw,loading_pct,date,hour
+LTGES1027,international,FR,ES212,2.0,international_diagnostic,2859.96,2859.96,100.0,2024-08-22,8
+NEWES_ES412_ES416,inter_nuts3,ES412,ES416,5.0,inter_allowance,-754.19,754.19,100.0,2024-08-22,12
