@@ -8,6 +8,9 @@ Evidence package: `Paper/evidence/necp_2035_selective_reinforcement_2w/`.
 100% inter-NUTS3 sensitivity:
 `Paper/evidence/necp_2035_interzonal_100pct_2w/`.
 
+200% inter-NUTS3 sensitivity:
+`Paper/evidence/necp_2035_interzonal_200pct_2w/`.
+
 ## Paper-ready wording
 
 To distinguish missing within-zone capacity from the corridor investments
@@ -60,3 +63,9 @@ Four inter-NUTS3 corridors still reached their doubled limits, and the same two
 fixed international links remained saturated. This plateau strengthens the
 case for targeted corridor analysis and for separating international-transfer
 and operational-flexibility constraints from domestic expansion needs.
+
+At +200%, solver success increased by one hour to 116, but that hour shed
+1,181.5 MW; no-shedding success therefore remained at 107. Only
+`NEWES_ES412_ES416` still reached its tripled inter-NUTS3 limit, while the same
+two fixed international links remained saturated. The response has thus
+plateaued with respect to uniform domestic inter-NUTS3 expansion.
