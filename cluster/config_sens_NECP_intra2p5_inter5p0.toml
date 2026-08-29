@@ -109,7 +109,7 @@ contiguous = false
     reliability_margin = 0.7
     reuse = true
     enabled = true
-    only = true
+    only = false
     cache_file = "hourly_ntc.csv"
 
 [bellman]
