@@ -1,0 +1,50 @@
+# Grid-reinforcement sensitivity findings for the paper
+
+Last updated: 2026-08-29
+
+## NECPEssentials 2035
+
+The final diagnostic uses two sampled weeks (336 hours), DC redispatch,
+hour-specific coordinated directional NTCs, an NTC reliability margin of 0.70,
+and `country_total` cross-border redistribution. Day-ahead country totals are
+preserved exactly in redispatch. International line ratings remain fixed at
+their original values. ID2, ID3, CID, and balancing are bypassed, so the tested
+chain is DA -> redispatch. All cases solved all 336 hours with zero load
+shedding, and the fixed-country-total validation passed in every hour.
+
+The inter-NUTS3 sweep used an intentionally non-binding 10x intra-NUTS3
+multiplier. Inter-NUTS3 multipliers of 1.0, 1.5, 2.0, 3.0, 4.0, and 4.5 left
+13, 7, 3, 1, 1, and 1 inter-NUTS3 branches above 95% loading, respectively.
+The maximum inter-NUTS3 loading was still 99.1% at 4.5x. At 5.0x, evaluated in
+the subsequent intra-NUTS3 sweep, maximum inter-NUTS3 loading fell to 89.2%.
+Therefore 5.0x was retained as the robust diagnostic allowance for the second
+sweep.
+
+With inter-NUTS3 capacity fixed at 5.0x, intra-NUTS3 multipliers of 1.0, 1.5,
+2.0, 2.5, 2.75, 3.0, and 4.0 left 65, 16, 5, 5, 5, 0, and 0 intra-NUTS3
+branches above 95% loading. Maximum intra-NUTS3 loading fell from 100% at
+2.75x to 94.1% at 3.0x and 70.6% at 4.0x. Increasing the multiplier beyond
+3.0x therefore did not remove any additional domestic near-binding branch.
+The three branches still above 95% at 3.0x and 4.0x were international:
+`LTGES0177`, `LTGES1027`, and `NEWXB_ES220_FR`.
+
+The paper-relevant interpretation is that EMPIRE's zonal transfer expansion is
+not, by itself, sufficient to guarantee nodal deliverability. In this sampled
+diagnostic, substantial additional freedom was required for both inter-NUTS3
+and intra-NUTS3 Spanish branches before the zonal DA schedules became robustly
+deliverable. This should be reported as evidence from a DC, sampled-horizon
+sensitivity rather than as a final transmission investment prescription. The
+candidate reinforcement set should still be confirmed by the planned AC
+validation.
+
+The compact numerical record is in
+`docs/paper_grid_reinforcement_sensitivity.csv`. Raw outputs are under:
+
+- `results/NECPEssentials_sens_hourlyntc0p7_intra10_inter*_da_rd/`
+- `results/NECPEssentials_sens_hourlyntc0p7_intra*_inter5p0_da_rd/`
+
+For each case, `hourly_ntc.csv` contains the 336 hourly NTC bounds,
+`summary.csv` contains redispatch feasibility, `branch_peaks.csv` contains one
+peak observation per branch, and `xb_flows.csv` / `xb_redispatch.csv` audit the
+preserved country-level exchanges.
+

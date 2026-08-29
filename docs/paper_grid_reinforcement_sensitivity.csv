@@ -1,0 +1,14 @@
+scenario,sweep,intra_multiplier,inter_multiplier,international_multiplier,hours_solved,ntc_reliability,max_intra_loading_pct,max_inter_loading_pct,max_international_loading_pct,intra_lines_gt95,inter_lines_gt95,international_lines_gt95
+NECPEssentials,inter,10.0,1.0,1.0,336,0.70,27.7,100.0,100.0,0,13,10
+NECPEssentials,inter,10.0,1.5,1.0,336,0.70,29.0,100.0,100.0,0,7,8
+NECPEssentials,inter,10.0,2.0,1.0,336,0.70,28.5,100.0,100.0,0,3,8
+NECPEssentials,inter,10.0,3.0,1.0,336,0.70,28.2,100.0,100.0,0,1,5
+NECPEssentials,inter,10.0,4.0,1.0,336,0.70,28.2,100.0,100.0,0,1,3
+NECPEssentials,inter,10.0,4.5,1.0,336,0.70,28.2,99.1,100.0,0,1,3
+NECPEssentials,intra,1.0,5.0,1.0,336,0.70,100.0,72.9,100.0,65,0,8
+NECPEssentials,intra,1.5,5.0,1.0,336,0.70,100.0,84.3,100.0,16,0,2
+NECPEssentials,intra,2.0,5.0,1.0,336,0.70,100.0,89.2,100.0,5,0,3
+NECPEssentials,intra,2.5,5.0,1.0,336,0.70,100.0,89.2,100.0,5,0,3
+NECPEssentials,intra,2.75,5.0,1.0,336,0.70,100.0,89.2,100.0,5,0,3
+NECPEssentials,intra,3.0,5.0,1.0,336,0.70,94.1,89.2,100.0,0,0,3
+NECPEssentials,intra,4.0,5.0,1.0,336,0.70,70.6,89.2,100.0,0,0,3
