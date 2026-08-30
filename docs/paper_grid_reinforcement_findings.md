@@ -71,7 +71,8 @@ With inter-NUTS3 capacity fixed at 3.0x, intra-NUTS3 multipliers of 1.0, 1.5,
 branches above 95% loading. Maximum intra-NUTS3 loading fell from 100% at
 2.0x to 81.9% at 2.5x. Thus 2.5x is the smallest tested robust multiplier for
 Trinity. Maximum inter-NUTS3 loading remained below the criterion (81.0%) and
-the two remaining branches above 95% were international fixed assets.
+the two remaining branches above 95% were the fixed international assets
+`LTGES0177` and `LTGES1027`, both on the France--ES212 boundary.
 
 All seven intra-sweep cases solved 336/336 hours and passed the exact
 country-total exchange validation. Rounded load-shed totals were between 0.0
