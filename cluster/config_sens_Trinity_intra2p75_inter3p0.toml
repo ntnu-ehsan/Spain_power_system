@@ -1,0 +1,208 @@
+[id3]
+enabled = false
+
+[scenario]
+label = "Trinity"
+co2_price_region = "ES"
+negative_co2_credit = false
+period = 2
+disaggregation = "nodal"
+co2_price_file = "Data/EU-EnVis-2060_Annual_Regional_CO2_Prices_v1.2.0.csv"
+empire_dir = "Data/2035/Trinity"
+
+[generators]
+rated_power_factor = 0.9
+renewable_power_factor = 0.95
+apparent_power_limit = true
+
+[da]
+nuclear_availability = 0.85
+ramp_limits = true
+enabled = true
+nuclear_min_gen_frac = 0.8
+coal_availability = 0.35
+
+    [da.nuclear_availability_by_date]
+    2024-12-02 = 0.69
+    2024-07-08 = 0.93
+
+    [da.coal_availability_by_date]
+    2024-12-02 = 0.32
+    2024-07-08 = 0.15
+
+[reactors]
+in_service_pct = 100.0
+enabled = true
+
+[chp]
+waste_cost_eur_mwh = 0.0
+waste_mw = 700.0
+siting_buses = 100
+minihydro_mw = 400.0
+gas_mw = 2600.0
+minihydro_cost_eur_mwh = 0.0
+gas_min_frac = 0.86
+waste_min_frac = 0.9
+gas_cost_eur_mwh = 22.0
+enabled = true
+minihydro_min_frac = 0.9
+
+    [chp.by_date.2024-12-02]
+    gas_mw = 2920.0
+    minihydro_mw = 350.0
+    waste_mw = 650.0
+
+    [chp.by_date.2024-07-08]
+    gas_mw = 2260.0
+    minihydro_mw = 420.0
+    waste_mw = 730.0
+
+[balancing]
+enabled = false
+
+[crossborder]
+source = "observed"
+export_at_border = true
+enabled = false
+
+[redispatch]
+frozen_fuels = ["Nuclear", "Biomass", "Coal"]
+diagnostic_intra_nuts_multiplier = 2.75
+extra_line_scale_file = ""
+objective = "quadratic"
+diagnostic_international_multiplier = 1.0
+diagnostic_inter_nuts_multiplier = 3.0
+from_saved = ""
+anchor_weight = 0.8
+power_flow = "DC"
+crossborder_split = "country_total"
+water_value = "constant"
+diagnostic_output = true
+only = ""
+enabled = true
+
+[midterm]
+volume_out = "Data/Volume_Scen0_OUT_sddp.csv"
+voll = 3000.0
+block_hours = 2
+cuts_out = "Data/BellmanValuesOUT_sddp.csv"
+end_penalty = 150.0
+end_fill = 1.0
+solver = "gurobi"
+sim_year = 1982
+iterations = 150
+n_stages = 78
+seed = 1234
+year_stride = 1
+
+[weeks]
+key_file = "Data/sample_weeks_diag_2w.csv"
+contiguous = false
+n_weeks = 2
+resample = false
+xb_ntc_margin = 1.0
+enabled = true
+seed = 20260822
+xb_hurdle_eur_mwh = 0.5
+
+    [weeks.ntc]
+    reliability_margin = 0.7
+    reuse = true
+    only = false
+    enabled = true
+    cache_file = "hourly_ntc.csv"
+
+[bellman]
+volume_file = "Data/Volume_Scen0_OUT_sddp4.csv"
+hydro_budget = true
+hydro_budget_basis = "week"
+turbine_file = "Data/TurbineSchedule_sddp4.csv"
+ssv_step = 168
+bgn_date = "2024-07-02"
+bellman_file = "Data/BellmanValuesOUT_sddp4.csv"
+
+[midterm4]
+gas_price_source = "mibgas"
+volume_out = "Data/Volume_Scen0_OUT_sddp4.csv"
+voll = 3000.0
+block_hours = 2
+cuts_out = "Data/BellmanValuesOUT_sddp4.csv"
+end_penalty = 0.0
+end_fill = 1.0
+solver = "gurobi"
+turbine_out = "Data/TurbineSchedule_sddp4.csv"
+sim_year = 1982
+iterations = 60
+n_stages = 78
+es_inflow_source = "empire_scaled"
+seed = 1234
+
+    [midterm4.reservoir.fill0]
+    EU = 0.65
+    FR = 0.65
+
+    [midterm4.reservoir.vmax_twh]
+    EU = 145.0
+    FR = 3.6
+
+    [midterm4.gas_cost.ccgt]
+    ES = 78.0
+    EU = 87.0
+    PT = 78.0
+    FR = 87.0
+
+    [midterm4.gas_cost.ocgt]
+    ES = 105.0
+    EU = 117.0
+    PT = 105.0
+    FR = 117.0
+
+    [midterm4.availability]
+    "Gas OCGT" = 0.95
+    Oil = 0.9
+    Bio = 0.85
+    Coal = 0.9
+    "Gas CCGT" = 0.9
+    Waste = 0.85
+    Nuclear = 0.9
+    Geo = 0.9
+    Lignite = 0.9
+
+        [midterm4.availability.FR]
+        Nuclear = 0.85
+
+[cid]
+enabled = false
+
+[network]
+gen_bus_vmax = 1.03
+voltage_band = 0.1
+gen_bus_voltage_control = true
+gen_bus_vmin = 0.98
+line_rating_factor = 0.8
+
+[id2]
+enabled = false
+
+[load]
+power_factor = 0.98
+
+[costs]
+gas_from_midterm = true
+
+    [costs.gas_srmc]
+    mibgas_file = "Data/MIBGAS_Data_2024.csv"
+    enabled = true
+    carbon_file = "Data/Carbon Emissions Price.csv"
+
+        [costs.gas_srmc.co2_content]
+        ccgt = 0.09735481800000001
+        ocgt = 0.128053746
+
+        [costs.gas_srmc.eta]
+        ccgt = 0.5600044800358402
+        ocgt = 0.4250074376301585
+
+        [costs.gas_srmc.vom]
+        ccgt = 4.68
+        ocgt = 5.76

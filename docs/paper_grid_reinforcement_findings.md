@@ -48,3 +48,20 @@ For each case, `hourly_ntc.csv` contains the 336 hourly NTC bounds,
 peak observation per branch, and `xb_flows.csv` / `xb_redispatch.csv` audit the
 preserved country-level exchanges.
 
+## Trinity 2035
+
+The Trinity inter-NUTS3 sweep used the same two weather weeks and modelling
+settings as NECPEssentials. With the intra-NUTS3 diagnostic multiplier fixed at
+10x, inter-NUTS3 multipliers of 1.0, 1.5, 2.0, 3.0, 4.0, and 4.5 left 7, 4, 2,
+0, 0, and 0 inter-NUTS3 branches above 95% loading. Maximum inter-NUTS3
+loading was 100% through 2.0x, then fell to 81.0% at 3.0x, 60.7% at 4.0x, and
+54.6% at 4.5x. Therefore 3.0x is the smallest tested robust allowance and is
+used for the Trinity intra-NUTS3 sweep.
+
+All six cases solved 336/336 redispatch hours. The selected 3.0x case had zero
+load shedding. The unselected 4.5x case recorded a single 0.3 MWh load-shed
+residual at 2024-08-24 hour 23 with `LOCALLY_SOLVED` status; it does not affect
+the multiplier choice but is retained in the numerical record.
+
+Raw inter-sweep outputs are under
+`results/Trinity_sens_hourlyntc0p7_intra10p0_inter*_da_rd/`.
