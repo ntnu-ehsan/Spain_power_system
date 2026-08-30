@@ -65,3 +65,34 @@ the multiplier choice but is retained in the numerical record.
 
 Raw inter-sweep outputs are under
 `results/Trinity_sens_hourlyntc0p7_intra10p0_inter*_da_rd/`.
+
+With inter-NUTS3 capacity fixed at 3.0x, intra-NUTS3 multipliers of 1.0, 1.5,
+2.0, 2.5, 2.75, 3.0, and 4.0 left 33, 8, 2, 0, 0, 0, and 0 intra-NUTS3
+branches above 95% loading. Maximum intra-NUTS3 loading fell from 100% at
+2.0x to 81.9% at 2.5x. Thus 2.5x is the smallest tested robust multiplier for
+Trinity. Maximum inter-NUTS3 loading remained below the criterion (81.0%) and
+the two remaining branches above 95% were international fixed assets.
+
+All seven intra-sweep cases solved 336/336 hours and passed the exact
+country-total exchange validation. Rounded load-shed totals were between 0.0
+and 1.0 MWh over 336 hours; the selected 2.5x case contained one rounded 0.1 MW
+observation. This is below the diagnostic rejection threshold and is negligible
+relative to 25--34 GW system load, but it is retained rather than silently
+rounded away.
+
+The line-specific sizing calculation on the selected 2.5x case gives a
+first-order minimum uncongested intra-NUTS3 multiplier of 2.05, set by
+`LTGES0645`. It identifies 31 intra-NUTS3 candidates above the normal usable
+0.80 rating factor: 13 exceed nominal rating, three exceed 1.5x nominal, and
+none exceed 2.0x nominal. The ranked list is stored in
+`results/Trinity_sens_hourlyntc0p7_intra2p5_inter3p0_da_rd/reinforcement.csv`.
+
+For comparison, the corresponding NECPEssentials sizing at intra=3.0 and
+inter=5.0 identifies 66 intra-NUTS3 candidates above 0.80, including 39 above
+nominal, seven above 1.5x, and five above 2.0x. Its first-order minimum
+multiplier is 2.82, set jointly by `LTGES1367`, `LTGES1433`, and `LTGES1368`;
+the ranked list is stored in
+`results/NECPEssentials_sens_hourlyntc0p7_intra3p0_inter5p0_da_rd/reinforcement.csv`.
+
+Raw Trinity intra-sweep outputs are under
+`results/Trinity_sens_hourlyntc0p7_intra*_inter3p0_da_rd/`.
