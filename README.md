@@ -36,7 +36,7 @@ Reproduces the observed 2024 Spanish market on two representative days
 
 ```bash
 # in config.toml: [scenario] label = "2024",  [weeks] enabled = false
-julia --project=. run_opf.jl
+julia --project=. run_market_chain.jl
 ```
 
 Writes `results/` — `da_dispatch.csv` … `bal_dispatch.csv` for the five market
@@ -65,7 +65,7 @@ capacity/cost table actually used, worth inspecting.
 ```bash
 # in config.toml: [scenario] label = "Trinity",  empire_dir = "Data/2035/Trinity"
 #                 [weeks] enabled = true
-julia --project=. run_opf.jl
+julia --project=. run_market_chain.jl
 ```
 
 Clears the five market stages and then the AC or DC redispatch
@@ -156,7 +156,7 @@ handling, storage, reactive compensation and the network model.
 Multi-hour AC OPF of the Spanish peninsular transmission grid, driven by an
 in-house market chain (day-ahead → intraday gates → continuous intraday →
 balancing → network redispatch). Configuration lives in `config.toml`; the
-network is assembled in `data_preparation.jl` and solved in `run_opf.jl`.
+network is assembled in `data_preparation.jl` and solved in `run_market_chain.jl`.
 
 ## Market chain stages
 

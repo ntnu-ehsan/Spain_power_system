@@ -54,7 +54,7 @@ end
 
 One study day's foreign-zone aggregates for the 4-zone DA (`solve_da`'s
 `foreign` argument).  `fws` is foreign_week_series' output, `bv` the day's
-Bellman tuple (cuts, v_es) from run_opf's pre-compute.
+Bellman tuple (cuts, v_es) from run_market_chain's pre-compute.
 
 When `ntc_override` is supplied, it contains four asymmetric hourly limits
 calculated offline by `derive_hourly_ntcs`; the DA still receives only scalar

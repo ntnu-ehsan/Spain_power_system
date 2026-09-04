@@ -573,7 +573,7 @@ frozen_fuels = ["Nuclear", "Biomass", "Coal"]
 #
 # `factor` is the branch's required ABSOLUTE rating as a fraction of NOMINAL
 # (i.e. the req_factor itself: 1.4 = needs 140 % of nameplate), independent of
-# the current derate — run_opf.jl divides by line_rating_factor to get the
+# the current derate — run_market_chain.jl divides by line_rating_factor to get the
 # multiplier the model applies.
 #
 # Modelled as a THERMAL UPRATE (reconductoring): only rate_a moves. This is

@@ -44,7 +44,7 @@ mkdir -p scripts/logs "$val_out"
 julia --project=. scripts/make_validation_config.jl "$scenario" "$list" "$n_weeks" DC
 
 SPAIN_CONFIG="scripts/config_validate_${scenario}.toml" SPAIN_RESULTS="$val_out" \
-    julia --project=. run_opf.jl 2>&1 | tee "$val_log"
+    julia --project=. run_market_chain.jl 2>&1 | tee "$val_log"
 
 echo
 echo "=== result ======================================================"

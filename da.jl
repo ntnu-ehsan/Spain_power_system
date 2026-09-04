@@ -164,7 +164,7 @@ function solve_da(nets, reservoir_gen_ids::Vector{Int}, cuts, v_es_0::Float64, o
     end
 
     # ── Reservoir hydro coupled across the day via the Bellman cost-to-go ──────
-    # Mirrors build_mn_bellman in run_opf.jl: energy is carried in pu·h so the
+    # Mirrors build_mn_bellman in run_market_chain.jl: energy is carried in pu·h so the
     # volume variables sit at the same scale as pg, the cuts are recentred about
     # the starting volume v_es_0 (dropping the dispatch-independent constant), and
     # both auxiliary variables are lower-bounded with interior starts.

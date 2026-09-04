@@ -89,7 +89,7 @@ by `req_factor` — see the reinforcement-map cell in `results_plots_2035.ipynb`
 For a short or full-year diagnostic, use `cluster/run_reinforcement_diag.sh`, for example
 `bash cluster/run_reinforcement_diag.sh NECPEssentials 10 2 1.5` for 336 hours with a 50%
 inter-NUTS3 allowance. It enables
-the memory-bounded `diagnostic_output` path: `run_opf.jl` writes one maximum row
+the memory-bounded `diagnostic_output` path: `run_market_chain.jl` writes one maximum row
 per branch to `branch_peaks.csv` instead of materialising the full
 hours-by-branches table. `cluster/derive_reinforcement.py` accepts either this
 compact file or the legacy `branch_flows.csv` and refuses to size a list unless
@@ -98,7 +98,7 @@ multiplier, not a global LRF. The runner keeps the base rating factor at 0.8;
 an optional fifth argument applies a diagnostic international multiplier (for example, `2.0`
 for +100%) while leaving the default international-fixed behavior unchanged. The emitted
 `reinforcement.csv` stores `factor=req_factor`, the absolute required rating as a fraction of
-nameplate; `run_opf.jl` applies the 0.8 security-margin conversion exactly once when loading it.
+nameplate; `run_market_chain.jl` applies the 0.8 security-margin conversion exactly once when loading it.
 An optional sixth argument selects the boundary split. The default,
 `country_total`, keeps each country's DA exchange exact during both hourly NTC
 calculation and redispatch while allowing a sign-consistent reallocation among

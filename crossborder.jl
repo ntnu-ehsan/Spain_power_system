@@ -17,7 +17,7 @@
 # lines proportionally to each line's thermal rating (∝ V·Imax) and then
 # aggregated to the foreign terminal bus, where it is injected.
 #
-# Usage (from run_opf.jl, after data_preparation.jl is included):
+# Usage (from run_market_chain.jl, after data_preparation.jl is included):
 #   xb     = load_crossborder()                       # date => hour => (FR,PT) net MW
 #   fracs  = crossborder_bus_fractions()              # country => bus_id => share
 #   inj    = crossborder_injections(xb, fracs, "2024-12-02", 13)  # bus_id => MW

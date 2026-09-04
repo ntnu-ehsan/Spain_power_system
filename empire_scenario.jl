@@ -4,7 +4,7 @@
 # Reads the outputs (and the cost-relevant inputs) of an EMPIRE
 # investment run and assembles the zone/tech tables that the
 # midterm SDDP (midterm_sddp4.jl) and the market chain
-# (run_opf.jl / data_preparation.jl) consume when a scenario
+# (run_market_chain.jl / data_preparation.jl) consume when a scenario
 # other than "2024" is selected in config.toml → [scenario].
 #
 # Sources inside cfg["scenario"]["empire_dir"]:

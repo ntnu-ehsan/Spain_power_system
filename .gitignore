@@ -1,4 +1,4 @@
-# Model output — regenerate with run_opf.jl / midterm_sddp4.jl
+# Model output — regenerate with run_market_chain.jl / midterm_sddp4.jl
 results/
 
 # SDDP outputs written into Data/ by midterm_sddp4.jl

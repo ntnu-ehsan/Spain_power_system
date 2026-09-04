@@ -11,7 +11,7 @@ plus the reference data in `Data/OMIE/`.  Colours, categories and the paper
 style come from `paper_figures_2024`, so these figures sit in the same visual
 system as the validation ones.
 
-The four runs are produced by re-running `run_opf.jl` with the flags flipped;
+The four runs are produced by re-running `run_market_chain.jl` with the flags flipped;
 point `RUNS` at wherever their result directories live:
 
     EXPORTS_RAMP_RUNS="C:/path/to/exp" python -m plotting.exports_ramp_2024

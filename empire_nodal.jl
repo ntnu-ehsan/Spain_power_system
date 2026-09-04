@@ -40,7 +40,7 @@
 #      buses with remaining headroom.  Pumped-storage power is matched per
 #      region onto the existing PHS units.
 #
-# Consumed by run_opf.jl / data_preparation.jl when
+# Consumed by run_market_chain.jl / data_preparation.jl when
 # config.toml → [scenario] disaggregation = "nodal".
 #
 # Standalone diagnostics (writes results/<label>/nodal/*.csv and a summary):
@@ -731,7 +731,7 @@ function nodal_bess_units(cfg; data_dir = joinpath(@__DIR__, "Data"),
             for b in sort(collect(keys(alloc_pw))) if alloc_pw[b] > 1e-3]
 end
 
-# ── 5. Bundle for run_opf.jl ────────────────────────────────
+# ── 5. Bundle for run_market_chain.jl ────────────────────────────────
 
 """
     build_nodal_disaggregation(cfg, emp; data_dir) -> NamedTuple

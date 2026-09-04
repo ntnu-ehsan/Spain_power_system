@@ -2,7 +2,7 @@
 Figures for Section 5.1 of the paper — validation of the market chain against the
 observed 2024 Spanish market on two representative days (8 July, 2 December).
 
-Reads only the CSVs written by `run_opf.jl` into `results/` and the reference
+Reads only the CSVs written by `run_market_chain.jl` into `results/` and the reference
 data in `Data/OMIE/`.  Every figure function returns a matplotlib Figure and, if
 `save=True`, writes a PDF into `figures/` (override with SPAIN_FIG_DIR).
 

@@ -825,7 +825,7 @@ def build_redispatch_map(
     bus_q = _matrix_for_map(bus_generation, "bus_i", "reactive_mvar", bus_order, times)
     bus_shed = _matrix_for_map(load_shed, "bus_i", "load_shed_mw", bus_order, times)
 
-    # Allocate the solved system demand using the same static shares as run_opf.jl.
+    # Allocate the solved system demand using the same static shares as run_market_chain.jl.
     demand = pd.to_numeric(run.loads.set_index("bus_id")["demand"], errors="coerce")
     demand = demand.reindex(buses["bus_id"]).fillna(0.0)
     shares = demand / max(float(demand.sum()), 1e-12)

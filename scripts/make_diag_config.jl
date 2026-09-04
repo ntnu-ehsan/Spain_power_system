@@ -56,7 +56,7 @@ w["xb_ntc_margin"] = 1.0
 
 # [crossborder] carries fixed injections for the 2024 study days only; the
 # sampled horizon clears its own ES-FR/ES-PT exchange inside the 4-zone DA, and
-# run_opf.jl refuses to start with both switched on.
+# run_market_chain.jl refuses to start with both switched on.
 cfg["crossborder"]["enabled"] = false
 
 # Fast diagnostic chain: clear DA and send that schedule/profile directly to
@@ -67,7 +67,7 @@ cfg["id3"]["enabled"] = false
 cfg["cid"]["enabled"] = false
 cfg["balancing"]["enabled"] = false
 
-# Keep the normal operating derate. run_opf.jl applies the separate multiplier
+# Keep the normal operating derate. run_market_chain.jl applies the separate multiplier
 # below only to same-NUTS3 Spanish branches.
 cfg["network"]["line_rating_factor"] = 0.80
 cfg["network"]["voltage_band"] = 0.10

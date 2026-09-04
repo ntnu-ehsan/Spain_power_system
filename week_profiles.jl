@@ -2,7 +2,7 @@
 # Spain Power System — sampled-week gate profiles ([weeks])
 # ============================================================
 # Builds the per-stage hourly ES profile tables (date, hour, load_mw,
-# solar_mw, wind_mw — the exact shape run_opf.jl's 2024 path assembles from
+# solar_mw, wind_mw — the exact shape run_market_chain.jl's 2024 path assembles from
 # Data/ES_old × Data/ES) for the sampled-week horizon of week_sampling.jl,
 # with the weather realisation taken from the EMPIRE ScenarioData series:
 #
@@ -86,7 +86,7 @@ _read_scen(cfg, file) = CSV.read(joinpath(_scenario_data_dir(cfg), file), DataFr
 # Per-stage hourly ES tables for the sampled horizon:
 #   Dict("DA"|"ID2"|"ID3"|"CID"|"BE" => DataFrame(date, hour, load_mw,
 #                                                 solar_mw, wind_mw))
-# Drop-in replacements for run_opf.jl's hourly_da … hourly_bal.
+# Drop-in replacements for run_market_chain.jl's hourly_da … hourly_bal.
 function week_stage_tables(cfg, emp, key::DataFrame)::Dict{String,DataFrame}
     times = scenario_time_axis(cfg)
     dfs   = _read_scen(cfg, "solar.csv")

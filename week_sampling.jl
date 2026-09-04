@@ -28,7 +28,7 @@
 #   data_start   ScenarioData timestamp of the anchor row (DateTime)
 #   row_start    1-based row index of the anchor in every ScenarioData file
 #
-# Usage (from run_opf.jl, cfg = TOML.parsefile("config.toml")):
+# Usage (from run_market_chain.jl, cfg = TOML.parsefile("config.toml")):
 #   key  = load_or_sample_weeks(cfg)          # DataFrame as above
 #   days = week_study_days(key)               # all study days, chain order
 #   rows = week_data_rows(key_row)            # 168-row range into ScenarioData

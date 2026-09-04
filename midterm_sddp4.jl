@@ -56,7 +56,7 @@ include("fuel_prices.jl")
 
 # ── configuration ────────────────────────────────────────────
 # SPAIN_CONFIG points a run at an alternative config file, exactly as in
-# run_opf.jl — the two must honour the same override or a scenario A/B lands
+# run_market_chain.jl — the two must honour the same override or a scenario A/B lands
 # the market chain on cuts trained for a different system.  Without this the
 # env var was silently ignored here and the run retrained the tracked config's
 # scenario while writing to the file names that config implies.

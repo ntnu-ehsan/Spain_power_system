@@ -4,7 +4,7 @@
 # Reads the six CSV data files and assembles the PowerModels.jl
 # network dict in per-unit on a 100 MVA base.
 #
-# Usage (from run_opf.jl):
+# Usage (from run_market_chain.jl):
 #   include("data_preparation.jl")
 #   net = prepare_network()
 #   # net.network, net.gens, net.branches, net.loads, net.bus_idx

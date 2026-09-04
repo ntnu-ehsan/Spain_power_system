@@ -110,7 +110,7 @@ so **DA, ID2, ID3, CID and BAL clear identically** — verified: day-ahead cost
 and on. Only the AC redispatch, the one stage that cares where power leaves the
 country, sees a difference.
 
-Implemented as `xb_export_offset` in `run_opf.jl`, applied at the three network
+Implemented as `xb_export_offset` in `run_market_chain.jl`, applied at the three network
 builds (the copper-plate gates, the anchored hour-by-hour redispatch and the
 multi-hour Bellman-coupled redispatch).
 

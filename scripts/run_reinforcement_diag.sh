@@ -54,7 +54,7 @@ echo "results           : $out"
 echo "log               : $log"
 
 SPAIN_CONFIG="$cfg" SPAIN_RESULTS="$out" \
-    julia --project=. run_opf.jl 2>&1 | tee "$log"
+    julia --project=. run_market_chain.jl 2>&1 | tee "$log"
 
 "$python_cmd" scripts/derive_reinforcement.py \
     "$out" "$out/reinforcement.csv" | tee -a "$log"
