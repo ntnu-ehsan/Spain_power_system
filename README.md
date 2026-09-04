@@ -46,8 +46,19 @@ stages, `gen_dispatch.csv` and `branch_flows.csv` for the redispatch, and
 
 ### 2. Mid-term SDDP (hydro water values)
 
-Generates the Bellman cuts the market chain needs. Run this **before** any 2035
-chain run — the chain reads the cuts it writes.
+Generates the Bellman cuts that price reservoir hydro in the market chain.
+
+**The cuts are already in the repository**, for the 2024 case and for both
+scenarios, so you do not need to run this before a chain run — it is here to
+regenerate them, or to run a scenario of your own. Re-running overwrites the
+tracked files in place:
+
+```
+Data/BellmanValuesOUT_sddp4[_<label>].csv    cut coefficients
+Data/Volume_Scen0_OUT_sddp4[_<label>].csv    reservoir volume trajectory
+Data/TurbineSchedule_sddp4[_<label>].csv     weekly release, the daily hydro budget
+Data/ExchangeSchedule_sddp4[_<label>].csv    ES-FR / ES-PT net position
+```
 
 ```bash
 # in config.toml: set [scenario].label to Trinity or NECPEssentials

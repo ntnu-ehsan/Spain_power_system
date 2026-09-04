@@ -626,7 +626,7 @@ anchor_weight = 0.8
 # The Bellman water value is recomputed each run (cheap, clearing-independent).
 # The saved *_dispatch.csv it reads are left untouched; only the redispatch
 # outputs (summary/gen_dispatch/branch_flows/fuel_mix/bus_voltages) are rewritten.
-from_saved = "BAL"
+from_saved = ""
 
 # Restrict the load flow to a single delivery hour (or a single day).
 #   ""             — every hour of every target day.
