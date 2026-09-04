@@ -1,0 +1,13 @@
+carrier,technology,variable_total_eur_per_mwh
+Biomass,,85.42433043
+Coal,Hard Coal,94.01052758
+Electricity Storage,Pumped Storage,0.036
+Gas,CCGT,93.16123916083919
+Hydro,Reservoir,0.320256
+Hydro,Run of River,0.0036
+Nuclear,,15.378779995977577
+Oil,Internal Combustion,179.6753046355619
+Solar,CSP,0.0036
+Solar,PV,0.0036
+Wind,Onshore,0.18
+Gas,OCGT,124.86767755622196

@@ -1,0 +1,6 @@
+# Do not translate line endings by default: the Data/ csv and tab files are
+# large and byte-exactness matters more than local newline convention.
+* -text
+
+# Shell scripts must stay LF or they break under bash on Linux/macOS.
+*.sh text eol=lf
