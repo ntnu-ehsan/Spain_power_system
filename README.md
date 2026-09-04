@@ -118,8 +118,9 @@ empty for this reason.
 | `Data/Generation.csv`, `Storage.csv`, `power_unit_tech_params.csv` | unit fleet, ramp rates, tech parameters |
 | `Data/ES_old/{Solar,Wind,load}/` | 2024 MW baselines; column `-12` is the day-ahead vintage |
 | `Data/ES/{Solar,Wind Onshore,load}/` | per-gate forecast-deviation factors (`DA,ID2,ID3,CID,BE`), 363 days of 2024 |
-| `Data/ts/EDF__*-ES__*.csv` | EDF wind/PV load factors and hydro coefficients, 37 climate years 1982–2018 — the SDDP scenarios |
-| `Data/ts/EMPIRE/` | hourly NUTS3 series for PT/FR/EU in the SDDP |
+| `Data/ts/EDF__*-ES__*.csv` | EDF load factors and hydro coefficients, 37 climate years 1982–2018. The climate years these files share define the SDDP's scenario set. Run-of-river drives the ES RoR units; inflow is used only when `[midterm4].es_inflow_source = "edf"`. The wind and PV load-factor files are read for the climate-year set only — availability comes from the EMPIRE series below |
+| `Data/ts/Profile-Iberia.csv` | ES load shape for the SDDP |
+| `Data/ts/EMPIRE/` | hourly NUTS3 weather for the SDDP in the **2024** case only. A scenario run reads the same six series from its own `Data/2035/<scenario>/Input/Xlsx/ScenarioData/`, which is also where the market chain gets them |
 | `Data/2035/<scenario>/` | the EMPIRE run: installed capacity, marginal costs, NTCs, and the ScenarioData weather |
 | `Data/OMIE/` | observed 2024 prices and generation, for validation |
 

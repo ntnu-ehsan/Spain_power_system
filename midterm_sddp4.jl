@@ -98,7 +98,17 @@ const EXCHANGE_OUT = joinpath(@__DIR__, empire_suffixed(
 const DATA_DIR    = joinpath(@__DIR__, "Data")
 const SMSPP_IN    = joinpath(DATA_DIR, "smspp_in")
 const TS_DIR      = joinpath(DATA_DIR, "ts")
-const EMPIRE_DIR  = joinpath(TS_DIR, "EMPIRE")
+# Hourly EMPIRE weather (load, solar, wind on/offshore, run-of-river, seasonal
+# inflow).  A scenario run reads the series belonging to the scenario it is
+# solving; only the 2024 case falls back to the shared Data/ts/EMPIRE copy.
+# Reading a fixed directory let the SDDP and the market chain — which takes
+# these series from <empire_dir> via week_profiles.jl — drift onto different
+# weather for the same scenario.  They currently agree column for column, so
+# this changes no result; it stops them diverging unnoticed again.
+const EMPIRE_DIR  = SCEN_ACTIVE ?
+    joinpath(@__DIR__, String(cfg["scenario"]["empire_dir"]),
+             "Input", "Xlsx", "ScenarioData") :
+    joinpath(TS_DIR, "EMPIRE")
 
 @assert 168 % BLOCK_HOURS == 0 && 24 % BLOCK_HOURS == 0 "block_hours must divide 24"
 Random.seed!(Int(get(mcfg, "seed", 1234)))
@@ -557,6 +567,7 @@ println("Mid-term SDDP (4 nodes, hybrid$(SCEN_ACTIVE ? ", scenario " * EMP.label
         "$(N_STAGES) weekly stages × $(NB) blocks of $(BLOCK_HOURS) h,")
 println("  $(NSCEN) scenarios = EDF climate years $(first(YEARS))–$(last(YEARS)) (ES/PT), each paired")
 println("  with EMPIRE year 2015+(i-1)%5 (FR/EU); solver=$(SOLVER)")
+println("  EMPIRE weather : $(relpath(EMPIRE_DIR, @__DIR__))")
 println(END_PENALTY > 0 ?
     @sprintf("  end-of-horizon target: %.0f%% of the initial volume, penalty %.0f EUR/MWh",
              100 * END_FILL, END_PENALTY) :
